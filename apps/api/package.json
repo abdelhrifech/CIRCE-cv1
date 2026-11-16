@@ -1,0 +1,40 @@
+{
+  "name": "@circe/api",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --env-file=../../.env src/server.ts",
+    "start": "tsx --env-file=../../.env src/server.ts",
+    "build": "prisma generate && tsc -p tsconfig.json",
+    "typecheck": "prisma generate && tsc -p tsconfig.json",
+    "test": "vitest run --project unit",
+    "test:int": "vitest run --project integration",
+    "db:up": "tsx scripts/db.ts dev",
+    "db:test:up": "tsx scripts/db.ts test",
+    "seed:ref": "tsx scripts/seed-ref.ts",
+    "jdd": "tsx scripts/jdd.ts",
+    "jdd:demo": "tsx scripts/jdd-demo.ts",
+    "dev:user": "tsx scripts/dev-user.ts",
+    "e2e:seed": "tsx scripts/e2e-seed.ts",
+    "seed:demo": "tsx scripts/e2e-seed.ts --demo",
+    "integration:lot": "tsx scripts/integration-lot.ts",
+    "taches:executer": "tsx scripts/taches.ts"
+  },
+  "dependencies": {
+    "@circe/shared": "workspace:*",
+    "@prisma/adapter-better-sqlite3": "7.10.1",
+    "@prisma/client": "7.10.1",
+    "better-sqlite3": "12.11.1",
+    "fastify": "5.12.7",
+    "fastify-type-provider-zod": "7.0.0",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "9.6.0",
+    "pino-pretty": "13.2.0",
+    "prisma": "7.10.1",
+    "tsx": "4.23.15",
+    "vitest": "5.0.5"
+  }
+}
