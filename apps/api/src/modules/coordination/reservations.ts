@@ -231,8 +231,11 @@ export async function etatReservations(db: Db, identity: Identity, q: Reservatio
   const dossierDe = new Map(dossiers.map((d) => [d.contNum, d]))
   // RG-COO-106 : statut d'une répartition = celui de son UM si elle existe.
   const production = new Map<string, StatutProduction[]>()
-  const ajouter = (k: string, s: StatutProduction) =>
-    production.set(k, [...(production.get(k) ?? []), s])
+  const ajouter = (k: string, s: StatutProduction) => {
+    const liste = production.get(k)
+    if (liste) liste.push(s)
+    else production.set(k, [s])
+  }
   for (const r of await parPaquets(contNums, (paquet) =>
     db.repartition.findMany({
       where: { contNum: { in: paquet } },
@@ -244,7 +247,17 @@ export async function etatReservations(db: Db, identity: Identity, q: Reservatio
       r.unite?.statut ?? r.statut,
     )
   for (const f of await parPaquets(contNums, (paquet) =>
-    db.faceTrain.findMany({ where: { contNum: { in: paquet } } }),
+    db.faceTrain.findMany({
+      where: { contNum: { in: paquet } },
+      select: {
+        contNum: true,
+        supportId: true,
+        theme: true,
+        depAnbas: true,
+        depSembas: true,
+        statut: true,
+      },
+    }),
   ))
     ajouter(cleProd(f.contNum, f.supportId, f.theme, f.depAnbas, f.depSembas), f.statut)
 
@@ -429,16 +442,38 @@ export async function suiviProduction(
     }),
   )
   const faces = await parPaquets(contNums, (paquet) =>
-    db.faceTrain.findMany({ where: { contNum: { in: paquet } } }),
+    db.faceTrain.findMany({
+      where: { contNum: { in: paquet } },
+      select: {
+        contNum: true,
+        supportId: true,
+        theme: true,
+        depAnbas: true,
+        depSembas: true,
+        statut: true,
+      },
+    }),
   )
+  // Index par clé de production (volume réel : des centaines de milliers de faces) : une passe, pas un
+  // filtre par ligne attendue.
+  const facesParCle = new Map<string, Map<string, number>>()
+  for (const f of faces) {
+    const k = cleProd(f.contNum, f.supportId, f.theme, f.depAnbas, f.depSembas)
+    const parStatut = facesParCle.get(k) ?? new Map<string, number>()
+    parStatut.set(f.statut, (parStatut.get(f.statut) ?? 0) + 1)
+    facesParCle.set(k, parStatut)
+  }
+  const repartitionsParCle = new Map<string, typeof repartitions>()
+  for (const r of repartitions) {
+    const k = cleProd(r.contNum, r.supportId, r.theme, r.semAnnee, r.semNum)
+    const liste = repartitionsParCle.get(k) ?? []
+    liste.push(r)
+    repartitionsParCle.set(k, liste)
+  }
   return {
     items: visibles.map((l) => {
       const k = cleProd(l.contNum, l.supportId, l.theme, l.semAnnee, l.semNum)
-      const parStatut = new Map<string, number>()
-      for (const f of faces.filter(
-        (f) => cleProd(f.contNum, f.supportId, f.theme, f.depAnbas, f.depSembas) === k,
-      ))
-        parStatut.set(f.statut, (parStatut.get(f.statut) ?? 0) + 1)
+      const parStatut = facesParCle.get(k) ?? new Map<string, number>()
       return {
         ligneAttendueId: l.id,
         dossier: l.contNum,
@@ -454,14 +489,12 @@ export async function suiviProduction(
             numeroVisibleSuiviProd({ validee: r.affiche.validationAdmin, sources: ['PREPA'] }),
           )
           .map((r) => r.affiche.id),
-        repartitions: repartitions
-          .filter((r) => cleProd(r.contNum, r.supportId, r.theme, r.semAnnee, r.semNum) === k)
-          .map((r) => ({
-            id: r.id,
-            statut: r.unite?.statut ?? r.statut,
-            qte: r.qte,
-            destinataire: r.destinataire ? (r.destinataire.nom ?? r.destinataire.nomOrigine) : null,
-          })),
+        repartitions: (repartitionsParCle.get(k) ?? []).map((r) => ({
+          id: r.id,
+          statut: r.unite?.statut ?? r.statut,
+          qte: r.qte,
+          destinataire: r.destinataire ? (r.destinataire.nom ?? r.destinataire.nomOrigine) : null,
+        })),
         faces: [...parStatut.entries()].map(([statut, nombre]) => ({ statut, nombre })),
       }
     }),

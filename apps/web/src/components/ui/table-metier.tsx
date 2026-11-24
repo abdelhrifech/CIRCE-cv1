@@ -566,7 +566,7 @@ export function TableMetier<T, K extends string | number = string | number>({
                         : ''}
                   </td>
                 ))}
-              </tr>{' '}
+              </tr>
             </tfoot>
           )}
         </table>

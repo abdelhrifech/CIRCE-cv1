@@ -28,12 +28,14 @@ La mission complète est dans `docs/MISSION.md`. Lis-la au début de toute étap
 ## 4. Commandes
 
 - `pnpm dev` — web + api
-- `pnpm start:all` — TOUT en une commande sur la base de dev : migrations, référentiels, un utilisateur de dev par rôle (`dev.coord`, `dev.recep`, `dev.cheq`, `dev.expe`, `dev.admin`, `dev.com`), puis API + web ; choisit des ports libres si 3000/3001 sont pris ; options `--user=dev.recep`, `--api-port=`, `--web-port=`, `--no-seed` ; Ctrl+C arrête tout (`scripts/start.mjs`)
+- `pnpm start:all` — TOUT en une commande sur la base de dev : migrations, référentiels, un utilisateur de dev par rôle (`dev.coord`, `dev.recep`, `dev.cheq`, `dev.expe`, `dev.admin`, `dev.com`), puis API + web ; choisit des ports libres si 3000/3001 sont pris ; options `--user=dev.recep`, `--api-port=`, `--web-port=`, `--no-seed` ; Ctrl+C arrête tout (`scripts/start.mjs`). Données (Q-437) : si `CIRCE_EXPORT_DIR` (dans `.env`) ou `--import=<dossier>` désigne un export de Circé, la base de dev porte les données reprises (import une seule fois sur base vide) + JDD fictifs sans source réelle (Bus, J-3, NC) sur des plateformes « … (JDD) » ; `--demo` ajoute `seed:scenarios`, `--sans-jdd` aucun JDD ; sans export : JDD fictifs complets (`--no-demo` pour s'en passer)
+- Installation neuve (Windows compris) : `npm install` puis `npm start` ; la base de dev livrée `apps/api/prisma/donnees/dev.sqlite.gz` (données reprises, Q-446) est restaurée si `dev.db` est absent.
+- Reprise Circé (CSV d'export JAMAIS dans le dépôt ; base de dev versionnée sur décision Q-446) : `CIRCE_SQL_PASSWORD=… pnpm --filter @circe/api export:circe [dossier]` (SELECT seuls sur le conteneur `circe-sql`, CSV hors dépôt, défaut `~/circe-export`) puis `pnpm --filter @circe/api import:circe [dossier]` (base de dev propre : déplacer `dev.db`, `pnpm db:up && pnpm seed:ref` ; rapport de rejets dans le dossier d'export)
 - `pnpm db:up` / `pnpm db:test:up` — applique les migrations sur le fichier SQLite dev (`apps/api/prisma/dev.db`) / test (`test.db`) ; aucun serveur ni Docker
 - `pnpm --filter @circe/api exec prisma migrate dev --name <nom>` (le nom de paquet est `@circe/api`, pas `api`)
 - `pnpm typecheck` · `pnpm lint` (ESLint + Prettier) · `pnpm format` · `pnpm test` (unit, tous les paquets) · `pnpm test:int` (API, base `test.db`) · `pnpm test:e2e` (Playwright : lance API 3101 + web 3100 sur la base de test ; `pnpm exec playwright install chromium` une fois)
 - Dev : web `http://127.0.0.1:3000`, API `http://127.0.0.1:3001`, relais `/api/*` assuré par la route `apps/web/src/routes/api/$.ts` (variable `API_URL`). Variables : `.env` (copié de `.env.example`) et `.env.test`.
-- `pnpm dev:user <identifiant> <rôle> [plateformeId...]` : utilisateur de dev (base de dev) injecté par le relais web via `DEV_IDENTITY_USER` (Q-001, jamais en production)
+- `pnpm dev:user <identifiant> <rôle> [plateformeId...]` : utilisateur de dev (base de dev) injecté par le relais web via `DEV_IDENTITY_USER` (Q-001, jamais en production) ; sans plateforme : toutes celles de la base
 - `pnpm seed:ref` (référentiels issus des RG : rôles, paramètres, types ; idempotent, base de dev) · `pnpm jdd --seed=<n> --volume=<n>` (JDD)
   (Commandes de l'étape 2 vérifiées le 2026-11-04. À maintenir à jour.)
 

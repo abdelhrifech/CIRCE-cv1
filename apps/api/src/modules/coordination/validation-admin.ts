@@ -202,6 +202,7 @@ export async function affichesDesDossiers(
       )
     ).map((u) => [u.id, u.nom ?? u.identifiantExterne]),
   )
+  const dossiersDemandes = new Set(contNums)
   for (const a of affiches) {
     const donnees: DonneesValidation = {
       statut: a.statut,
@@ -228,12 +229,12 @@ export async function affichesDesDossiers(
     const parDossier = new Map<number, { theme: string | null; quantite: number }[]>()
     for (const r of a.rattachements) {
       const c = r.ligneAttendue.contNum
-      if (c === null || !contNums.includes(c)) continue
+      if (c === null || !dossiersDemandes.has(c)) continue
       if (plateformes && !plateformes.includes(r.ligneAttendue.plateformeId)) continue
-      parDossier.set(c, [
-        ...(parDossier.get(c) ?? []),
-        { theme: r.ligneAttendue.theme, quantite: r.quantite },
-      ])
+      const themesDossier = parDossier.get(c)
+      const theme = { theme: r.ligneAttendue.theme, quantite: r.quantite }
+      if (themesDossier) themesDossier.push(theme)
+      else parDossier.set(c, [theme])
     }
     for (const [dossier, themesDossier] of parDossier) {
       const liste = resultat.get(dossier) ?? []
@@ -260,6 +261,29 @@ export async function affichesDesDossiers(
     }
   }
   return resultat
+}
+
+/**
+ * État et motifs de plusieurs affiches en un lot : même calcul que `etatValidationAffiche` (l'état d'une affiche ne
+ * dépend que de ses propres liens et des lignes de ses dossiers), sans une lecture complète par affiche — les listes
+ * (ECR-REC-04, tableau de bord) portent des milliers d'affiches sur le volume réel.
+ */
+export async function etatsValidationAffiches(client: Db | Tx, afficheIds: number[]) {
+  const liens = await parPaquets(afficheIds, (paquet) =>
+    client.afficheAttendue.findMany({
+      where: { actif: true, afficheId: { in: paquet } },
+      select: { ligneAttendue: { select: { contNum: true } } },
+    }),
+  )
+  const contNums = [
+    ...new Set(liens.map((l) => l.ligneAttendue.contNum).filter((c): c is number => c !== null)),
+  ]
+  const etats = new Map<number, { etat: AfficheDuDossier['etat']; motifs: MotifDoute[] }>()
+  for (const liste of (await affichesDesDossiers(client, contNums, null)).values())
+    for (const x of liste) if (!etats.has(x.id)) etats.set(x.id, { etat: x.etat, motifs: x.motifs })
+  // Sans dossier (orpheline, ou liens vers des lignes sans n° de dossier) : réception inconnue.
+  return (afficheId: number) =>
+    etats.get(afficheId) ?? { etat: 'RECEPTION_INCONNUE' as const, motifs: [] as MotifDoute[] }
 }
 
 /** État et motifs d'une seule affiche (fiche affiche, ECR-REC-05). */

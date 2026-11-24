@@ -112,10 +112,18 @@ export function aggregateDashboard(data: DashboardDataset, query: DashboardQuery
         destinations: u.destinationId === null ? [] : [u.destinationId],
       }),
   )
+  // Index visuel → unités en une passe (volume réel : milliers de trains × milliers de visuels).
+  const unitsByVisual = new Map<string, ProductionUnit[]>()
+  for (const u of units)
+    for (const id of new Set(u.visualIds)) {
+      const list = unitsByVisual.get(id)
+      if (list) list.push(u)
+      else unitsByVisual.set(id, [u])
+    }
   const visuals = data.visuals
     .filter((v) => visualMatches(v, query) && (!selectedIds || selectedIds.has(v.id)))
     .map((v) => {
-      const related = units.filter((u) => u.visualIds.includes(v.id))
+      const related = unitsByVisual.get(v.id) ?? []
       return {
         ...v,
         blockedUnits: related.filter((u) => u.covered === false).length,
@@ -139,9 +147,14 @@ export function aggregateDashboard(data: DashboardDataset, query: DashboardQuery
   )
   const workshops = new Map<number, ProductionUnit[]>()
   const departures = new Map<string, ProductionUnit[]>()
+  const push = <K>(map: Map<K, ProductionUnit[]>, key: K, u: ProductionUnit) => {
+    const list = map.get(key)
+    if (list) list.push(u)
+    else map.set(key, [u])
+  }
   for (const u of units) {
-    workshops.set(u.workshopId, [...(workshops.get(u.workshopId) ?? []), u])
-    if (u.departure) departures.set(u.departure.id, [...(departures.get(u.departure.id) ?? []), u])
+    push(workshops, u.workshopId, u)
+    if (u.departure) push(departures, u.departure.id, u)
   }
   const advertisers = new Map<string, { label: string; expected: number; remaining: number }>()
   for (const v of visuals)

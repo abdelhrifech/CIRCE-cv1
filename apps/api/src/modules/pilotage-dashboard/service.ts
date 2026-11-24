@@ -133,6 +133,10 @@ export async function readProductionDashboard(
           }),
         )
       : []
+  // Index (atelier, dossier, type) des préparations : une passe, pas un parcours par ligne attendue.
+  const preparationKeys = new Set(
+    preparationTypes.map((r) => `${String(r.atelierId)}|${String(r.contNum)}|${typeDe(r, types)}`),
+  )
   const visuals: DashboardVisual[] = expectedRows.flatMap((row) => {
     const workshop = workshopById.get(row.atelierId ?? 0)
     if (!workshop || !row.theme) return []
@@ -141,12 +145,7 @@ export async function readProductionDashboard(
       (query.pour === 'deroulant'
         ? workshop.type !== 'SCROLL'
         : workshop.type === 'SCROLL' ||
-          !preparationTypes.some(
-            (r) =>
-              r.atelierId === workshop.id &&
-              r.contNum === row.contNum &&
-              typeDe(r, types) === query.pour,
-          ))
+          !preparationKeys.has(`${String(workshop.id)}|${String(row.contNum)}|${query.pour}`))
     )
       return []
     const expected = row.qtePrepa ?? row.qteBc
@@ -203,18 +202,22 @@ export async function readProductionDashboard(
       },
     ]
   })
-  const visualKey = (v: DashboardVisual) => cleVisuel(v.siteId, v.dossier, v.theme)
+  // Index par clé de visuel (volume réel : des centaines de milliers de positions de trains).
+  const visualsByKey = new Map<string, DashboardVisual[]>()
+  for (const v of visuals) {
+    const key = cleVisuel(v.siteId, v.dossier, v.theme)
+    const list = visualsByKey.get(key)
+    if (list) list.push(v)
+    else visualsByKey.set(key, [v])
+  }
   const visualIds = (
     site: number,
     dossier: number | null,
     theme: string | null,
     week: string | null,
   ) =>
-    visuals
-      .filter(
-        (v) =>
-          visualKey(v) === cleVisuel(site, dossier, theme) && (week === null || v.week === week),
-      )
+    (visualsByKey.get(cleVisuel(site, dossier, theme)) ?? [])
+      .filter((v) => week === null || v.week === week)
       .map((v) => v.id)
   const visualById = new Map(visuals.map((v) => [v.id, v]))
   const loopRows = loops.map((l) => ({
@@ -325,14 +328,17 @@ export async function readProductionDashboard(
       departure: departure(workshop.plateformeId, um.destinataireId, week),
     })
   }
+  const destinationsByVisual = new Map<string, Set<number>>()
+  for (const u of units) {
+    if (u.destinationId === null) continue
+    for (const id of u.visualIds) {
+      const set = destinationsByVisual.get(id) ?? new Set<number>()
+      set.add(u.destinationId)
+      destinationsByVisual.set(id, set)
+    }
+  }
   for (const visual of visuals)
-    visual.destinations = [
-      ...new Set(
-        units
-          .filter((u) => u.visualIds.includes(visual.id))
-          .flatMap((u) => (u.destinationId === null ? [] : [u.destinationId])),
-      ),
-    ]
+    visual.destinations = [...(destinationsByVisual.get(visual.id) ?? [])]
   const data = aggregateDashboard(
     {
       units,

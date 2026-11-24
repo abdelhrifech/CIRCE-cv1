@@ -15,6 +15,7 @@ import {
   type SemaineIso,
   type TypeAlerte,
 } from '@circe/shared'
+import { grouperPar } from '../../core/grouper.ts'
 import { parPaquets } from '../../core/paquets.ts'
 import type { Db } from '../../core/db.ts'
 import type { Tx } from '../../core/transaction.ts'
@@ -23,7 +24,7 @@ import { hasPermission } from '../../core/permissions/permissions.ts'
 import { lireParametreNombre, lireParametreTexte } from '../reception/parametres.ts'
 import { alertesAlimentation } from './alimentation-lignes.ts'
 import { alertesValidation } from './effets-validation.ts'
-import { ecartDossier } from './instruction-ok.ts'
+import { ecartDeLignes } from './instruction-ok.ts'
 import { departsDesDossiers, dossiersEnProduction, semainePlus } from './production.ts'
 import { lireDeadline } from './reservations.ts'
 import { groupesAVerifier, lignesThemeModifie } from './themes.ts'
@@ -157,11 +158,13 @@ export async function alertesCoordination(
       }),
     )
     const noms = await fiches(dossiersVa)
+    const liensDe = grouperPar(liens, (l) => l.afficheId)
     for (const [id, e] of doutes) {
       const depart = minSemaine(
-        liens
-          .filter((l) => l.afficheId === id)
-          .map((l) => ({ annee: l.ligneAttendue.semAnnee, semaine: l.ligneAttendue.semNum })),
+        (liensDe.get(id) ?? []).map((l) => ({
+          annee: l.ligneAttendue.semAnnee,
+          semaine: l.ligneAttendue.semNum,
+        })),
       )
       const premier = e.dossiers[0] ?? 0
       out.push({
@@ -202,9 +205,7 @@ export async function alertesCoordination(
     },
     orderBy: { id: 'asc' },
   })
-  const parAfficheSansIp = new Map<number, typeof sansIp>()
-  for (const l of sansIp)
-    parAfficheSansIp.set(l.afficheId, [...(parAfficheSansIp.get(l.afficheId) ?? []), l])
+  const parAfficheSansIp = grouperPar(sansIp, (l) => l.afficheId)
   for (const [id, liens] of parAfficheSansIp) {
     const l0 = liens[0]
     if (!l0) continue
@@ -261,12 +262,13 @@ export async function alertesCoordination(
       departsDesDossiers(db, numsPp),
     ])
     const deadline = lireDeadline(await lireParametreTexte(db, 'coordination.deadlinePrepa'))
+    const candidatsDe = grouperPar(candidats, (l) => l.contNum)
     for (const n of numsPp) {
       const fiche = dossiersPp.get(n)
       if (fiche && fiche.statut !== 'A_TRAITER') continue
       const premier = (departsPp.get(n) ?? []).find((s) => comparerSemaines(s, S) >= 0)
       if (!premier || comparerSemaines(premier, S2) > 0) continue
-      const lignes = candidats.filter((l) => l.contNum === n)
+      const lignes = candidatsDe.get(n) ?? []
       const l0 = lignes[0]
       if (!l0) continue
       const ipSaisies = lignes.some((l) => l.theme !== null && !l.provisoire)
@@ -310,10 +312,27 @@ export async function alertesCoordination(
     ...new Set(lignesPrepa.map((l) => l.contNum).filter((c): c is number => c !== null)),
   ]
   const dossiersBc = await fiches(numsBc)
+  const lignesPrepaDe = grouperPar(lignesPrepa, (l) => l.contNum)
+  // RG-COO-055 : même calcul que `ecartDossier` (lignes actives, thème non exclu, du périmètre), lu par paquets
+  // plutôt qu'une requête par dossier (des milliers de dossiers sur le volume réel, à chaque affichage du badge).
+  const lignesEcartDe = grouperPar(
+    await parPaquets(numsBc, (paquet) =>
+      db.receptionAttendue.findMany({
+        where: {
+          contNum: { in: paquet },
+          etatLigne: 'ACTIVE',
+          themeExclu: false,
+          ...surPlateformes,
+        },
+        select: { contNum: true, qteBc: true, qtePrepa: true },
+      }),
+    ),
+    (l) => l.contNum,
+  )
   for (const n of numsBc) {
     if (dossiersBc.get(n)?.statut === 'ANNULE') continue
-    const ecart = (await ecartDossier(db, n, plateformes)) ?? 0
-    const lignes = lignesPrepa.filter((l) => l.contNum === n)
+    const ecart = ecartDeLignes(lignesEcartDe.get(n) ?? []) ?? 0
+    const lignes = lignesPrepaDe.get(n) ?? []
     const differente = lignes.find((l) => l.qtePrepa !== l.qteBc)
     if (ecart === 0 && !differente) continue
     const l0 = lignes[0]
@@ -510,9 +529,10 @@ export async function alertesCoordination(
       }),
     )
     const noms = await fiches(nums)
+    const lignesDe = grouperPar(lignes, (l) => l.contNum)
     for (const j of integrations) {
       const n = Number(j.entiteId)
-      const ls = lignes.filter((l) => l.contNum === n)
+      const ls = lignesDe.get(n) ?? []
       const semaines = [
         ...new Map(
           ls.map((l) => [
@@ -788,10 +808,11 @@ export async function alertesCoordination(
       if (!deja || e.export.le < deja) exporteLe.set(e.trainId, e.export.le)
     }
     const nomsDossiers = await fiches(contNums)
+    const facesDe = grouperPar(faces, (f) => f.contNum)
     for (const l of liens) {
       const n = l.ligneAttendue.contNum
       if (n === null) continue
-      const facesDossier = faces.filter((f) => f.contNum === n)
+      const facesDossier = facesDe.get(n) ?? []
       const exportsDossier = facesDossier
         .map((f) => (f.trainId ? exporteLe.get(f.trainId) : undefined))
         .filter((d): d is Date => d !== undefined)

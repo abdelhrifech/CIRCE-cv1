@@ -6,6 +6,7 @@ import type { CreerRouleur, ModifierRouleur, RouleurLigne } from '@circe/shared'
 import type { Db } from '../../core/db.ts'
 import { ConflictError, NotFoundError } from '../../core/errors.ts'
 import type { Identity } from '../../core/identity.ts'
+import { parPaquets } from '../../core/paquets.ts'
 import { ecrireJournal } from '../../core/tracabilite.ts'
 import type { Tx } from '../../core/transaction.ts'
 import { bumpVersion, updateWithVersion } from '../../core/versioning.ts'
@@ -52,13 +53,34 @@ export async function listerRouleursReferentiel(
 ): Promise<{ rouleurs: RouleurLigne[] }> {
   assertDroitCoordination(identity, 'referentiel.gerer', R)
   const rouleurs = await db.rouleur.findMany({
-    include: { atelier: { select: { id: true, plateformeId: true } } },
+    include: { atelier: { include: { plateforme: { select: { nom: true } } } } },
     orderBy: [{ atelierId: 'asc' }, { nom: 'asc' }],
   })
   const visibles = rouleurs.filter((r) => peutVoirAtelier(identity, r.atelier))
-  const lignes: RouleurLigne[] = []
-  for (const r of visibles) lignes.push(await ligne(db, r.id, maintenant))
-  return { rouleurs: lignes }
+  // « Utilisé » : un comptage groupé (pas une requête par rouleur : N+1 sur des centaines de milliers de faces).
+  const ids = visibles.map((r) => r.id)
+  const [faces, bagues] = await Promise.all([
+    parPaquets(ids, (paquet) =>
+      db.faceTrain.groupBy({ by: ['rouleurId'], where: { rouleurId: { in: paquet } } }),
+    ),
+    parPaquets(ids, (paquet) =>
+      db.bague.groupBy({ by: ['rouleurId'], where: { rouleurId: { in: paquet } } }),
+    ),
+  ])
+  const utilises = new Set([...faces, ...bagues].map((x) => x.rouleurId))
+  return {
+    rouleurs: visibles.map((r) => ({
+      id: r.id,
+      nom: r.nom,
+      poste: r.poste,
+      atelier: r.atelier
+        ? { id: r.atelier.id, libelle: r.atelier.libelle, plateforme: r.atelier.plateforme.nom }
+        : null,
+      actif: actif(r, maintenant),
+      utilise: utilises.has(r.id),
+      version: r.version,
+    })),
+  }
 }
 
 // RG-COO-297 : création d'un rouleur d'un atelier du périmètre ; le nom est unique dans l'atelier (HYPOTHÈSE Q-195).

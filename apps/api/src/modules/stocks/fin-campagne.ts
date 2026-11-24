@@ -62,7 +62,15 @@ export async function calculerFinsCampagne(
             retire: false,
             atelier: { ...scopeStock(i) },
           },
-          include: { destinataire: true, atelier: true },
+          select: {
+            contNum: true,
+            statut: true,
+            semAnnee: true,
+            semNum: true,
+            qte: true,
+            destinataire: { select: { nom: true, nomOrigine: true } },
+            atelier: { select: { plateformeId: true } },
+          },
         }),
       ),
       parPaquets(contNums, (paquet) =>
@@ -79,7 +87,14 @@ export async function calculerFinsCampagne(
             statut: { not: 'ANNULE' },
             atelier: { ...scopeStock(i) },
           },
-          include: { destinataire: true, atelier: true },
+          select: {
+            contNum: true,
+            depAnbas: true,
+            depSembas: true,
+            dateDepart: true,
+            destinataire: { select: { nom: true, nomOrigine: true } },
+            atelier: { select: { plateformeId: true } },
+          },
         }),
       ),
       parPaquets(contNums, (paquet) =>
@@ -95,7 +110,12 @@ export async function calculerFinsCampagne(
             statut: { not: 'ANNULE' },
             atelier: { ...scopeStock(i) },
           },
-          include: { atelier: true },
+          select: {
+            contNum: true,
+            contAnbas: true,
+            contSembas: true,
+            atelier: { select: { plateformeId: true } },
+          },
         }),
       ),
     ])
@@ -154,10 +174,32 @@ export async function calculerFinsCampagne(
     groupes.set(k, g)
   }
 
+  // Index (site, dossier) en une passe : volume réel (centaines de milliers de faces), pas un filtre par groupe.
+  function indexer<T>(liste: T[], cleDe: (x: T) => string | null) {
+    const m = new Map<string, T[]>()
+    for (const x of liste) {
+      const k = cleDe(x)
+      if (k === null) continue
+      const l = m.get(k)
+      if (l) l.push(x)
+      else m.set(k, [x])
+    }
+    return m
+  }
+  const afficheDe = new Map(affiches.map((a) => [a.id, a]))
+  const cleSiteDossier = (site: number | undefined, dossier: number | null) =>
+    site === undefined || dossier === null ? null : cle(site, dossier)
+  const attenduesDe = indexer(attendues, (l) => cleSiteDossier(l.plateformeId, l.contNum))
+  const repartsDe = indexer(reparts, (r) => cleSiteDossier(r.atelier?.plateformeId, r.contNum))
+  const facesDe = indexer(faces, (f) => cleSiteDossier(f.atelier?.plateformeId, f.contNum))
+
   const rows: FinCampagneLigne[] = []
   for (const [key, g] of groupes) {
-    const afs = affiches.filter((a) => g.ids.has(a.id)),
-      ls = attendues.filter((l) => l.plateformeId === g.site && l.contNum === g.dossier)
+    const afs = [...g.ids].flatMap((id) => {
+        const a = afficheDe.get(id)
+        return a ? [a] : []
+      }),
+      ls = attenduesDe.get(key) ?? []
     const dernier = [
       ...ls.map((l) => formatSemaineIso({ annee: l.semAnnee, semaine: l.semNum })),
       ...(programmes.get(key) ?? []),
@@ -186,18 +228,14 @@ export async function calculerFinsCampagne(
     )
     const attention: string[] = []
     const destinations = [
-      ...reparts
-        .filter((r) => r.contNum === g.dossier && r.atelier?.plateformeId === g.site)
-        .map((r) => ({
-          nom: `${r.destinataire?.nom ?? ''} ${r.destinataire?.nomOrigine ?? ''}`,
-          quantite: r.qte ?? 0,
-        })),
-      ...faces
-        .filter((f) => f.contNum === g.dossier && f.atelier?.plateformeId === g.site)
-        .map((f) => ({
-          nom: `${f.destinataire?.nom ?? ''} ${f.destinataire?.nomOrigine ?? ''}`,
-          quantite: 1,
-        })),
+      ...(repartsDe.get(key) ?? []).map((r) => ({
+        nom: `${r.destinataire?.nom ?? ''} ${r.destinataire?.nomOrigine ?? ''}`,
+        quantite: r.qte ?? 0,
+      })),
+      ...(facesDe.get(key) ?? []).map((f) => ({
+        nom: `${f.destinataire?.nom ?? ''} ${f.destinataire?.nomOrigine ?? ''}`,
+        quantite: 1,
+      })),
     ]
     const versBordeaux = destinations.filter((r) => normaliser(r.nom).includes('BORDEAUX'))
     const total = destinations.reduce((s, r) => s + r.quantite, 0),

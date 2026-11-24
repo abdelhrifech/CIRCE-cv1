@@ -11,6 +11,7 @@
     "start": "node scripts/start.mjs",
     "dev": "pnpm --parallel --filter @circe/api --filter @circe/web dev",
     "start:all": "node scripts/start.mjs",
+    "postinstall": "node scripts/installer.mjs",
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck && tsc -p tsconfig.json",
     "lint": "eslint . && prettier --check .",

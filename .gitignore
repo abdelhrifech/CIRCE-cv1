@@ -24,3 +24,6 @@ docs/_travail/extraits/*.sql
 cle-dechiffrement*.json
 docs-resources/
 donnees-chiffrees/
+
+# npm install (postinstall -> pnpm) : seul pnpm-lock.yaml fait foi
+/package-lock.json

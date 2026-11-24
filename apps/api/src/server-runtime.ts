@@ -2,7 +2,7 @@ import { telemetry } from './telemetry-bootstrap.ts'
 import { buildAdminServer } from './core/observability/admin.ts'
 import { buildApp } from './app.ts'
 import { loadConfig } from './core/config.ts'
-import { createDb } from './core/db.ts'
+import { createDb, optimiserStatistiques } from './core/db.ts'
 import { creerMailPort } from './core/ports/mail.ts'
 import { demarrerOrdonnanceur } from './modules/taches/service.ts'
 import { BroadcastNonConfigure } from './core/ports/broadcast.ts'
@@ -57,6 +57,7 @@ process.on('SIGINT', () => void stop('SIGINT'))
 process.on('SIGTERM', () => void stop('SIGTERM'))
 
 try {
+  await optimiserStatistiques(db)
   await admin.app.listen({ host: config.ADMIN_HOST, port: config.ADMIN_PORT })
   await app.listen({ host: config.API_HOST, port: config.API_PORT })
 } catch (error) {

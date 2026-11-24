@@ -18,6 +18,7 @@ import {
   type Nc,
 } from '@circe/shared'
 import { createDb } from '../src/core/db.ts'
+import { nomCentre } from './jdd-centres.ts'
 import { dbIdentityLoader, type Identity } from '../src/core/identity.ts'
 import { enregistrerPhoto } from '../src/modules/reception/photos.ts'
 import { validerReception } from '../src/modules/reception/validation.ts'
@@ -288,7 +289,7 @@ try {
     )
   }
   for (const [siteIndex, centre] of ['Wissous', 'Nîmes', 'Nanterre'].entries()) {
-    const site = await db.plateforme.findFirstOrThrow({ where: { nom: centre } })
+    const site = await db.plateforme.findFirstOrThrow({ where: { nom: nomCentre(centre) } })
     const code = ['wissous', 'nimes', 'nanterre'][siteIndex]
     const recep = await identite(`dev.recep.${code}`)
     const coord = await identite(`dev.coord.${code}`)

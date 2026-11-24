@@ -651,3 +651,23 @@ SQLite conservé selon l’arbitrage explicite de l’utilisateur. Analyse compl
 ### Journal — 23 novembre 2026 : correction des erreurs de pages sur la recette hybride
 
 Correction technique de `core/paquets.ts` : concaténation sans déploiement de centaines de milliers de résultats en arguments JavaScript. Même ordre, mêmes données, mêmes lots et mêmes règles. Trois tests de régression, dont 200 001 résultats dans un lot. Analyse Production et Administration Fin de campagne vérifiées dans le navigateur ; 16 endpoints de lecture répondent HTTP 200. Typecheck, lint, 357 tests unitaires, 37 API ciblés sur `test.db` et build réussis. Gel : 228 fichiers et 95 blocs Prisma inchangés. Détail et limites : `CORRECTIFS_PAGES_2026_11_23.md`. Aucune modification de Réception/Coordination, des paramètres ou des données pour faire passer les lectures.
+
+### Journal — 24 novembre 2026 : base réelle, synchronisation GV1, reprise de la référence circe-tested
+
+- **Base réelle (lecture seule)** : copie Docker de la base de qualification CIRCE (07/07–07/10/2026) lue table par table, correspondance avec le modèle V2, contrôles de qualité ; `docs/_travail/base-reelle-2026-11-24/` ; complément de Q-004 (`tr_statut`), questions Q-437 à Q-443 (reprise, pseudonymisation, effet de fenêtre, lignes hors règles, types de préparation, concepts sans source, dates passées). Aucune donnée réelle copiée.
+- **Synchronisation sur GV1** (`abdelhrifech/CIRCE-v1`, 08f32e2) : code aligné, 152 fichiers gelés Réception / Coordination identiques, 8 migrations additives ; JDD de démo (`pnpm jdd:demo`) conservé.
+- **Reprise de `docs-sources/circe-tested`** (Réception, Coordination, 2 m² fixe, Pliage, thème) : 34 fichiers repris, RG-COO-309, ECART-120 à 123, Q-430 à Q-436 ; deux corrections minimales (ECART-125) ; contrat OpenAPI régénéré ; 6 E2E adaptés ; référence inchangée (1 072 fichiers vérifiés).
+- **Incident** : la synchronisation GV1 (`rsync --delete`, exclusions non appliquées sous zsh) a supprimé `apps/api/prisma/dev.db` et deux sauvegardes `.bak` ; base de dev recréée par `pnpm start:all` (JDD des centres de GV1), l'ancien JDD de démo est régénérable (`pnpm jdd:demo --seed=7`).
+- **Vérifications** : typecheck, lint, tests unitaires (386), intégration (3 771), E2E 113 / 117 (1 échec `coordination-validation-admin.spec.ts:18`, 3 non lancés en série : Q-444).
+- **Reste** : trancher Q-444 (validation admin en 2 m² fixe / pliage) ; passer `spec-auditor` sur le périmètre repris ; décider de la fusion de la branche `sync-gv1` dans `main` et du push ; Q-437 / Q-438 avant toute reprise de données réelles.
+- **Prochaine commande** : après décision sur Q-444, `pnpm exec playwright test e2e/coordination-validation-admin.spec.ts`, puis `git checkout main && git merge sync-gv1`.
+
+
+### Journal — 24 novembre 2026 (suite) : import de la base réelle, recette sur volume réel, livraison
+
+- **Import (Q-437, Q-438)** : `apps/api/scripts/export-circe.ts` (SELECT seuls) puis `import-circe.ts` (méthode propre, rapport de rejets par RG, invariants à 0) ; JDD fictifs Bus, J-3, NC sur les plateformes « (JDD) ». Q-445 (24/11) : instructions validées à 0 % acceptées à l'import (ECART-127) ; 1 seule instruction encore rejetée par RG-COO-043, 388 429 faces.
+- **Recette sur données réelles** : 98 routes GET × 6 profils × sites et semaines, 268 pages par profil (Playwright). 10 bugs de volume corrigés (parcours quadratiques, N+1, statistiques SQLite) ; test `test/massif/volume-reel.int.test.ts` ; ANO-065 à ANO-080 dans `RAPPORT_TESTS.md`, dont ANO-075, 076, 077, 079, 080 ouverts (arbitrages).
+- **Livraison (Q-446)** : base de dev versionnée (`apps/api/prisma/donnees/dev.sqlite.gz`, restaurée par `start.mjs` si `dev.db` est absent) ; `npm install` (postinstall `scripts/installer.mjs` → `npx pnpm@12.14.0 install`) puis `npm start`, sans pnpm global (`scripts/pnpm-process.mjs` : pnpm natif ou npx). Branche `sync-gv1` fusionnée dans `main` et poussée.
+- **Vérifications** : typecheck, lint, 386 tests unitaires, 3 778 tests d'intégration ; clone vierge testé sous macOS (`npm install`, `npm start`). Recette native Windows non faite (pas de poste Windows).
+- **Reste** : Q-444 ; ANO-075, 076, 077, 079, 080 ; recette sur un poste Windows ; `spec-auditor`.
+- **Prochaine commande** : sur un poste Windows, `git clone … && npm install && npm start`.

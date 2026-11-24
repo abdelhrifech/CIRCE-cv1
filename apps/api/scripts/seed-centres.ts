@@ -12,6 +12,7 @@ import {
   semaineIsoDe,
 } from '@circe/shared'
 import { createDb } from '../src/core/db.ts'
+import { nomCentre } from './jdd-centres.ts'
 import { dbIdentityLoader, type Identity } from '../src/core/identity.ts'
 import { canAccessPlateforme, permissionsOf } from '../src/core/permissions/permissions.ts'
 import { seedRef } from '../src/reference/seed-ref.ts'
@@ -51,10 +52,11 @@ try {
   const sites: { code: string; nom: string; id: number }[] = []
   for (const centre of CENTRES_DEMO) {
     const existants = (await db.plateforme.findMany()).filter(
-      (p) => normaliser(p.nom) === normaliser(centre.nom),
+      (p) => normaliser(p.nom) === normaliser(nomCentre(centre.nom)),
     )
     if (existants.length > 1) throw new Error(`Plusieurs centres nommés ${centre.nom}`)
-    const plateforme = existants[0] ?? (await db.plateforme.create({ data: { nom: centre.nom } }))
+    const plateforme =
+      existants[0] ?? (await db.plateforme.create({ data: { nom: nomCentre(centre.nom) } }))
     // Identifiants de site fictifs réservés aux JDD : l'EDR n'affiche que les plateformes gérées.
     if (plateforme.idSiteCcf === null) {
       const fictif = 9000 + CENTRES_DEMO.findIndex((c) => c.code === centre.code) + 1

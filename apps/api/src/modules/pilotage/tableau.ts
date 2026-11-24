@@ -13,6 +13,7 @@ import { assertPermission } from '../../core/permissions/permissions.ts'
 import { ConflictError } from '../../core/errors.ts'
 import { bumpVersion, updateWithVersion } from '../../core/versioning.ts'
 import { ecrireJournal } from '../../core/tracabilite.ts'
+import { parPaquets } from '../../core/paquets.ts'
 import { listerDossiers } from '../coordination/dossiers.ts'
 import { groupesAVerifier } from '../coordination/themes.ts'
 import { listerAffiches } from '../reception/affiches.ts'
@@ -62,37 +63,41 @@ export async function sauverDisposition(
 export async function donneesTableau(db: Db, identity: Identity): Promise<DonneesTableau> {
   assertPermission(identity, 'validation_admin.valider')
   const i = identiteDuSite(identity)
-  const dossiers: Awaited<ReturnType<typeof listerDossiers>>['items'] = []
-  const affiches: Awaited<ReturnType<typeof listerAffiches>>['items'] = []
-  for (let page = 1; ; page++) {
-    const r = await listerDossiers(db, i, { page, pageSize: 100 })
-    dossiers.push(...r.items)
-    if (page * 100 >= r.total) break
-  }
-  for (let page = 1; ; page++) {
-    const r = await listerAffiches(db, i, { page, pageSize: 100 })
-    affiches.push(...r.items)
-    if (page * 100 >= r.total) break
-  }
+  // Une seule page couvrant toute la liste : chaque appel recalcule la liste entière avant de la découper, parcourir
+  // les pages de 100 refaisait ce calcul des dizaines de fois sur le volume réel (milliers de dossiers et d'affiches).
+  const tout = { page: 1, pageSize: Number.MAX_SAFE_INTEGER }
+  const dossiers = (await listerDossiers(db, i, tout)).items
+  const affiches = (await listerAffiches(db, i, tout)).items
   const ids = dossiers.map((d) => d.dossier)
-  const lignes = await db.receptionAttendue.findMany({
-    where: {
-      contNum: { in: ids },
-      ...(i.perimetre.toutesPlateformes ? {} : { plateformeId: { in: i.perimetre.plateformeIds } }),
-      etatLigne: 'ACTIVE',
-    },
-    select: {
-      contNum: true,
-      theme: true,
-      format: true,
-      atelierId: true,
-      semAnnee: true,
-      semNum: true,
-      rattachements: { where: { actif: true }, select: { afficheId: true } },
-    },
-  })
+  const lignes = await parPaquets(ids, (paquet) =>
+    db.receptionAttendue.findMany({
+      where: {
+        contNum: { in: paquet },
+        ...(i.perimetre.toutesPlateformes
+          ? {}
+          : { plateformeId: { in: i.perimetre.plateformeIds } }),
+        etatLigne: 'ACTIVE',
+      },
+      select: {
+        contNum: true,
+        theme: true,
+        format: true,
+        atelierId: true,
+        semAnnee: true,
+        semNum: true,
+        rattachements: { where: { actif: true }, select: { afficheId: true } },
+      },
+    }),
+  )
+  const lignesDe = new Map<number, typeof lignes>()
+  for (const l of lignes) {
+    if (l.contNum === null) continue
+    const liste = lignesDe.get(l.contNum)
+    if (liste) liste.push(l)
+    else lignesDe.set(l.contNum, [l])
+  }
   const contexte = (nums: number[]) => {
-    const ls = lignes.filter((l) => l.contNum !== null && nums.includes(l.contNum))
+    const ls = [...new Set(nums)].flatMap((n) => lignesDe.get(n) ?? [])
     return {
       semaines: [
         ...new Set(ls.map((l) => formatSemaineIso({ annee: l.semAnnee, semaine: l.semNum }))),

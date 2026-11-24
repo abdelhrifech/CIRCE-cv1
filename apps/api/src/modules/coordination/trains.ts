@@ -302,7 +302,11 @@ export async function construireTrains(
     ).map((d) => [d.id, d.nom ?? d.nomOrigine]),
   )
   const groupes = new Map<string, FaceTrain[]>()
-  for (const f of faces) groupes.set(f.trainId ?? '', [...(groupes.get(f.trainId ?? '') ?? []), f])
+  for (const f of faces) {
+    const groupe = groupes.get(f.trainId ?? '')
+    if (groupe) groupe.push(f)
+    else groupes.set(f.trainId ?? '', [f])
+  }
   const trains: TrainCalcule[] = []
   for (const [trainId, fs] of groupes) {
     const tri = [...fs].sort((a, b) => (a.ordreReel ?? 0) - (b.ordreReel ?? 0) || a.id - b.id)
@@ -1011,18 +1015,41 @@ export async function optionsCreationTrain(
         orderBy: { id: 'asc' },
       })
     : []
-  const destinataires = atelier
-    ? await db.destinataire.findMany({
-        where: {
-          actif: true,
-          OR: [
-            { faces: { some: { atelier: { plateformeId: atelier.plateformeId } } } },
-            { repartitions: { some: { atelier: { plateformeId: atelier.plateformeId } } } },
-          ],
-        },
-        orderBy: { id: 'asc' },
-      })
+  // Destinataires du site : identifiants distincts lus d'abord (une passe sur les faces et les répartitions), puis
+  // les destinataires. Le `some` corrélé équivalent parcourait toutes les faces pour chaque destinataire sur le
+  // volume réel (plan SQLite dépendant des statistiques).
+  const ateliersDuSite = atelier
+    ? (
+        await db.atelier.findMany({
+          where: { plateformeId: atelier.plateformeId },
+          select: { id: true },
+        })
+      ).map((a) => a.id)
     : []
+  const [destFaces, destRepartitions] = atelier
+    ? await Promise.all([
+        db.faceTrain.groupBy({
+          by: ['destinataireId'],
+          where: { atelierId: { in: ateliersDuSite }, destinataireId: { not: null } },
+        }),
+        db.repartition.groupBy({
+          by: ['destinataireId'],
+          where: { atelierId: { in: ateliersDuSite }, destinataireId: { not: null } },
+        }),
+      ])
+    : [[], []]
+  const idsDestinataires = [
+    ...new Set(
+      [...destFaces, ...destRepartitions].flatMap((d) =>
+        d.destinataireId === null ? [] : [d.destinataireId],
+      ),
+    ),
+  ]
+  const destinataires = (
+    await parPaquets(idsDestinataires, (paquet) =>
+      db.destinataire.findMany({ where: { actif: true, id: { in: paquet } } }),
+    )
+  ).sort((a, b) => a.id - b.id)
   return {
     ateliers: ateliers.map((a) => ({ id: a.id, libelle: a.libelle, plateforme: a.plateforme })),
     visuels: visuels.map((v) => ({

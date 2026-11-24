@@ -12,6 +12,7 @@ import {
   semaineIsoDe,
 } from '@circe/shared'
 import { createDb } from '../src/core/db.ts'
+import { nomCentre } from './jdd-centres.ts'
 import { dbIdentityLoader, type Identity } from '../src/core/identity.ts'
 import {
   referencesBus,
@@ -51,7 +52,7 @@ try {
   const admin = await identity('dev.admin')
   const plateformes = await db.plateforme.findMany()
   const site = (nom: string) => {
-    const p = plateformes.find((p) => p.nom === nom)
+    const p = plateformes.find((p) => p.nom === nomCentre(nom))
     if (!p) throw new Error(`Site manquant : ${nom}`)
     return p
   }

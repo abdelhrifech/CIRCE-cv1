@@ -23,6 +23,8 @@
     "taches:executer": "tsx scripts/taches.ts",
     "seed:news": "tsx scripts/seed-news.ts",
     "seed:scenarios": "tsx scripts/seed-scenarios.ts",
+    "export:circe": "tsx scripts/export-circe.ts",
+    "import:circe": "tsx scripts/import-circe.ts",
     "openapi:generate": "tsx scripts/generate-openapi.ts",
     "openapi:check": "tsx scripts/generate-openapi.ts --check"
   },

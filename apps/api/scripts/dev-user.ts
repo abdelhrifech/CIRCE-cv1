@@ -1,5 +1,6 @@
 // Crée ou met à jour un utilisateur de DÉVELOPPEMENT (base de dev uniquement) pour le fournisseur
 // d'identité de dev (Q-001). Usage : pnpm dev:user <identifiant> <role> [plateformeId...]
+// Sans plateforme : périmètre = toutes les plateformes de la base (données reprises de Circé, Q-437).
 import { resolve } from 'node:path'
 import { RoleSchema } from '@circe/shared'
 import { createDb } from '../src/core/db.ts'
@@ -30,11 +31,16 @@ try {
   await db.utilisateurRole.deleteMany({ where: { utilisateurId: user.id } })
   await db.utilisateurRole.create({ data: { utilisateurId: user.id, roleId: roleRow.id } })
   await db.utilisateurPerimetre.deleteMany({ where: { utilisateurId: user.id } })
-  for (const plateformeId of plateformes.map(Number)) {
+  const ids = plateformes.length
+    ? plateformes.map(Number)
+    : (await db.plateforme.findMany({ select: { id: true }, orderBy: { id: 'asc' } })).map(
+        (p) => p.id,
+      )
+  for (const plateformeId of ids) {
     await db.utilisateurPerimetre.create({ data: { utilisateurId: user.id, plateformeId } })
   }
   console.log(
-    `Utilisateur de dev « ${identifiant} » : rôle ${role.data}, plateformes [${plateformes.join(', ')}]`,
+    `Utilisateur de dev « ${identifiant} » : rôle ${role.data}, plateformes [${ids.join(', ')}]`,
   )
 } finally {
   await db.$disconnect()

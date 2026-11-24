@@ -18,8 +18,11 @@ import { assertDroitReception, assertPerimetreReception, REC } from './permissio
 import { dateDernierDepart, rattacher, retirerRattachement } from './rattachement.ts'
 import { changerStatutReception } from './service.ts'
 import { TRANSITIONS_RATTACHEMENT } from './statuts.ts'
-import { stockAffiche } from './stock.ts'
-import { etatValidationAffiche, messageConfirmation } from '../coordination/validation-admin.ts'
+import {
+  etatValidationAffiche,
+  etatsValidationAffiches,
+  messageConfirmation,
+} from '../coordination/validation-admin.ts'
 import {
   aTraiter,
   donneesAnnulation,
@@ -28,7 +31,6 @@ import {
 } from '../coordination/effets-validation.ts'
 
 type Client = Db | Tx
-const asTx = (c: Client) => c as unknown as Tx
 
 const INCLUDE_LISTE = {
   plateforme: { select: { id: true, nom: true } },
@@ -79,7 +81,38 @@ export function tagsDe(a: AfficheListee) {
   return tags
 }
 
-async function ligneListe(client: Client, a: AfficheListee) {
+/** Données calculées d'un lot d'affiches (état de validation, stock, rebut) : quelques requêtes pour tout le lot
+ * plutôt que plusieurs par affiche (liste de milliers d'affiches sur le volume réel). Mêmes calculs que la fiche. */
+async function contexteListe(client: Client, ids: number[]) {
+  const [etatDe, stocks, rebuts] = await Promise.all([
+    etatsValidationAffiches(client, ids),
+    parPaquets(ids, (paquet) =>
+      client.mouvement.groupBy({
+        by: ['afficheId'],
+        where: { afficheId: { in: paquet } },
+        _sum: { quantite: true },
+      }),
+    ),
+    parPaquets(ids, (paquet) =>
+      client.mouvement.groupBy({
+        by: ['afficheId'],
+        where: { afficheId: { in: paquet }, type: 'MISE_AU_REBUT' },
+        _sum: { quantite: true },
+      }),
+    ),
+  ])
+  const stockDe = new Map(stocks.map((m) => [m.afficheId, m._sum.quantite ?? 0]))
+  const rebutDe = new Map(rebuts.map((m) => [m.afficheId, m._sum.quantite ?? 0]))
+  return {
+    etat: (id: number) => etatDe(id).etat,
+    stock: (id: number) => stockDe.get(id) ?? 0,
+    rebut: (id: number) => rebutDe.get(id) ?? 0,
+  }
+}
+type ContexteListe = Awaited<ReturnType<typeof contexteListe>>
+
+async function ligneListe(client: Client, a: AfficheListee, lot?: ContexteListe) {
+  const c = lot ?? (await contexteListe(client, [a.id]))
   const semaines = [
     ...new Set(
       a.rattachements.map((r) =>
@@ -87,17 +120,13 @@ async function ligneListe(client: Client, a: AfficheListee) {
       ),
     ),
   ].sort()
-  const rebut = await client.mouvement.aggregate({
-    where: { afficheId: a.id, type: 'MISE_AU_REBUT' },
-    _sum: { quantite: true },
-  })
   const receptions = receptionsDe(a)
   return {
     id: a.id,
     version: a.version,
     zonePicking: a.zonePicking,
     fusionneeHeritee: a.estFusionne,
-    validation: (await etatValidationAffiche(client, a.id)).etat,
+    validation: c.etat(a.id),
     recueLe: a.dateEntree.toISOString(),
     annonceur: a.contAnnonc,
     theme: a.theme,
@@ -109,8 +138,8 @@ async function ligneListe(client: Client, a: AfficheListee) {
     departs: semaines,
     multiSemaines: semaines.length >= 2,
     // RG-REC-126 / RG-REC-153 : en stock = Σ mouvements ; rebut mis en évidence.
-    enStock: await stockAffiche(asTx(client), a.id),
-    rebut: -(rebut._sum.quantite ?? 0),
+    enStock: c.stock(a.id),
+    rebut: -c.rebut(a.id),
     emplacement: `${a.allee ?? '—'}-${a.rayon ?? '—'}`,
     statut: a.statut,
     tags: tagsDe(a),
@@ -151,11 +180,14 @@ export async function listerAffiches(db: Db, identity: Identity, q: ListeAffiche
     orderBy: [{ dateEntree: 'desc' }, { id: 'desc' }],
   })
   // Le filtre utilise le même calcul que la confirmation, jamais une copie simplifiée.
-  const validations = new Map<number, string>()
-  if (q.validation)
-    for (const a of toutes) validations.set(a.id, (await etatValidationAffiche(db, a.id)).etat)
+  const validationDe = q.validation
+    ? await etatsValidationAffiches(
+        db,
+        toutes.map((a) => a.id),
+      )
+    : null
   const filtrees = toutes.filter((a) => {
-    if (q.validation && validations.get(a.id) !== q.validation) return false
+    if (validationDe && validationDe(a.id).etat !== q.validation) return false
     if (q.depart) {
       const semaines = a.rattachements.map((r) =>
         formatSemaineIso({ annee: r.ligneAttendue.semAnnee, semaine: r.ligneAttendue.semNum }),
@@ -178,8 +210,12 @@ export async function listerAffiches(db: Db, identity: Identity, q: ListeAffiche
     return true
   })
   const page = filtrees.slice((q.page - 1) * q.pageSize, q.page * q.pageSize)
+  const lot = await contexteListe(
+    db,
+    page.map((a) => a.id),
+  )
   const items = []
-  for (const a of page) items.push(await ligneListe(db, a))
+  for (const a of page) items.push(await ligneListe(db, a, lot))
   return { items, total: filtrees.length, page: q.page, pageSize: q.pageSize }
 }
 

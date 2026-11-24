@@ -214,7 +214,21 @@ async function construireLignes(
       r.semAnnee,
       r.semNum,
     ].join('|')
-    groupes.set(cle, [...(groupes.get(cle) ?? []), r])
+    const membres = groupes.get(cle)
+    if (membres) membres.push(r)
+    else groupes.set(cle, [r])
+  }
+  // Affiches par clé de visuel, indexées une fois (volume réel : des dizaines de milliers de liens).
+  const affichesParVisuel = new Map<string, Set<number>>()
+  for (const l of liensAffiches) {
+    const k = cleVisuel(
+      l.ligneAttendue.plateformeId,
+      l.ligneAttendue.contNum,
+      l.ligneAttendue.theme,
+    )
+    const ids = affichesParVisuel.get(k) ?? new Set<number>()
+    ids.add(l.afficheId)
+    affichesParVisuel.set(k, ids)
   }
   const lignes: LigneUnitaire[] = []
   for (const [cle, membres] of groupes) {
@@ -254,18 +268,8 @@ async function construireLignes(
         colis: unique(ums.flatMap((u) => u.colis.map((c) => c.colis.codeColis))),
         repartitions: unique(membres.map((r) => r.repartition?.toString() ?? null)),
         affiches: [
-          ...new Set(
-            liensAffiches
-              .filter(
-                (l) =>
-                  cleVisuel(
-                    l.ligneAttendue.plateformeId,
-                    l.ligneAttendue.contNum,
-                    l.ligneAttendue.theme,
-                  ) === cleVisuel(plateformeId, premiere.contNum, premiere.theme),
-              )
-              .map((l) => l.afficheId),
-          ),
+          ...(affichesParVisuel.get(cleVisuel(plateformeId, premiere.contNum, premiere.theme)) ??
+            []),
         ],
         quantitePreparee: ums.reduce(
           (total, u) => total + u.colis.reduce((s, c) => s + c.quantite, 0),
