@@ -1,5 +1,6 @@
 // RG-REC-079 : code-barres de la feuille de stock (« A- » + 13 chiffres) rendu en Code 39, sans
-// dépendance (PDF / impression générés par le navigateur, CLAUDE.md §3).
+// dépendance (PDF / impression générés par le navigateur, CLAUDE.md §3). Table Code 39 standard (lettres A-Z, chiffres,
+// « - », « . », espace) : aussi pour les étiquettes d'UM de la Préparation (codes « UM- », « PL- », « BU- »).
 // Chaque caractère = 9 éléments (5 barres, 4 espaces), dont 3 larges ; « n » étroit, « w » large.
 const MOTIFS: Record<string, string> = {
   '0': 'nnnwwnwnn',
@@ -13,6 +14,33 @@ const MOTIFS: Record<string, string> = {
   '8': 'wnnwnnwnn',
   '9': 'nnwwnnwnn',
   A: 'wnnnnwnnw',
+  B: 'nnwnnwnnw',
+  C: 'wnwnnwnnn',
+  D: 'nnnnwwnnw',
+  E: 'wnnnwwnnn',
+  F: 'nnwnwwnnn',
+  G: 'nnnnnwwnw',
+  H: 'wnnnnwwnn',
+  I: 'nnwnnwwnn',
+  J: 'nnnnwwwnn',
+  K: 'wnnnnnnww',
+  L: 'nnwnnnnww',
+  M: 'wnwnnnnwn',
+  N: 'nnnnwnnww',
+  O: 'wnnnwnnwn',
+  P: 'nnwnwnnwn',
+  Q: 'nnnnnnwww',
+  R: 'wnnnnnwwn',
+  S: 'nnwnnnwwn',
+  T: 'nnnnwnwwn',
+  U: 'wwnnnnnnw',
+  V: 'nwwnnnnnw',
+  W: 'wwwnnnnnn',
+  X: 'nwnnwnnnw',
+  Y: 'wwnnwnnnn',
+  Z: 'nwwnwnnnn',
+  '.': 'wwnnnnwnn',
+  ' ': 'nwwnnnwnn',
   '-': 'nwnnnnwnw',
   '*': 'nwnnwnwnn',
 }

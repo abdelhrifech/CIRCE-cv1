@@ -10,6 +10,9 @@ test.describe.configure({ mode: 'serial' })
 
 const unites = (page: Page) => page.getByRole('table', { name: 'Unités de préparation' })
 const ligne = (page: Page, texte: RegExp) => unites(page).getByRole('row', { name: texte })
+// Message de l'action. L'écran garde le tableau pendant le rechargement et l'annonce par un second « status »
+// (« Actualisation… », reprise du 24/11) : il est écarté pour lire le message.
+const message = (page: Page) => page.getByRole('status').filter({ hasNotText: /^Actualisation…$/ })
 
 test('RG-COO-238 / 239 liste de la préparation 2 m² fixe : entretien à l’afficheur, libération annoncée, quantité modifiée', async ({
   page,
@@ -26,7 +29,7 @@ test('RG-COO-238 / 239 liste de la préparation 2 m² fixe : entretien à l’af
   const modale = page.getByRole('dialog', { name: 'Modifier la quantité à produire' })
   await modale.getByLabel('Quantité').fill('30')
   await modale.getByRole('button', { name: 'Enregistrer' }).click()
-  await expect(page.getByRole('status')).toContainText('Quantité à produire mise à jour : 20 → 30.')
+  await expect(message(page)).toContainText('Quantité à produire mise à jour : 20 → 30.')
   await expect(ligne(page, /Thème unitaire E2E/).locator('[data-colonne="entretien"]')).toHaveText(
     '3',
   )
@@ -52,8 +55,8 @@ test('RG-COO-244 corriger l’intitulé : champs vides refusés, puis correction
   await modale.getByLabel('Thème').fill('Thème corrigé E2E')
   await modale.getByLabel('Annonceur imprimé').fill('Annonceur corrigé')
   await modale.getByRole('button', { name: 'Corriger' }).click()
-  await expect(page.getByRole('status')).toContainText('Intitulé corrigé sur 1 unité(s)')
-  await expect(page.getByRole('status')).toContainText('mail à la Pré-Prod mis en file')
+  await expect(message(page)).toContainText('Intitulé corrigé sur 1 unité(s)')
+  await expect(message(page)).toContainText('mail à la Pré-Prod mis en file')
   const l = ligne(page, /Thème corrigé E2E/)
   await expect(l).toContainText('corrigé par la plateforme')
   await expect(l).toContainText('Annonceur corrigé')
@@ -67,7 +70,7 @@ test('RG-COO-250 / 249 préparer une UM, puis retirer une autre ; un retrait imp
   await expect(prep).toContainText('En cours')
   await prep.getByRole('checkbox').check()
   await page.getByRole('button', { name: 'Préparer', exact: true }).click()
-  await expect(page.getByRole('status')).toContainText('1 UM préparée(s).')
+  await expect(message(page)).toContainText('1 UM préparée(s).')
   await expect(ligne(page, /Thème à préparer E2E/)).toContainText('Préparé')
   // « Préparé » ne se retire plus : refus visible (transition interdite).
   await ligne(page, /Thème à préparer E2E/)
@@ -82,7 +85,7 @@ test('RG-COO-250 / 249 préparer une UM, puis retirer une autre ; un retrait imp
   const ret = ligne(page, /Thème à retirer E2E/)
   await ret.getByRole('checkbox').check()
   await page.getByRole('button', { name: 'Retirer' }).click()
-  await expect(page.getByRole('status')).toContainText('1 UM retirée(s)')
+  await expect(message(page)).toContainText('1 UM retirée(s)')
   // RG-COO-241 : la semaine n'est pas libérée, la ligne A traiter est donc « à libérer ».
   await expect(ligne(page, /Thème à retirer E2E/)).toContainText('À libérer')
   await expect(
@@ -102,31 +105,24 @@ test('RG-COO-243 rendre la main à la Pré-Prod : motif par défaut, unités ren
   const modale = page.getByRole('dialog', { name: 'Rendre la main à la Pré-Prod' })
   await expect(modale.getByLabel('Motif')).toHaveValue('Changement de visuel demandé par le client')
   await modale.getByRole('button', { name: 'Rendre la main' }).click()
-  await expect(page.getByRole('status')).toContainText(
-    'Main rendue à la Pré-Prod : 1 unité(s) rendue(s).',
-  )
+  await expect(message(page)).toContainText('Main rendue à la Pré-Prod : 1 unité(s) rendue(s).')
   await expect(ligne(page, /Thème à rendre E2E/)).toContainText('main rendue')
   await page.goto('/coordination/unitaire?repere=RENDU&dossier=2190404')
   await expect(ligne(page, /Thème à rendre E2E/)).toBeVisible()
 })
 
-test('RG-COO-247 pliage : comptage avec écart (alerte qualité) puis unités « Préparé »', async ({
+// Demande de l'utilisateur du 24/11 (ECART-123) : « Plié : saisir le comptage » (RG-COO-247) et « Rendre la main à la
+// Pré-Prod » (RG-COO-243) sont retirés de la Préparation pliage ; le comptage reste testé côté API (intégration).
+test('RG-COO-247 pliage : ni « Plié : saisir le comptage » ni « Rendre la main » sur la Préparation pliage', async ({
   page,
 }) => {
   await page.goto('/coordination/unitaire?type=pliage&dossier=2190405')
-  const l = ligne(page, /Thème pliage E2E/)
-  await l.getByRole('checkbox').check()
-  await page.getByRole('button', { name: 'Plié : saisir le comptage' }).click()
-  const modale = page.getByRole('dialog', { name: 'Plié : saisir le comptage' })
-  await expect(modale).toContainText('Attendu : 22 affiche(s).')
-  await modale.getByLabel('Affiches comptées').fill('20')
-  await modale.getByRole('button', { name: 'Valider le comptage' }).click()
-  await expect(page.getByRole('status')).toContainText(
-    'Écart de comptage : 2 affiche(s). Alerte qualité créée.',
-  )
-  await expect(ligne(page, /Thème pliage E2E/)).toContainText('Préparé')
+  await expect(ligne(page, /Thème pliage E2E/)).toBeVisible()
+  const actions = page.getByRole('toolbar', { name: 'Actions' })
+  await expect(actions.getByRole('button', { name: 'Préparer' })).toBeVisible()
+  await expect(actions.getByRole('button', { name: 'Plié : saisir le comptage' })).toHaveCount(0)
+  await expect(actions.getByRole('button', { name: /Rendre la main/ })).toHaveCount(0)
 })
-
 test('RG-COO-304 / 305 bus : quantités à encoller par centre, ajustement global enregistré', async ({
   page,
 }) => {
@@ -141,7 +137,7 @@ test('RG-COO-304 / 305 bus : quantités à encoller par centre, ajustement globa
   await expect(centre).toContainText('128')
   await modale.getByLabel('Ajustement global (%)').fill('10')
   await modale.getByRole('button', { name: 'Enregistrer et éditer les états de collage' }).click()
-  await expect(page.getByRole('status')).toContainText('Quantités à encoller enregistrées')
+  await expect(message(page)).toContainText('Quantités à encoller enregistrées')
   await page.getByRole('button', { name: 'Quantités à encoller' }).click()
   await expect(
     page
@@ -186,7 +182,7 @@ test('RG-COO-241 / 240 ligne « à libérer » : « Libérer la semaine » (sans
     'pas encore libérée vers l’atelier Fixe E2E LIB',
   )
   await page.getByRole('button', { name: /^Libérer la W/ }).click()
-  await expect(page.getByRole('status')).toContainText("libérée vers l'atelier « Fixe E2E LIB »")
+  await expect(message(page)).toContainText("libérée vers l'atelier « Fixe E2E LIB »")
   await expect(page.getByTestId('liberation')).toContainText('libérée vers l’atelier Fixe E2E LIB')
   await expect(ligne(page, /Thème libération E2E/)).not.toContainText('À libérer')
   await expect(ligne(page, /Thème libération E2E/)).toContainText('À traiter')
@@ -197,18 +193,31 @@ test('RG-COO-241 / 240 ligne « à libérer » : « Libérer la semaine » (sans
 test('RG-COO-260 / 261 / 262 Colisage : 25 affiches à 10 par UM donnent 3 UM « En cours » ; un second Colisage est refusé', async ({
   page,
 }) => {
+  // Demande du 23/11 (Q-430) : « Colisage » n'est plus sur la Préparation mais sur « À traiter », comme dans Circé
+  // (unitaire.tsx : « Pas de Colisage ici ») ; les lignes cochées de « À traiter » passent en Préparation.
+  await page.goto('/coordination?pour=fixe')
+  const aTraiter = page
+    .getByRole('table', { name: 'Dossiers' })
+    .getByRole('row', { name: /Thème libération E2E/ })
+  await aTraiter.getByRole('checkbox').check()
+  await page.getByRole('button', { name: /^Colisage/ }).click()
+  await expect(message(page)).toContainText('3 UM créée(s).')
+  // La ligne n'est plus « à traiter » : elle sort de la liste, un second Colisage n'y est plus proposé.
+  await expect(aTraiter).toHaveCount(0)
   await page.goto('/coordination/unitaire?dossier=2190407')
-  await ligne(page, /Thème libération E2E/)
-    .getByRole('checkbox')
-    .check()
-  await page.getByRole('button', { name: 'Colisage' }).click()
-  await expect(page.getByRole('status')).toContainText('3 UM créée(s).')
   const l = ligne(page, /Thème libération E2E/)
   await expect(l).toContainText('En cours')
   await expect(l).toContainText(/UM-\d{4}/)
-  await l.getByRole('checkbox').check()
-  await page.getByRole('button', { name: 'Colisage' }).click()
-  await expect(page.getByTestId('error-message')).toContainText(
+  // Rejet côté serveur (le front n'est qu'un confort) : un second Colisage de la même ligne est refusé (409).
+  const liste = (await (
+    await page.request.get('/api/coordination/unitaire?type=fixe&dossier=2190407')
+  ).json()) as { lignes: { refs: { id: number; version: number }[] }[] }
+  const r = await page.request.post('/api/coordination/unitaire/colisage', {
+    headers: { 'Idempotency-Key': `e2e-colisage-${String(Date.now())}` },
+    data: { lignes: liste.lignes.flatMap((x) => x.refs) },
+  })
+  expect(r.status()).toBe(409)
+  expect(((await r.json()) as { message: string }).message).toMatch(
     /déjà dans une UM|Transition interdite/i,
   )
 })

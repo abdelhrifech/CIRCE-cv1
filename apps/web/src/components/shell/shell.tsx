@@ -30,7 +30,8 @@ import { ApiError } from '../../lib/api-client.ts'
 import { abonnerSite, getSiteId, setSiteId } from '../../lib/site.ts'
 import { can, getMe, resetMe } from '../../lib/session.ts'
 import { useApi } from '../../lib/use-api.ts'
-import { NAV, type CleBadge, type EntreeNav, type OngletNav } from './nav-config.ts'
+import { Icone } from '../ui/icone.tsx'
+import { NAV, iconeEntree, type CleBadge, type EntreeNav, type OngletNav } from './nav-config.ts'
 
 type Compteurs = Partial<Record<CleBadge, { n: number; chaud: boolean }>>
 
@@ -348,6 +349,7 @@ function Bandeau2({ moi }: { moi: EtatMoi }) {
               onglet={onglet}
               me={me}
               ouvert={ouvert === onglet.id}
+              autreOuvert={ouvert !== null && ouvert !== onglet.id}
               onOuvert={(o) => {
                 setOuvert(o ? onglet.id : null)
               }}
@@ -365,6 +367,7 @@ function Onglet({
   onglet,
   me,
   ouvert,
+  autreOuvert,
   onOuvert,
   location,
   compteurs,
@@ -372,6 +375,8 @@ function Onglet({
   onglet: OngletNav
   me: MeResponse | null
   ouvert: boolean
+  /** Un autre onglet vient d'ouvrir sa liste (liste unique, ECR-NAV-01). */
+  autreOuvert: boolean
   onOuvert: (ouvert: boolean) => void
   location: { pathname: string; search: Record<string, unknown> }
   compteurs: Compteurs
@@ -402,22 +407,14 @@ function Onglet({
           type="button"
           aria-current={actif ? 'page' : undefined}
           data-testid={`onglet-${onglet.id}`}
-          className={`flex items-center gap-1 border-b-2 px-3 py-2.5 text-sm font-medium hover:bg-slate-50 ${
+          className={`flex items-center gap-1.5 border-b-2 px-3 py-2.5 text-sm font-medium hover:bg-slate-50 ${
             actif ? 'border-sky-600 text-sky-800' : 'border-transparent text-slate-700'
           } ${ouvert ? 'bg-slate-100' : ''} focus-visible:outline-2 focus-visible:outline-sky-600`}
         >
+          <Icone nom={onglet.icone} className="size-4" />
           {onglet.titre}
           {tete?.c && <Pastille n={tete.c.n} chaud={tete.c.chaud} />}
-          <svg
-            aria-hidden="true"
-            viewBox="0 0 24 24"
-            className="size-3.5"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <path d="m6 9 6 6 6-6" />
-          </svg>
+          <Icone nom="chevron-down" className="size-3.5" />
         </button>
       </Popover.Trigger>
       <Popover.Portal>
@@ -426,13 +423,21 @@ function Onglet({
           sideOffset={1}
           aria-label={onglet.titre}
           data-testid={`menu-${onglet.id}`}
+          // ECR-NAV-01 (liste unique) : fermée parce qu'un autre onglet s'ouvre, la liste ne rend pas le focus à son
+          // onglet ; sinon ce focus, hors de la nouvelle liste, la refermait aussitôt (Radix « focus outside »).
+          // Échap ou un choix rendent toujours le focus à l'onglet.
+          onCloseAutoFocus={(event) => {
+            if (autreOuvert) event.preventDefault()
+          }}
           className="z-50 min-w-64 max-w-[22rem] rounded-b-md border border-slate-200 bg-white py-1 shadow-lg"
         >
           <ul onKeyDown={touches}>
             {onglet.entrees.map((entree, index) => (
               <li key={entree.id}>
                 {entree.groupe && onglet.entrees[index - 1]?.groupe !== entree.groupe && (
-                  <p className="mt-2 border-t px-3 py-2 text-xs font-semibold text-slate-500">
+                  <p
+                    className={`px-3 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-slate-500 ${index > 0 ? 'mt-2 border-t' : ''}`}
+                  >
                     {entree.groupe}
                   </p>
                 )}
@@ -470,6 +475,7 @@ function EntreeMenu({
   const autorise = me !== null && can(me, entree.permission)
   const contenu = (
     <>
+      <Icone nom={iconeEntree(entree)} className="size-4 text-slate-500" />
       <span className={entree.fort ? 'font-bold' : undefined}>{entree.libelle}</span>
       {autorise && compteur && <Pastille n={compteur.n} chaud={compteur.chaud} />}
     </>
@@ -482,7 +488,7 @@ function EntreeMenu({
         tabIndex={0}
         aria-disabled="true"
         title={`Réservé aux profils ayant le droit « ${entree.permission} »`}
-        className="flex cursor-not-allowed items-center px-4 py-2 text-sm text-slate-400"
+        className="flex cursor-not-allowed items-center gap-2.5 px-4 py-2 text-sm text-slate-400"
       >
         {contenu}
       </span>
@@ -493,7 +499,7 @@ function EntreeMenu({
       search={entree.search}
       aria-current={courante ? 'page' : undefined}
       onClick={onChoisi}
-      className={`${entree.separe ? 'mb-2 border-b-2 pb-3' : ''} flex items-center px-4 py-2 text-sm hover:bg-slate-50 focus-visible:bg-slate-100 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-sky-600 ${
+      className={`${entree.separe ? 'mb-2 border-b-2 pb-3' : ''} flex items-center gap-2.5 px-4 py-2 text-sm hover:bg-slate-50 focus-visible:bg-slate-100 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-sky-600 ${
         courante ? 'bg-sky-50 font-medium text-sky-900' : 'text-slate-800'
       }`}
     >

@@ -636,6 +636,7 @@ function Filtres({
           nombre: compte('depart', d),
         }))}
         selection={departSel}
+        toutesValeurs
         onChange={(sel) => {
           // RG-REC-016 : aucune coche = tout (semaines passées comprises).
           onChange({ depart: sel.length === 0 ? 'tous' : sel.join(',') })

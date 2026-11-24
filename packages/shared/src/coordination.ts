@@ -101,6 +101,19 @@ export const DossierCoordinationSchema = z.object({
         destinataire: z.string().nullable(),
         depart: z.string().nullable(),
         atelier: z.string().nullable(),
+        /** Filtre multiple par atelier (EX-NEW-COO-001). */
+        atelierId: n.nullable(),
+        /** Q-431 (HYPOTHÈSE) : localité de l'adresse du destinataire (colonne « Destination » de Circé). */
+        destination: z.string().nullable(),
+        /** Semaines (« 2026-W48 ») de la même répartition (n° de répartition, support, thème) dans le dossier :
+         *  l'écran en tire « Sem. Max », la dernière après la fin de la recherche (p_s_listeprepa_pliage.sql, #t3). */
+        semainesRepartition: z.array(z.string()),
+        /** « Numéro Affiche » (pliage) : affiches reçues et validées de même dossier, annonceur, support et thème
+         *  (p_s_listeprepa_pliage.sql, #affiche_recu). */
+        numerosAffiche: z.array(n),
+        /** Colisage (RG-COO-260 / 262) : version de la répartition (verrouillage optimiste) et statut. */
+        version: n,
+        statut: z.string(),
         dateAffichage: z.string().nullable(),
       }),
     )
@@ -144,7 +157,8 @@ export const ListeDossiersQuerySchema = z.object({
   /** ECR-COO-05 « Voir les dossiers » : seuls les dossiers ayant une instruction d'un atelier déroulant. */
   pour: z.enum(['DEROULANT', 'FIXE', 'PLIAGE']).optional(),
   page: z.coerce.number().int().min(1).default(1),
-  pageSize: z.coerce.number().int().min(1).max(100).default(25),
+  // « À traiter » (fixe, pliage) charge tous les dossiers de l'écran d'un coup (recherche et filtres sur toute la liste).
+  pageSize: z.coerce.number().int().min(1).max(1000).default(25),
 })
 export type ListeDossiersQuery = z.infer<typeof ListeDossiersQuerySchema>
 

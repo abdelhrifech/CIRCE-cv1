@@ -65,4 +65,4 @@ Date : 2026-11-24. Source : conteneur `circe-sql` (SQL Server 2025), base `CIRCE
 - crée des mouvements d'ouverture ;
 - produit un rapport de rejets qui liste chaque ligne refusée et la RG concernée.
 
-Ce rapport mesure en lui-même l'écart entre le legacy et les règles cible. Les décisions nécessaires sont posées en Q-430 à Q-436.
+Ce rapport mesure en lui-même l'écart entre le legacy et les règles cible. Les décisions nécessaires sont posées en Q-437 à Q-443.

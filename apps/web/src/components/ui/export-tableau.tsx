@@ -1,4 +1,6 @@
 import { exporterExcel, type CelluleExcel } from '../../lib/excel.ts'
+import { Icone } from './icone.tsx'
+import { EXPORT } from './table-metier.tsx'
 
 // EX-NEW-NAV-001 : l’export reprend les colonnes et lignes du tableau actuellement filtré.
 export function BoutonExportTableau({ nom, tableau }: { nom: string; tableau: string }) {
@@ -34,11 +36,8 @@ export function BoutonExportTableau({ nom, tableau }: { nom: string; tableau: st
     )
   }
   return (
-    <button
-      type="button"
-      className="m-3 rounded border border-slate-300 bg-white px-3 py-1.5 text-sm"
-      onClick={exporter}
-    >
+    <button type="button" className={`m-3 ${EXPORT}`} onClick={exporter}>
+      <Icone nom="file-spreadsheet" />
       Exporter en Excel
     </button>
   )

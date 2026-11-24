@@ -83,10 +83,18 @@ function stages(units: ProductionUnit[]) {
   for (const unit of units) counts[unit.stage ?? 'UNKNOWN']++
   return counts
 }
-const options = (pairs: [string, string][]) =>
-  [...new Map(pairs).entries()]
-    .map(([value, label]) => ({ value, label }))
+// `nombre` : lignes que la valeur donnerait avec les autres filtres posés (compteurs des filtres, DESIGN.md §4.3).
+const options = (pairs: [string, string][], avecNombre = true) => {
+  const nombres = new Map<string, number>()
+  for (const [value] of pairs) nombres.set(value, (nombres.get(value) ?? 0) + 1)
+  return [...new Map(pairs).entries()]
+    .map(([value, label]) => ({
+      value,
+      label,
+      ...(avecNombre ? { nombre: nombres.get(value) ?? 0 } : {}),
+    }))
     .sort((a, b) => a.label.localeCompare(b.label, 'fr', { numeric: true }))
+}
 
 // TODO(question-ouverte): A prévisionnel fixe/pliage avant matérialisation des UM : le moteur
 // gelé ne fournit pas ces identifiants en préparation. Compter les UM réelles et exposer à part
@@ -228,6 +236,7 @@ export function aggregateDashboard(data: DashboardDataset, query: DashboardQuery
           )
           .filter((u) => u.destinationId !== null)
           .map((u) => [String(u.destinationId), u.destination ?? `Destination ${u.destinationId}`]),
+        false,
       ),
     },
   } satisfies Pick<

@@ -96,20 +96,33 @@ export function classeurExcel(
     main = ns + 'spreadsheetml/2006/main',
     rel = ns + 'officeDocument/2006/relationships'
   const nom = titre.replace(/[\\/?*[\]:]/g, ' ').slice(0, 31) || 'Export'
+  // Styles (cellXfs) : 0 sans bordure, 1 en-tête (blanc gras sur bleu nuit), 2 date, 3 texte, 4 nombre.
   const cellule = (v: CelluleExcel, ref: string, head: boolean) => {
-    if (v === null || v === undefined) return ''
-    if (typeof v === 'number' && Number.isFinite(v)) return `<c r="${ref}"><v>${v}</v></c>`
+    if (v === null || v === undefined) return head ? '' : `<c r="${ref}" s="3"/>`
+    if (typeof v === 'number' && Number.isFinite(v)) return `<c r="${ref}" s="4"><v>${v}</v></c>`
     if (v instanceof Date && Number.isFinite(v.getTime()))
       return `<c r="${ref}" s="2"><v>${v.getTime() / 86400000 + 25569}</v></c>`
     const texte = typeof v === 'boolean' ? (v ? 'Oui' : 'Non') : String(v)
-    return `<c r="${ref}" t="inlineStr"${head ? ' s="1"' : ''}><is><t xml:space="preserve">${xml(texte)}</t></is></c>`
+    return `<c r="${ref}" t="inlineStr" s="${head ? 1 : 3}"><is><t xml:space="preserve">${xml(texte)}</t></is></c>`
   }
   const rows = [titres, ...lignes]
     .map(
       (r, i) =>
-        `<row r="${i + 1}">${r.map((v, j) => cellule(v, `${colonne(j)}${i + 1}`, i === 0)).join('')}</row>`,
+        `<row r="${i + 1}"${i === 0 ? ' ht="26" customHeight="1"' : ''}>${r.map((v, j) => cellule(v, `${colonne(j)}${i + 1}`, i === 0)).join('')}</row>`,
     )
     .join('')
+  // Largeur de chaque colonne : le contenu le plus long (borné), au lieu du seul titre.
+  const longueur = (v: CelluleExcel) =>
+    v instanceof Date ? 17 : v === null || v === undefined ? 0 : String(v).length
+  const largeur = (j: number) =>
+    Math.min(
+      60,
+      Math.max(
+        10,
+        (titres[j]?.length ?? 0) + 4,
+        ...lignes.slice(0, 500).map((l) => longueur(l[j]) + 2),
+      ),
+    )
   const fin = `${colonne(Math.max(0, titres.length - 1))}${lignes.length + 1}`
   return zip([
     [
@@ -130,11 +143,11 @@ export function classeurExcel(
     ],
     [
       'xl/styles.xml',
-      `<styleSheet xmlns="${main}"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="3"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/><xf numFmtId="22" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`,
+      `<styleSheet xmlns="${main}"><numFmts count="1"><numFmt numFmtId="164" formatCode="dd/mm/yyyy\\ hh:mm"/></numFmts><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF1B2A44"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="2"><border/><border><left style="thin"><color rgb="FFCBD5E1"/></left><right style="thin"><color rgb="FFCBD5E1"/></right><top style="thin"><color rgb="FFCBD5E1"/></top><bottom style="thin"><color rgb="FFCBD5E1"/></bottom></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="5"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center" wrapText="1"/></xf><xf numFmtId="164" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="top"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="right" vertical="top"/></xf></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`,
     ],
     [
       'xl/worksheets/sheet1.xml',
-      `<worksheet xmlns="${main}"><dimension ref="A1:${fin}"/><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>${titres.map((t, i) => `<col min="${i + 1}" max="${i + 1}" width="${Math.min(60, Math.max(14, t.length + 3))}" customWidth="1"/>`).join('')}</cols><sheetData>${rows}</sheetData><autoFilter ref="A1:${fin}"/></worksheet>`,
+      `<worksheet xmlns="${main}"><dimension ref="A1:${fin}"/><sheetViews><sheetView showGridLines="0" workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>${titres.map((_, i) => `<col min="${i + 1}" max="${i + 1}" width="${largeur(i)}" customWidth="1"/>`).join('')}</cols><sheetData>${rows}</sheetData><autoFilter ref="A1:${fin}"/></worksheet>`,
     ],
   ])
 }

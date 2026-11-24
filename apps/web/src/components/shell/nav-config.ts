@@ -1,5 +1,6 @@
 // EX-NEW-NAV-001 : navigation de la nouvelle maquette ; les routes appliquent leurs droits côté serveur.
 import type { MeResponse, PermissionCode } from '@circe/shared'
+import type { NomIcone } from '../ui/icone.tsx'
 
 export type CleBadge = 'palettes' | 'inconnues' | 'alertes'
 
@@ -14,17 +15,21 @@ export interface EntreeNav {
   fort?: boolean
   separe?: boolean
   badge?: CleBadge
+  /** Icône de l'entrée ; à défaut celle de ICONES_ENTREES (maquette core.js, NAV_ICONS). */
+  icone?: NomIcone
 }
 
 export interface OngletNav {
   id: string
   titre: string
+  icone: NomIcone
   entrees: EntreeNav[]
 }
 
 export const NAV: OngletNav[] = [
   {
     id: 'pilotage',
+    icone: 'layout-dashboard',
     titre: 'Pilotage',
     entrees: [
       {
@@ -75,6 +80,7 @@ export const NAV: OngletNav[] = [
   },
   {
     id: 'reception',
+    icone: 'inbox',
     titre: 'Réception',
     entrees: [
       {
@@ -114,6 +120,7 @@ export const NAV: OngletNav[] = [
   },
   {
     id: 'non-conformite',
+    icone: 'alert-triangle',
     titre: 'Non-conformité',
     entrees: [
       {
@@ -135,6 +142,7 @@ export const NAV: OngletNav[] = [
   },
   {
     id: 'fixe',
+    icone: 'layout-rows',
     titre: '2 m² fixe',
     entrees: [
       {
@@ -171,6 +179,7 @@ export const NAV: OngletNav[] = [
   },
   {
     id: 'pliage',
+    icone: 'stack-2',
     titre: 'Pliage',
     entrees: [
       {
@@ -207,6 +216,7 @@ export const NAV: OngletNav[] = [
   },
   {
     id: 'deroulant',
+    icone: 'panneau-deroulant',
     titre: 'Déroulant',
     entrees: [
       {
@@ -277,6 +287,7 @@ export const NAV: OngletNav[] = [
   },
   {
     id: 'bus',
+    icone: 'bus',
     titre: 'Bus',
     entrees: [
       {
@@ -320,6 +331,7 @@ export const NAV: OngletNav[] = [
   },
   {
     id: 'expedition',
+    icone: 'route',
     titre: 'Expédition',
     entrees: [
       {
@@ -340,6 +352,7 @@ export const NAV: OngletNav[] = [
   },
   {
     id: 'stocks',
+    icone: 'building-warehouse',
     titre: 'Stocks',
     entrees: [
       {
@@ -364,35 +377,105 @@ export const NAV: OngletNav[] = [
   },
   {
     id: 'admin',
+    icone: 'settings',
     titre: 'Administration',
+    // Regroupement de la maquette : « Paramétrage » (écran Paramétrage), « Pages de Circé » (pages reprises du Circé
+    // actuel, ajoutées le 12/11) et « Autres pages » (pages propres à cette application).
     entrees: [
       {
-        id: 'admin-fin-campagne',
-        libelle: 'Règles de fin de campagne',
-        to: '/admin/fin-campagne',
+        id: 'sites',
+        groupe: 'Paramétrage',
+        libelle: 'Sites et ateliers',
+        to: '/admin/sites',
         permission: 'parametrage.gerer',
       },
-      { id: 'admin-mails', libelle: 'Mails', to: '/admin/mails', permission: 'parametrage.gerer' },
+      {
+        id: 'parametres',
+        groupe: 'Paramétrage',
+        libelle: 'Paramètres',
+        to: '/admin/parametres',
+        permission: 'parametrage.gerer',
+      },
       {
         id: 'admin-machines',
+        groupe: 'Paramétrage',
         libelle: 'Machines et fichiers',
         to: '/admin/machines',
         permission: 'parametrage.gerer',
       },
       {
         id: 'admin-statuts',
+        groupe: 'Paramétrage',
         libelle: 'Statuts',
         to: '/admin/statuts',
         permission: 'parametrage.gerer',
       },
       {
+        id: 'admin-alertes',
+        groupe: 'Paramétrage',
+        libelle: 'Alertes et mails',
+        to: '/admin/alertes',
+        permission: 'parametrage.gerer',
+      },
+      {
+        id: 'admin-mails',
+        groupe: 'Paramétrage',
+        libelle: 'Mails',
+        to: '/admin/mails',
+        permission: 'parametrage.gerer',
+      },
+      {
+        id: 'admin-fin-campagne',
+        groupe: 'Paramétrage',
+        libelle: 'Règles de fin de campagne',
+        to: '/admin/fin-campagne',
+        permission: 'parametrage.gerer',
+      },
+      {
         id: 'admin-transport',
+        groupe: 'Paramétrage',
         libelle: 'Transport',
         to: '/admin/transport',
         permission: 'parametrage.gerer',
       },
       {
+        id: 'referentiels',
+        groupe: 'Paramétrage',
+        libelle: 'Référentiels',
+        to: '/admin/referentiels',
+        permission: 'referentiel.gerer',
+      },
+      {
+        id: 'bus-references',
+        groupe: 'Paramétrage',
+        libelle: 'Référentiels Bus',
+        to: '/admin/bus',
+        permission: 'referentiel.gerer',
+      },
+      {
+        id: 'declarants',
+        groupe: 'Paramétrage',
+        libelle: 'Déclarants NC',
+        to: '/admin/declarants',
+        permission: 'referentiel.gerer',
+      },
+      {
+        id: 'destinataires',
+        groupe: 'Paramétrage',
+        libelle: 'Destinataires',
+        to: '/coordination/destinataires',
+        permission: 'referentiel.gerer',
+      },
+      {
+        id: 'plateformes',
+        groupe: 'Paramétrage',
+        libelle: 'Plateformes',
+        to: '/admin/plateformes',
+        permission: 'parametrage.gerer',
+      },
+      {
         id: 'admin-journal',
+        groupe: 'Paramétrage',
         libelle: 'Journal',
         to: '/admin/journal',
         permission: 'parametrage.gerer',
@@ -400,99 +483,134 @@ export const NAV: OngletNav[] = [
 
       {
         id: 'admin-deblocage',
+        groupe: 'Pages de Circé',
         libelle: 'Déblocage préparations',
         to: '/coordination/deblocage',
         permission: 'deblocage.consulter',
       },
       {
         id: 'admin-debloquees',
+        groupe: 'Pages de Circé',
         libelle: 'Préparations débloquées',
         to: '/coordination/deblocage',
         permission: 'deblocage.consulter',
       },
       {
         id: 'admin-rafraichir',
+        groupe: 'Pages de Circé',
         libelle: 'Rafraîchir un dossier',
         to: '/coordination/integration',
         permission: 'alimentation.manuelle',
       },
       {
         id: 'admin-dupliquer',
+        groupe: 'Pages de Circé',
         libelle: 'Dupliquer train',
         to: '/admin/dupliquer-train',
         permission: 'train.dupliquer',
       },
+      {
+        id: 'utilisateurs',
+        groupe: 'Pages de Circé',
+        libelle: 'Utilisateurs et menus',
+        to: '/admin/utilisateurs',
+        permission: 'utilisateur.gerer',
+      },
 
       {
-        id: 'declarants',
-        libelle: 'Déclarants NC',
-        to: '/admin/declarants',
-        permission: 'referentiel.gerer',
-      },
-      {
-        id: 'bus-references',
-        libelle: 'Référentiels Bus',
-        to: '/admin/bus',
-        permission: 'referentiel.gerer',
-      },
-      {
         id: 'integration',
+        groupe: 'Autres pages',
         libelle: 'Chargements Broadcast',
         to: '/coordination/integration',
         permission: 'alimentation.manuelle',
       },
       {
         id: 'deblocage',
+        groupe: 'Autres pages',
         libelle: 'Déblocage des préparations',
         to: '/coordination/deblocage',
         permission: 'deblocage.consulter',
-      },
-      {
-        id: 'parametres',
-        libelle: 'Paramètres',
-        to: '/admin/parametres',
-        permission: 'parametrage.gerer',
-      },
-      {
-        id: 'utilisateurs',
-        libelle: 'Utilisateurs et menus',
-        to: '/admin/utilisateurs',
-        permission: 'utilisateur.gerer',
-      },
-      {
-        id: 'plateformes',
-        libelle: 'Plateformes',
-        to: '/admin/plateformes',
-        permission: 'parametrage.gerer',
-      },
-      {
-        id: 'referentiels',
-        libelle: 'Référentiels',
-        to: '/admin/referentiels',
-        permission: 'referentiel.gerer',
-      },
-      {
-        id: 'admin-alertes',
-        libelle: 'Alertes et mails',
-        to: '/admin/alertes',
-        permission: 'parametrage.gerer',
-      },
-      {
-        id: 'sites',
-        libelle: 'Sites et ateliers',
-        to: '/admin/sites',
-        permission: 'parametrage.gerer',
-      },
-      {
-        id: 'destinataires',
-        libelle: 'Destinataires',
-        to: '/coordination/destinataires',
-        permission: 'referentiel.gerer',
       },
     ],
   },
 ]
 
+/** Icône Tabler de chaque entrée (maquette `core.js`, `NAV_ICONS` et icônes propres aux pages du menu). */
+export const ICONES_ENTREES: Record<string, NomIcone> = {
+  analyse: 'chart-bar',
+  'suivi-prod': 'layout-dashboard',
+  tableau: 'gauge',
+  reservations: 'calendar',
+  alertes: 'bell',
+  'themes-proches': 'list-check',
+  'themes-annonceurs': 'list-check',
+  'themes-bc': 'list-check',
+  reception: 'inbox',
+  inconnues: 'photo-search',
+  affiches: 'package',
+  picking: 'barcode',
+  fusion: 'stack-2',
+  j3: 'calendar-event',
+  'nc-nouvelle': 'plus',
+  'nc-suivi': 'list-check',
+  'suivi-fixe': 'table',
+  'suivi-pliage': 'table',
+  'suivi-deroulant': 'table',
+  'fixe-traiter': 'clipboard-check',
+  'pliage-traiter': 'clipboard-check',
+  'fixe-preparer': 'stack-2',
+  'pliage-preparer': 'stack-2',
+  'fixe-colis': 'package',
+  'pliage-colis': 'package',
+  'deroulant-colis': 'package',
+  instructions: 'clipboard-check',
+  trains: 'train',
+  'deroulant-besoin': 'list-check',
+  'deroulant-prepa': 'box',
+  'deroulant-d8': 'chart-bar',
+  'deroulant-positions': 'arrows-shuffle',
+  'deroulant-export': 'download',
+  generateur: 'file-spreadsheet',
+  bagues: 'tag',
+  dispatch: 'arrows-shuffle',
+  rouleurs: 'users',
+  'bus-suivi': 'chart-bar',
+  'bus-reception': 'inbox',
+  'bus-atraiter': 'clipboard-list',
+  'bus-preparation': 'stack-2',
+  'bus-vue': 'calendar',
+  'colis-exterieur': 'truck',
+  colisage: 'scan',
+  colis: 'package',
+  departs: 'truck',
+  'stock-affiches': 'building-warehouse',
+  'stock-mouvements': 'arrows-shuffle',
+  'fin-campagne': 'trash',
+  sites: 'building-factory-2',
+  parametres: 'adjustments-horizontal',
+  'admin-machines': 'file-spreadsheet',
+  'admin-statuts': 'tag',
+  'admin-alertes': 'bell',
+  'admin-mails': 'mail',
+  'admin-fin-campagne': 'trash',
+  'admin-transport': 'truck',
+  referentiels: 'list-check',
+  'bus-references': 'bus',
+  declarants: 'users',
+  destinataires: 'map-pin',
+  plateformes: 'building-factory-2',
+  'admin-journal': 'history',
+  'admin-deblocage': 'lock',
+  'admin-debloquees': 'history',
+  'admin-rafraichir': 'refresh',
+  'admin-dupliquer': 'train',
+  utilisateurs: 'users',
+  integration: 'download',
+  deblocage: 'lock',
+}
+
+export const iconeEntree = (entree: EntreeNav): NomIcone =>
+  entree.icone ?? ICONES_ENTREES[entree.id] ?? 'circle-dot'
 type Permis = Pick<MeResponse, 'permissions'>
 const a = (me: Permis, code: PermissionCode) => me.permissions.includes(code)
 

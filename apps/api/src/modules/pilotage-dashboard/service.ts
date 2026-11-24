@@ -355,12 +355,14 @@ export async function readProductionDashboard(
     },
     query,
   )
+  // Toutes les semaines restent proposées ; leur compteur vient des visuels compatibles avec les autres filtres (0 sinon).
+  const nombreParDepart = new Map(data.options.depart.map((o) => [o.value, o.nombre ?? 0]))
   data.options.depart = [
     ...new Map(availableWeeks.map((week) => [`${week.semAnnee}-${week.semNum}`, week])).values(),
   ]
     .map((w) => {
       const value = formatSemaineIso({ annee: w.semAnnee, semaine: w.semNum })
-      return { value, label: value }
+      return { value, label: value, nombre: nombreParDepart.get(value) ?? 0 }
     })
     .sort((a, b) => a.value.localeCompare(b.value))
   const alertsAvailable = hasPermission(identity, 'alerte.consulter')

@@ -70,7 +70,15 @@ test('RG-COO-268 / 269 / RG-X-087 clore le colis, puis fin de journée : colis �
   await confirmation.getByRole('button', { name: 'Confirmer la fin de journée' }).click()
   await expect(page.getByRole('status')).toContainText('Fin de journée : 1 colis expédié(s)')
   await expect(table).toContainText('Expédié')
-  await expect(page.getByLabel('Statut du colis')).toBeVisible()
+  // Reprise du 23/11 : le filtre « Statut du colis » (liste déroulante) est devenu le filtre à cocher « Statut » de la
+  // barre de filtres de la liste (filtres de Circé + Statut ajouté par la V2), qui propose le statut « Expédié ».
+  const filtreStatut = page
+    .getByRole('group', { name: 'Filtres de la liste des colis' })
+    .getByRole('button', { name: 'Filtre Statut', exact: true })
+  await expect(filtreStatut).toBeVisible()
+  await filtreStatut.click()
+  await expect(page.getByRole('checkbox', { name: 'Expédié', exact: true })).toBeVisible()
+  await page.keyboard.press('Escape')
 })
 
 test('ECR-EXP-02 liste des colis : filtre par statut, état vide', async ({ page }) => {
@@ -81,11 +89,20 @@ test('ECR-EXP-02 liste des colis : filtre par statut, état vide', async ({ page
   await page.goto('/expedition/colis?dossier=2190502&statut=TERMINE')
   const table = page.getByRole('table', { name: 'Colis' })
   await expect(table).toContainText('Expédié')
-  // D-14 : colonnes « Récépissé », « Clos le », « Expédié le » (dates de clôture et de fin de journée renseignées).
-  for (const colonne of ['Récépissé', 'Clos le', 'Expédié le'])
+  // D-14 : colonnes du récépissé, de la clôture et de la fin de journée (dates de clôture et de fin de journée
+  // renseignées). Reprise du 23/11 (colonnes de la Liste des colis de Circé, colis.tsx) : « Récépissé » est devenu
+  // « Code transporteur » (code externe, sinon récépissé) et « Clos le » est devenu « Date expédition » (colis_dat_expe,
+  // posée à la clôture) ; « Expédié le » est gardé.
+  for (const colonne of ['Code transporteur', 'Date expédition', 'Expédié le'])
     await expect(table.getByRole('columnheader', { name: colonne })).toBeVisible()
-  await expect(table.getByRole('row').nth(1).getByRole('cell').nth(8)).not.toHaveText('—')
-  await expect(table.getByRole('row').nth(1).getByRole('cell').nth(9)).not.toHaveText('—')
+  const entetes = await table.getByRole('columnheader').allInnerTexts()
+  const colonne = (titre: string) => entetes.findIndex((t) => t.trim().startsWith(titre))
+  for (const titre of ['Date expédition', 'Expédié le']) {
+    expect(colonne(titre)).toBeGreaterThan(0)
+    await expect(
+      table.getByRole('row').nth(1).getByRole('cell').nth(colonne(titre)),
+    ).not.toHaveText('—')
+  }
 })
 
 test('ECR-EXP-03 Départs camions (D-14) : avancement du colisage par départ et destinataire, filtre, état vide', async ({

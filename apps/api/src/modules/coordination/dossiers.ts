@@ -13,7 +13,7 @@ import type { Prisma, StatutInstruction } from '../../generated/prisma/client.ts
 import type { Tx } from '../../core/transaction.ts'
 import { dossierDuPerimetre, positionProposee } from './edition.ts'
 import { donneesNariman, ecartDeLignes, ecartDossier, motifsNariman } from './instruction-ok.ts'
-import { NotFoundError } from '../../core/errors.ts'
+import { ForbiddenError, NotFoundError } from '../../core/errors.ts'
 import { assertDroitCoordination, assertPerimetreAtelier, peutVoirAtelier } from './permissions.ts'
 import { TRANSITIONS_INSTRUCTION_UTILISATEUR } from './statuts.ts'
 import { affichesDesDossiers, resumeValidation, type AfficheDuDossier } from './validation-admin.ts'
@@ -259,7 +259,14 @@ export async function listerDossiers(db: Db, identity: Identity, q: ListeDossier
     const repTypes = typesUnitaire
       ? await db.repartition.findMany({
           where: { contNum: { in: dossiers.map((d) => d.contNum) } },
-          select: { contNum: true, typePreparationId: true },
+          select: {
+            contNum: true,
+            typePreparationId: true,
+            statut: true,
+            retire: true,
+            atelierId: true,
+            atelier: { select: { id: true, plateformeId: true, type: true } },
+          },
         })
       : []
     const bcTypes = typesUnitaire
@@ -290,9 +297,26 @@ export async function listerDossiers(db: Db, identity: Identity, q: ListeDossier
         : q.pour === 'FIXE' || q.pour === 'PLIAGE'
           ? i.atelier?.type === 'FIXE' && dossierDuType(i.contNum)
           : true)
+    // RG-COO-309 (process de Circé, p_s_listeprepa2m2.sql:69-76, p_s_listeprepa_pliage.sql) : en 2 m² fixe et pliage, un
+    // dossier est listé dès qu'il a une répartition « à traiter » (rpc_statut = 0) d'un atelier de son type, dans le
+    // périmètre : elle naît quand la Pré-Prod envoie la préparation depuis Broadcast, sans instruction ni ligne attendue.
+    const aUneRepartitionATraiter = (contNum: number) =>
+      typesUnitaire !== null &&
+      repTypes.some(
+        (r) =>
+          r.contNum === contNum &&
+          r.statut === 'A_TRAITER' &&
+          !r.retire &&
+          r.atelier?.type === 'FIXE' &&
+          peutVoirAtelier(identity, r.atelier) &&
+          (!q.atelierId || r.atelierId === q.atelierId) &&
+          typeDe({ typePreparationId: r.typePreparationId }, typesUnitaire) ===
+            (q.pour === 'PLIAGE' ? 'pliage' : 'fixe'),
+      )
     const visibles = dossiers.filter(
       (d) =>
         d.instructions.some(retenue) ||
+        ((q.pour === 'FIXE' || q.pour === 'PLIAGE') && aUneRepartitionATraiter(d.contNum)) ||
         (q.atelierId === undefined &&
           (q.pour === undefined ||
             ((q.pour === 'FIXE' || q.pour === 'PLIAGE') && dossierDuType(d.contNum))) &&
@@ -335,43 +359,133 @@ export async function listerDossiers(db: Db, identity: Identity, q: ListeDossier
     }
   }
   const page = items.slice((q.page - 1) * q.pageSize, q.page * q.pageSize)
-  return {
-    items: await Promise.all(
-      page.map(async (d) => {
-        if (!typesUnitaire) return d
-        const reps = await db.repartition.findMany({
-          where: { contNum: d.dossier, retire: false },
-          include: { atelier: true, destinataire: true, support: true, typePreparation: true },
+  // Répartitions et affiches de toute la page lues par paquets (pas une requête par dossier ; limite de paramètres de
+  // SQLite, ANO-035) : la page peut compter jusqu'à 1 000 dossiers.
+  const contNumsPage = page.map((d) => d.dossier)
+  const paquets: number[][] = []
+  if (typesUnitaire)
+    for (let i = 0; i < contNumsPage.length; i += PAQUET)
+      paquets.push(contNumsPage.slice(i, i + PAQUET))
+  const repsPage = (
+    await Promise.all(
+      paquets.map((paquet) =>
+        // Détail seulement pour les lignes à traiter (seules affichées, RG-COO-309) : avec les vraies données, charger tous
+        // les statuts avec leurs destinataires dépassait la limite de paramètres de SQLite.
+        db.repartition.findMany({
+          where: { contNum: { in: paquet }, retire: false, statut: 'A_TRAITER' },
+          include: {
+            atelier: true,
+            destinataire: { include: { adresses: { orderBy: { id: 'asc' }, take: 1 } } },
+            support: true,
+            typePreparation: true,
+          },
           orderBy: { id: 'asc' },
-        })
-        return {
-          ...d,
-          lignesPreparation: reps
-            .filter(
-              (r) =>
-                peutVoirAtelier(identity, r.atelier) &&
-                (!q.atelierId || r.atelierId === q.atelierId) &&
-                typeDe(r, typesUnitaire) === (q.pour === 'PLIAGE' ? 'pliage' : 'fixe'),
-            )
-            .map((r) => ({
-              id: r.id,
-              type: r.typePreparation?.libelle ?? null,
-              repartition: r.repartition?.toString() ?? null,
-              theme: r.theme,
-              repiquage: r.repiquage,
-              format: r.support?.nom ?? null,
-              quantite: r.qte,
-              destinataire: r.destinataire?.nom ?? null,
-              depart:
-                r.semAnnee && r.semNum
-                  ? formatSemaineIso({ annee: r.semAnnee, semaine: r.semNum })
-                  : null,
-              atelier: r.atelier?.libelle ?? null,
-              dateAffichage: r.dateAffichage?.toISOString() ?? null,
-            })),
-        }
-      }),
-    ),
+        }),
+      ),
+    )
+  ).flat()
+  // Semaines de toutes les répartitions (tous statuts) pour « Sem. Max » : lecture légère, sans relation.
+  const semainesPage = (
+    await Promise.all(
+      paquets.map((paquet) =>
+        db.repartition.findMany({
+          where: { contNum: { in: paquet }, retire: false },
+          select: {
+            contNum: true,
+            repartition: true,
+            supportId: true,
+            theme: true,
+            semAnnee: true,
+            semNum: true,
+          },
+        }),
+      ),
+    )
+  ).flat()
+  const affichesPage = (
+    await Promise.all(
+      paquets.map((paquet) =>
+        db.affiche.findMany({
+          where: { contNum: { in: paquet } },
+          select: {
+            id: true,
+            theme: true,
+            contNum: true,
+            contAnnonc: true,
+            supportId: true,
+            validationAdmin: true,
+          },
+          orderBy: { id: 'asc' },
+        }),
+      ),
+    )
+  ).flat()
+  return {
+    items: page.map((d) => {
+      if (!typesUnitaire) return d
+      const reps = repsPage.filter((r) => r.contNum === d.dossier)
+      // p_s_listeprepa_pliage.sql (#t3) : semaines de la même répartition (n° de répartition, support, thème), tous
+      // statuts ; l'écran en tire « Sem. Max », la dernière après la fin de la recherche.
+      const cleRep = (r: {
+        repartition: bigint | null
+        supportId: number | null
+        theme: string | null
+      }) => `${r.repartition?.toString() ?? ''}|${String(r.supportId)}|${r.theme ?? ''}`
+      const semainesParRep = new Map<string, string[]>()
+      for (const r of semainesPage)
+        if (r.contNum === d.dossier && r.semAnnee && r.semNum)
+          semainesParRep.set(cleRep(r), [
+            ...(semainesParRep.get(cleRep(r)) ?? []),
+            formatSemaineIso({ annee: r.semAnnee, semaine: r.semNum }),
+          ])
+      const affichesDossier = affichesPage.filter((a) => a.contNum === d.dossier)
+      return {
+        ...d,
+        lignesPreparation: reps
+          .filter(
+            (r) =>
+              peutVoirAtelier(identity, r.atelier) &&
+              (!q.atelierId || r.atelierId === q.atelierId) &&
+              typeDe(r, typesUnitaire) === (q.pour === 'PLIAGE' ? 'pliage' : 'fixe') &&
+              // « À traiter » de Circé : répartitions à traiter seulement (rpc_statut = 0, p_s_listeprepa2m2.sql:70-71).
+              r.statut === 'A_TRAITER',
+          )
+          .map((r) => ({
+            id: r.id,
+            type: r.typePreparation?.libelle ?? null,
+            repartition: r.repartition?.toString() ?? null,
+            theme: r.theme,
+            repiquage: r.repiquage,
+            format: r.support?.nom ?? null,
+            quantite: r.qte,
+            // Circé affiche le nom d'origine du destinataire (dest_nom_ori, p_s_listeprepa2m2.sql:37).
+            destinataire: r.destinataire?.nomOrigine ?? r.destinataire?.nom ?? null,
+            depart:
+              r.semAnnee && r.semNum
+                ? formatSemaineIso({ annee: r.semAnnee, semaine: r.semNum })
+                : null,
+            atelier: r.atelier?.libelle ?? null,
+            atelierId: r.atelierId,
+            destination: r.destinataire?.adresses[0]?.localite ?? null,
+            semainesRepartition: [...new Set(semainesParRep.get(cleRep(r)) ?? [])].sort(),
+            // « Numéro Affiche » (pliage) : affiches reçues et validées de même dossier, annonceur, support et thème
+            // (p_s_listeprepa_pliage.sql, #affiche_recu ; la borne « semaine de début » de Circé n'est pas reprise).
+            numerosAffiche: affichesDossier
+              .filter(
+                (a) =>
+                  a.validationAdmin &&
+                  a.contAnnonc === r.annonceur &&
+                  a.supportId === r.supportId &&
+                  r.theme !== null &&
+                  a.theme === r.theme,
+              )
+              .map((a) => a.id),
+            version: r.version,
+            statut: r.statut,
+            dateAffichage: r.dateAffichage?.toISOString() ?? null,
+          })),
+      }
+    }),
     total: items.length,
     // RG-COO-011 : « n » = dossiers cas sûrs sous le filtre courant (toutes pages).
     casSurs: items.filter((i) => i.validationAdmin.casSur).length,
@@ -394,11 +508,37 @@ export async function listerAteliersPerimetre(db: Db, identity: Identity) {
   }
 }
 
+// RG-COO-167 / RG-COO-309 : la fiche s'ouvre pour un dossier du périmètre (instruction ou ligne attendue), et aussi pour
+// un dossier que « À traiter » liste par une répartition à traiter, non retirée, d'un atelier FIXE du périmètre, sans
+// instruction ni ligne attendue du périmètre (sinon la liste proposait « Ouvrir le dossier » et la fiche répondait 403).
+// La fiche ne montre que les données du périmètre (instructions, lignes et affiches filtrées) ; les actions gardent
+// leur propre contrôle (`dossierDuPerimetre`).
+async function dossierDeLaFiche(db: Db, identity: Identity, id: number) {
+  try {
+    return await dossierDuPerimetre(db, identity, id)
+  } catch (e) {
+    if (!(e instanceof ForbiddenError)) throw e
+    const dossier = await db.dossier.findUnique({ where: { id } })
+    const aTraiter = dossier
+      ? await db.repartition.findMany({
+          where: { contNum: dossier.contNum, statut: 'A_TRAITER', retire: false },
+          select: { atelier: { select: { id: true, plateformeId: true, type: true } } },
+        })
+      : []
+    if (
+      dossier &&
+      aTraiter.some((r) => r.atelier?.type === 'FIXE' && peutVoirAtelier(identity, r.atelier))
+    )
+      return dossier
+    throw e
+  }
+}
+
 // ECR-COO-02 — fiche dossier : instructions, visuels (répartition, valeur Broadcast d'origine), lignes attendues
 // (qte_BC / qte_prépa, exclusions), demandes de correction. RG-COO-167 : périmètre revérifié.
 export async function lireFicheDossier(db: Db, identity: Identity, id: number) {
   assertDroitCoordination(identity, 'instruction.consulter')
-  const dossier = await dossierDuPerimetre(db, identity, id)
+  const dossier = await dossierDeLaFiche(db, identity, id)
   const instructions = await db.instruction.findMany({
     where: { dossierId: id },
     include: { atelier: { include: { plateforme: { select: { nom: true } } } } },

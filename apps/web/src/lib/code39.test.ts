@@ -14,3 +14,13 @@ describe('RG-REC-079 code-barres Code 39', () => {
     expect(() => barresCode39('A-12$')).toThrow('Caractère non encodable')
   })
 })
+
+describe('Code 39 : codes d’UM de la Préparation', () => {
+  it('encode les codes « UM- », « PL- », « BU- » (lettres de la table standard)', () => {
+    for (const code of ['UM-0011', 'PL-0002', 'BU-0420'])
+      expect(barresCode39(code).barres.length).toBe((code.length + 2) * 5)
+  })
+  it('refuse un caractère hors de la table Code 39', () => {
+    expect(() => barresCode39('UM_01')).toThrow('Caractère non encodable')
+  })
+})

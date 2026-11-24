@@ -2921,6 +2921,12 @@ Transitions interdites notables (409)
 ## 5. Règles inter-modules (RG-X) concernant ce module
 Règles RG-X-050…099 initiées par la Coordination ; les RG-X-001…049 (initiées par la Réception) sont dans `RECEPTION_REGLES_METIER.md` §5 et s'appliquent aussi à la Coordination.
 
+### RG-COO-309 — « À traiter » (2 m² fixe, pliage) : un dossier est listé dès qu'il a une répartition à traiter
+- Origine : CONSERVÉE (process de Circé)
+- Énoncé : la liste « À traiter » du 2 m² fixe et du pliage montre les répartitions « à traiter » (rpc_statut = 0) des ateliers de l'utilisateur ; une telle répartition naît quand la Pré-Prod envoie la préparation depuis Broadcast. Un dossier qui a au moins une répartition à traiter, non retirée, d'un atelier FIXE de son type (fixe ou pliage) et dans le périmètre, est donc listé même sans instruction ni ligne attendue.
+- Sources : legacy `p_s_listeprepa2m2.sql:69-76` (`rpc_statut = 0`, ateliers de l'utilisateur), `p_s_listeprepa_pliage.sql` ; demande de l'utilisateur du 23/11 (« une ligne à traiter naît quand la Pré-Prod envoie la préparation depuis Broadcast »).
+- Implémentation : FAIT — `apps/api/src/modules/coordination/dossiers.ts` (`aUneRepartitionATraiter`, filtre des lignes `statut === 'A_TRAITER'`) ; test d'intégration `apps/api/test/coordination/a-traiter-fiche.int.test.ts` (2026-11-24 : la fiche d'un dossier listé par une seule répartition à traiter s'ouvre au lieu de répondre 403 RG-COO-167, `dossierDeLaFiche` ; refus pour un autre site et pour une répartition qui n'est plus à traiter).
+
 ### RG-X-050 — Annulation d'une validation admin : conséquences côté Réception
 - Origine : NOUVELLE
 - Modules : COO → REC

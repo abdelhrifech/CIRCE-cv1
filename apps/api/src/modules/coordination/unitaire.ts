@@ -346,6 +346,24 @@ async function lireLignes(client: Client, identity: Identity, q: UnitaireQuery) 
   const ateliers = await ateliersUnitaire(client, identity, q.atelier)
   const types = await lireTypes(client)
   const depart = q.depart ? lireSemaineIso(q.depart) : null
+  // Plage de semaines (écran « Préparation ») : bornes comprises, une borne absente n'est pas une borne.
+  const de = q.departDe ? lireSemaineIso(q.departDe) : null
+  const a = q.departA ? lireSemaineIso(q.departA) : null
+  const plage = [
+    ...(de
+      ? [
+          {
+            OR: [
+              { semAnnee: { gt: de.annee } },
+              { semAnnee: de.annee, semNum: { gte: de.semaine } },
+            ],
+          },
+        ]
+      : []),
+    ...(a
+      ? [{ OR: [{ semAnnee: { lt: a.annee } }, { semAnnee: a.annee, semNum: { lte: a.semaine } }] }]
+      : []),
+  ]
   const reps = await parPaquets(
     ateliers.map((a) => a.id),
     (paquet) =>
@@ -355,6 +373,7 @@ async function lireLignes(client: Client, identity: Identity, q: UnitaireQuery) 
           statut: { notIn: STATUTS_MASQUES },
           contNum: q.dossier ?? { not: null },
           ...(depart ? { semAnnee: depart.annee, semNum: depart.semaine } : {}),
+          ...(plage.length ? { AND: plage } : {}),
         },
         include: INCLUDE_REPARTITION,
         orderBy: { id: 'asc' },
@@ -431,6 +450,28 @@ async function semainesLiberation(db: Db, lignes: readonly LigneUnitaire[]) {
   return semaines.sort((a, b) => a.depart.localeCompare(b.depart) || a.atelierId - b.atelierId)
 }
 
+/** Semaines de départ qui ont des lignes du type (ateliers du périmètre, statuts affichés) : regroupement léger, sans détail. */
+async function semainesDisponibles(db: Db, ateliers: number[], type: UnitaireQuery['type']) {
+  const types = await lireTypes(db)
+  const groupes = await parPaquets(ateliers, (paquet) =>
+    db.repartition.groupBy({
+      by: ['semAnnee', 'semNum', 'typePreparationId'],
+      where: {
+        atelierId: { in: paquet },
+        statut: { notIn: STATUTS_MASQUES },
+        contNum: { not: null },
+      },
+    }),
+  )
+  return [
+    ...new Set(
+      groupes
+        .filter((g) => g.semAnnee && g.semNum && typeDe(g, types) === type)
+        .map((g) => formatSemaineIso({ annee: g.semAnnee ?? 0, semaine: g.semNum ?? 0 })),
+    ),
+  ].sort()
+}
+
 // RG-COO-290 / 238 / 245 / 248 : liste des unités d'un type (fixe, pliage, bus), lecture seule.
 export async function listerUnitaire(
   db: Db,
@@ -460,6 +501,11 @@ export async function listerUnitaire(
       ...new Set(exclus.map((e) => e.theme).filter((t): t is string => t !== null)),
     ].sort(),
     liberation: { disponible: true, semaines: await semainesLiberation(db, toutes) },
+    semainesDisponibles: await semainesDisponibles(
+      db,
+      ateliers.map((a) => a.id),
+      q.type,
+    ),
   }
 }
 

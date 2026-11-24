@@ -10,7 +10,7 @@ import { apiRequest } from '../../lib/api-client.ts'
 import { ErrorMessage } from '../error-message.tsx'
 import { TableMetier } from '../ui/table-metier.tsx'
 import { SidePanel } from '../overlays/side-panel.tsx'
-import { DashboardFilter } from './dashboard-filter.tsx'
+import { BarreFiltres, enOptionsFiltre } from '../ui/barre-filtres.tsx'
 import { DeliveryForecastEditor } from './delivery-forecast.tsx'
 
 const receiptLabels = {
@@ -139,56 +139,56 @@ export function WorkshopDashboard({
         Une ligne par visuel ; les unités physiques sont dédupliquées dans les indicateurs. Chaque
         étape ouvre sa page de travail sur le dossier.
       </p>
-      <div
-        role="group"
-        aria-label="Filtres du suivi"
-        className="my-5 flex flex-wrap items-end gap-3"
-      >
-        <label className="text-sm">
-          Dossier(s)
-          <input
-            className="block rounded border p-2"
-            value={filters.dossier}
-            onChange={(event) => {
-              setFilters({ ...filters, dossier: event.target.value })
-            }}
-            placeholder="Séparer par virgule"
-          />
-        </label>
-        {(['depart', 'atelier', 'format', 'annonceur', 'destination'] as const).map((key) => (
-          <DashboardFilter
-            key={key}
-            label={
-              {
-                depart: 'Départ',
-                atelier: 'Atelier',
-                format: 'Format',
-                annonceur: 'Annonceur',
-                destination: 'Destination',
-              }[key]
-            }
-            options={data?.options[key] ?? []}
-            selected={filters[key]
-              .split(key === 'format' || key === 'annonceur' ? '|' : ',')
-              .filter(Boolean)}
-            onChange={(values) => {
-              setFilters({
-                ...filters,
-                [key]: values.join(key === 'format' || key === 'annonceur' ? '|' : ','),
-              })
-            }}
-          />
-        ))}
-        <DashboardFilter
-          label="Avancement"
-          options={Object.entries(progressLabels).map(([value, label]) => ({ value, label }))}
-          selected={progress}
-          onChange={setProgress}
-        />
-        <button
-          type="button"
-          className="rounded border p-2"
-          onClick={() => {
+      <div className="my-5">
+        <BarreFiltres
+          libelle="Filtres du suivi"
+          dossier={{
+            valeur: filters.dossier,
+            onChange: (v) => {
+              setFilters({ ...filters, dossier: v })
+            },
+          }}
+          filtres={[
+            ...(
+              [
+                ['depart', 'Départ', ',', true],
+                ['atelier', 'Atelier', ',', false],
+                ['format', 'Format', '|', false],
+                ['annonceur', 'Annonceur', '|', false],
+              ] as const
+            ).map(([key, libelle, separateur, toutesValeurs]) => ({
+              id: key,
+              libelle,
+              options: enOptionsFiltre(data?.options[key] ?? []),
+              selection: filters[key].split(separateur).filter(Boolean),
+              onChange: (values: string[]) => {
+                setFilters({ ...filters, [key]: values.join(separateur) })
+              },
+              toutesValeurs,
+            })),
+            {
+              id: 'avancement',
+              libelle: 'Avancement',
+              options: Object.entries(progressLabels).map(([valeur, libelle]) => ({
+                valeur,
+                libelle,
+                nombre: (data?.visuals ?? []).filter((visual) => progressOf(visual) === valeur)
+                  .length,
+              })),
+              selection: progress,
+              onChange: setProgress,
+            },
+            {
+              id: 'destination',
+              libelle: 'Destination',
+              options: enOptionsFiltre(data?.options.destination ?? []),
+              selection: filters.destination.split(',').filter(Boolean),
+              onChange: (values: string[]) => {
+                setFilters({ ...filters, destination: values.join(',') })
+              },
+            },
+          ]}
+          onReinitialiser={() => {
             setFilters({
               dossier: '',
               depart: '',
@@ -199,9 +199,7 @@ export function WorkshopDashboard({
             })
             setProgress([])
           }}
-        >
-          Réinitialiser
-        </button>
+        />
       </div>
       {!validDossier && (
         <p role="alert">

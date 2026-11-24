@@ -38,6 +38,9 @@ export const UnitaireQuerySchema = z.object({
   type: TypeUnitaireSchema.default('fixe'),
   atelier: z.coerce.number().int().positive().optional(),
   depart: SemaineIsoSchema.optional(),
+  /** Plage de semaines de départ (du … au …, bornes comprises), pour la recherche « Semaine de départ » de l'écran. */
+  departDe: SemaineIsoSchema.optional(),
+  departA: SemaineIsoSchema.optional(),
   dossier: z.coerce.number().int().positive().optional(),
   annonceur: z.string().trim().min(1).max(100).optional(),
   statut: StatutUniteUnitaireSchema.optional(),
@@ -121,6 +124,9 @@ export const UnitaireSchema = z.object({
   lignes: z.array(LigneUnitaireSchema),
   /** Thèmes exclus par Broadcast, sortis automatiquement de la liste (annotation). */
   themesExclus: z.array(z.string()),
+  /** Semaines de départ (« 2026-W30 ») qui ont des lignes de ce type, toutes semaines confondues : l'écran se place sur la
+   *  dernière quand la semaine par défaut est vide (demande du 23/11). */
+  semainesDisponibles: z.array(z.string()),
   /** RG-COO-240 / 241 / 242 : état de la libération de chaque semaine de départ affichée (par atelier). */
   liberation: z.object({
     disponible: z.boolean(),

@@ -9,7 +9,21 @@ test.describe.configure({ mode: 'serial' })
 async function ouvrir(page: Page) {
   await page.goto('/coordination?aFaire=TOUS')
   await expect(page.getByRole('table', { name: 'Dossiers' })).toBeVisible()
+  await toutesSemaines(page)
 }
+
+// Demande du 23/11 : la liste est bornée par la « Semaine de départ » (par défaut la semaine en cours + 1) ; une borne
+// vide n'est pas une borne (filtre-semaines.tsx) : les deux bornes sont vidées pour retrouver tous les dossiers du jeu.
+async function toutesSemaines(page: Page) {
+  const semaines = page.getByRole('group', { name: 'Semaine de départ' })
+  await semaines.getByLabel('Semaine de départ : du').fill('')
+  await semaines.getByLabel('Semaine de départ : au').fill('')
+  await expect(semaines.getByLabel('Semaine de départ : au')).toHaveValue('')
+}
+
+// Message de l'action. Pendant un rechargement, l'écran garde le tableau et l'annonce par un second « status »
+// (« Actualisation… », reprise du 24/11) : il est écarté pour lire le message.
+const message = (page: Page) => page.getByRole('status').filter({ hasNotText: /^Actualisation…$/ })
 
 const ligne = (page: Page, annonceur: RegExp) =>
   page.getByRole('table', { name: 'Dossiers' }).getByRole('row', { name: annonceur })
@@ -66,7 +80,7 @@ test('RG-COO-045 « Remettre à traiter » une instruction annulée', async ({ p
   await ouvrir(page)
   await instructionEnCours(page).getByRole('button', { name: 'Remettre à traiter' }).click()
   await page.getByRole('dialog').getByRole('button', { name: 'Confirmer' }).click()
-  await expect(page.getByRole('status')).toContainText(': À traiter.')
+  await expect(message(page)).toContainText(': À traiter.')
   await expect(instructionEnCours(page)).toContainText('À traiter · prépa pas reçue')
 })
 
@@ -83,7 +97,7 @@ test('RG-COO-046 retour arrière de l’Instruction OK : avertissement puis calc
     'Le calcul des trains de cette instruction sera effacé',
   )
   await modale.getByRole('button', { name: 'Confirmer' }).click()
-  await expect(page.getByRole('status')).toContainText(
+  await expect(message(page)).toContainText(
     "Calcul des trains effacé (1 face(s) remise(s) à blanc, 1 face(s) d'entretien supprimée(s)).",
   )
   await expect(iok).toContainText('En cours')

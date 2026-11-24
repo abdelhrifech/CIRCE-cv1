@@ -7,9 +7,19 @@ import { expect, test, type Page } from '@playwright/test'
 
 test.describe.configure({ mode: 'serial' })
 
-async function ouvrir(page: Page) {
-  await page.goto('/coordination')
+async function ouvrir(page: Page, chemin = '/coordination') {
+  await page.goto(chemin)
   await expect(page.getByRole('table', { name: 'Dossiers' })).toBeVisible()
+  await toutesSemaines(page)
+}
+
+// Demande du 23/11 : la liste est bornée par la « Semaine de départ » (par défaut la semaine en cours + 1) ; une borne
+// vide n'est pas une borne (filtre-semaines.tsx) : les deux bornes sont vidées pour retrouver tous les dossiers du jeu.
+async function toutesSemaines(page: Page) {
+  const semaines = page.getByRole('group', { name: 'Semaine de départ' })
+  await semaines.getByLabel('Semaine de départ : du').fill('')
+  await semaines.getByLabel('Semaine de départ : au').fill('')
+  await expect(semaines.getByLabel('Semaine de départ : au')).toHaveValue('')
 }
 
 const ligne = (page: Page, annonceur: RegExp) =>
@@ -63,7 +73,7 @@ test('RG-COO-059 / RG-COO-048 / RG-COO-044 fiche dossier : position proposée, e
 test('RG-COO-056 / RG-COO-057 écart : appliquer la version Broadcast, puis demander une correction', async ({
   page,
 }) => {
-  await page.goto('/coordination?aFaire=TOUS')
+  await ouvrir(page, '/coordination?aFaire=TOUS')
   await ligne(page, /Annonceur Écart E2E/)
     .getByRole('button', { name: /^Ouvrir le dossier/ })
     .click()

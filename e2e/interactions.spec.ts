@@ -21,11 +21,24 @@ async function coordination(page: Page, chemin: string) {
   return p
 }
 
+/** Dossiers 2 m² fixe vus par la Coordination (API, relais du serveur web de la Coordination). */
+async function dossiersFixe(p: Page, filtre = '') {
+  const r = await p.request.get(
+    `${COORD}/api/coordination/dossiers?pour=FIXE&pageSize=1000${filtre}`,
+  )
+  expect(r.status()).toBe(200)
+  return ((await r.json()) as { items: { id: number; annonceur: string | null }[] }).items.filter(
+    (d) => ANNONCEUR.test(d.annonceur ?? ''),
+  )
+}
+
+// Reprise du 23/11 : « À traiter » (2 m² fixe) n'affiche plus qu'une ligne par répartition à traiter (RG-COO-309, Q-431,
+// ECART-121) ; ce dossier (une ligne attendue, aucune répartition) n'y a donc pas de ligne. Sa fiche dossier
+// (ECR-COO-02) est ouverte par l'adresse de l'écran (`?fiche=`), l'identifiant étant lu dans la liste de l'API.
 async function ficheCoordination(p: Page) {
-  const table = p.getByRole('table', { name: 'Dossiers' })
-  await expect(table).toBeVisible()
-  const ligne = table.getByRole('row', { name: ANNONCEUR })
-  await ligne.getByRole('button', { name: /^Ouvrir le dossier/ }).click()
+  const [dossier] = await dossiersFixe(p)
+  expect(dossier).toBeDefined()
+  await p.goto(`${COORD}/coordination?pour=fixe&fiche=${String(dossier?.id)}`)
   return p.getByRole('dialog', { name: /Annonceur Interactions E2E · dossier/ })
 }
 
@@ -153,5 +166,9 @@ test('RG-X-013 / RG-X-058 la Réception retire le dernier dossier : l’affiche 
   const table = coord.getByRole('table', { name: 'Dossiers' })
   await expect(table).toBeVisible()
   await expect(table.getByRole('row', { name: ANNONCEUR })).toHaveCount(0)
+  // Le dossier n'a pas de ligne dans « À traiter » (voir ficheCoordination) : sa sortie du filtre « À faire » est lue
+  // dans la liste de l'API, filtre « À faire (Coordination) ».
+  expect(await dossiersFixe(coord, '&aFaire=A_FAIRE')).toHaveLength(0)
+  expect(await dossiersFixe(coord)).toHaveLength(1)
   await coord.close()
 })

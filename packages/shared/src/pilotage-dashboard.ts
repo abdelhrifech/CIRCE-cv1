@@ -104,6 +104,13 @@ export const DashboardVisualSchema = z.object({
   ),
 })
 export type DashboardVisual = z.infer<typeof DashboardVisualSchema>
+// Valeur proposée par un filtre ; « nombre » = lignes (visuels) que la valeur donnerait avec les autres filtres posés
+// (DESIGN.md §4.3).
+export const OptionFiltreSchema = z.object({
+  value: z.string(),
+  label: z.string(),
+  nombre: count.optional(),
+})
 export const DashboardSchema = z.object({
   computedAt: z.string(),
   kpis: z.object({
@@ -141,12 +148,12 @@ export const DashboardSchema = z.object({
     unknownQuantities: count,
   }),
   options: z.object({
-    dossier: z.array(z.object({ value: z.string(), label: z.string() })),
-    depart: z.array(z.object({ value: z.string(), label: z.string() })),
-    atelier: z.array(z.object({ value: z.string(), label: z.string() })),
-    format: z.array(z.object({ value: z.string(), label: z.string() })),
-    annonceur: z.array(z.object({ value: z.string(), label: z.string() })),
-    destination: z.array(z.object({ value: z.string(), label: z.string() })),
+    dossier: z.array(OptionFiltreSchema),
+    depart: z.array(OptionFiltreSchema),
+    atelier: z.array(OptionFiltreSchema),
+    format: z.array(OptionFiltreSchema),
+    annonceur: z.array(OptionFiltreSchema),
+    destination: z.array(OptionFiltreSchema),
   }),
 })
 export type Dashboard = z.infer<typeof DashboardSchema>
