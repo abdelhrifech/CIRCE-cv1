@@ -45,6 +45,7 @@ export default defineConfig({
       command:
         'pnpm --filter @circe/api db:test:up && pnpm --filter @circe/api e2e:seed && pnpm --filter @circe/api exec tsx --env-file=../../.env.test src/server.ts',
       url: `http://127.0.0.1:${apiPort}/api/health`,
+      env: { ADMIN_PORT: '0' },
       reuseExistingServer: false,
       timeout: 90_000,
     },

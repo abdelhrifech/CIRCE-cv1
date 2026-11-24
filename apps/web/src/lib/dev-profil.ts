@@ -1,15 +1,9 @@
 // ECR-NAV-01 : sélecteur de profil de DEV (Q-001 non tranchée). Le choix est un cookie lu par le relais web
-// (routes/api/$.ts), qui ne l'honore que hors production et pour un identifiant `dev.<rôle>` valide.
+// (routes/api/$.ts), qui ne l'honore que hors production et pour un identifiant du catalogue de démo.
 // Aucune authentification réelle : jamais en production.
 export const COOKIE_PROFIL_DEV = 'circe_dev_user'
-export const PROFILS_DEV = [
-  { identifiant: 'dev.coord', libelle: 'Coordination' },
-  { identifiant: 'dev.cheq', libelle: 'Chef d’équipe' },
-  { identifiant: 'dev.recep', libelle: 'Agent de réception' },
-  { identifiant: 'dev.expe', libelle: 'Agent d’expédition' },
-  { identifiant: 'dev.admin', libelle: 'Administrateur' },
-  { identifiant: 'dev.com', libelle: 'Commerce (lecture)' },
-] as const
+export { PROFILS_DEMO as PROFILS_DEV } from '@circe/shared'
+import { PROFILS_DEMO as PROFILS_DEV } from '@circe/shared'
 
 /** Les menus de profil ne sont proposés que hors build de production. */
 export const PROFIL_DEV_DISPONIBLE = !import.meta.env.PROD

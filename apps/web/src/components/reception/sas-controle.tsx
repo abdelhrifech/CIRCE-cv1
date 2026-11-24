@@ -1,14 +1,16 @@
+import { DeclarerConstat } from '../nonconformite/constat.tsx'
+import type { NON_CONFORMITES } from '@circe/shared'
 import {
+  ListeNcSchema,
   ControleSchema,
   ControleValideSchema,
-  NON_CONFORMITES,
   ReferentielsReceptionSchema,
   SasSchema,
   type Controle,
 } from '@circe/shared'
 import { useState } from 'react'
 import { apiPost, apiRequest } from '../../lib/api-client.ts'
-import { dateCourte, duree } from '../../lib/duree.ts'
+import { dateCourte } from '../../lib/duree.ts'
 import { ecartImportant } from '../../lib/ecart.ts'
 import { useApi } from '../../lib/use-api.ts'
 import { Button } from '../button.tsx'
@@ -16,15 +18,6 @@ import { ErrorMessage } from '../error-message.tsx'
 import { Modale } from '../ui/modale.tsx'
 import { Pastille } from '../ui/pastille.tsx'
 import { ApercuFeuilles } from './apercu-feuilles.tsx'
-
-const LIBELLE_NC: Record<(typeof NON_CONFORMITES)[number], string> = {
-  CONFORME: 'Conforme',
-  VISUEL_NON_CONFORME: 'Visuel non conforme',
-  QUANTITE: 'Quantité',
-  AFFICHE_ABIMEE: 'Affiche abîmée',
-  BANDEAU_MANQUANT: 'Bandeau manquant',
-  AUTRE: 'Autre',
-}
 
 interface SasProps {
   /** Réception ouverte en contrôle (paramètre d'URL `palette`). */
@@ -48,17 +41,7 @@ export function SasEtControle({ ouverte, onOuvrir, rafraichir, peutControler }: 
   )
   const sas = etat.kind === 'ready' ? etat.data : null
   return (
-    <section className="mt-8" aria-labelledby="titre-etape-2">
-      <h2 id="titre-etape-2" className="text-lg font-medium">
-        2 · Contrôle des affiches — {sas ? sas.palettes.length : '…'} palette(s) à contrôler
-        {sas && sas.nombreEnRetard > 0 ? `, dont ${String(sas.nombreEnRetard)} en retard` : ''}
-      </h2>
-      {sas && sas.nombreEnRetard > 0 && (
-        <p className="mt-2 rounded-md border border-amber-200 bg-amber-50 p-2 text-sm" role="note">
-          {sas.nombreEnRetard} palette(s) dans le sas depuis plus de {sas.delaiControleHeures} h — À
-          contrôler en premier : elles sont en tête de liste.
-        </p>
-      )}
+    <section className="mt-8 border-t border-slate-200 pt-4" aria-label="Contrôle des affiches">
       <div className="mt-2 rounded-lg border border-slate-200 bg-white">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 p-3">
           <h3 className="font-medium">Palettes à contrôler (sas)</h3>
@@ -90,7 +73,6 @@ export function SasEtControle({ ouverte, onOuvrir, rafraichir, peutControler }: 
               <thead className="bg-slate-50 text-slate-600">
                 <tr>
                   {[
-                    'En attente depuis',
                     'Réception',
                     'Arrivée',
                     'Site',
@@ -115,13 +97,8 @@ export function SasEtControle({ ouverte, onOuvrir, rafraichir, peutControler }: 
                     onClick={() => {
                       onOuvrir(p.receptionId)
                     }}
-                    className={`cursor-pointer border-t border-slate-100 ${ouverte === p.receptionId ? 'bg-sky-50' : p.retard === 'DOUBLE' ? 'bg-orange-50' : p.retard === 'RETARD' ? 'bg-amber-50' : ''}`}
+                    className={`cursor-pointer border-t border-slate-100 ${ouverte === p.receptionId ? 'bg-sky-50' : ''}`}
                   >
-                    <td className="px-3 py-2">
-                      {duree(p.attenteMinutes)}{' '}
-                      {p.retard === 'DOUBLE' && <Pastille ton="important">Important</Pastille>}
-                      {p.retard === 'RETARD' && <Pastille ton="surveiller">À surveiller</Pastille>}
-                    </td>
                     <td className="px-3 py-2 font-mono">
                       R{p.receptionId}{' '}
                       {p.estInconnue && <Pastille ton="surveiller">réception inconnue</Pastille>}
@@ -163,7 +140,10 @@ export function SasEtControle({ ouverte, onOuvrir, rafraichir, peutControler }: 
           onFermer={() => {
             onOuvrir(null)
           }}
-          onValide={recharger}
+          onValide={() => {
+            recharger()
+            onOuvrir(null)
+          }}
         />
       )}
     </section>
@@ -199,7 +179,7 @@ function ControlePalette({
   )
   return (
     <section
-      className="mt-4 rounded-lg border border-slate-200 bg-white p-3"
+      className="mt-4 rounded-lg border border-sky-200 border-l-[6px] border-l-sky-600 bg-[#eaf4f8] p-4"
       aria-label={`Contrôle de la palette · réception R${String(receptionId)}`}
     >
       {etat.kind === 'loading' && <p className="text-sm text-slate-500">Chargement du contrôle…</p>}
@@ -261,6 +241,12 @@ function FormulaireControle({
   })
   const [apercu, setApercu] = useState<number[] | null>(null)
   const [voirBl, setVoirBl] = useState(false)
+  const [imprimerNc, setImprimerNc] = useState(false)
+  const { etat: ncEtat, recharger: rechargerNc } = useApi(`nc-palette-${c.receptionId}`, (signal) =>
+    apiRequest('GET', '/api/non-conformites?type=RECEPTION', { schema: ListeNcSchema, signal }),
+  )
+  const ncs =
+    ncEtat.kind === 'ready' ? ncEtat.data.items.filter((n) => n.receptionId === c.receptionId) : []
   const lecture = c.lectureSeule || !peutControler
   const agents =
     refs.kind === 'ready' ? refs.data.agents.filter((a) => a.plateformeIds.includes(c.site.id)) : []
@@ -271,7 +257,7 @@ function FormulaireControle({
     })
   }
 
-  async function valider() {
+  async function valider(imprimer = false) {
     setEnvoi({ kind: 'en-cours' })
     try {
       const r = await apiPost(`/api/receptions/${String(c.receptionId)}/controle`, {
@@ -297,7 +283,8 @@ function FormulaireControle({
       })
       setEnvoi({ kind: 'repos' })
       // RG-REC-069 : après le contrôle, aperçu d'impression avec étiquettes rack (ECR-REC-09).
-      setApercu(r.affiches)
+      if (imprimer) setApercu(r.affiches)
+      else onValide()
     } catch (error) {
       setEnvoi({ kind: 'erreur', error })
     }
@@ -336,6 +323,21 @@ function FormulaireControle({
           </button>
         )}
       </p>
+      {!lecture && (
+        <div className="mt-3">
+          <DeclarerConstat
+            onDeclaree={rechargerNc}
+            receptionId={c.receptionId}
+            plateformeId={c.site.id}
+            affiches={c.lignes.map((l) => ({
+              id: l.afficheId,
+              annonceur: l.annonceur,
+              theme: l.theme,
+              dossier: l.dossiers[0],
+            }))}
+          />
+        </div>
+      )}
       <table className="mt-2 w-full text-sm" aria-label="Lignes du contrôle">
         <thead className="bg-slate-50 text-slate-600">
           <tr>
@@ -464,22 +466,19 @@ function FormulaireControle({
                 </td>
                 <td className="px-2 py-2">
                   {!lecture && (
-                    <select
-                      aria-label={`Non-conformité, affiche ${String(l.afficheId)}`}
-                      className="rounded border border-slate-300 px-1 py-0.5"
-                      value={s?.nonConformite ?? 'CONFORME'}
-                      onChange={(e) => {
-                        majSaisie(l.afficheId, {
-                          nonConformite: e.target.value as Saisie['nonConformite'],
-                        })
-                      }}
-                    >
-                      {NON_CONFORMITES.map((n) => (
-                        <option key={n} value={n}>
-                          {LIBELLE_NC[n]}
-                        </option>
-                      ))}
-                    </select>
+                    <DeclarerConstat
+                      onDeclaree={rechargerNc}
+                      receptionId={c.receptionId}
+                      plateformeId={c.site.id}
+                      affiches={[
+                        {
+                          id: l.afficheId,
+                          annonceur: l.annonceur,
+                          theme: l.theme,
+                          dossier: l.dossiers[0],
+                        },
+                      ]}
+                    />
                   )}
                   {!lecture && saisies[l.afficheId]?.nonConformite !== 'CONFORME' && (
                     <span className="block text-xs text-slate-500">
@@ -563,31 +562,48 @@ function FormulaireControle({
         <button type="button" className="text-sm underline" onClick={onFermer}>
           Fermer le contrôle
         </button>
-        {lecture ? (
-          <Button
-            type="button"
-            onClick={() => {
-              setApercu(c.lignes.map((l) => l.afficheId))
-            }}
-          >
-            {c.lignes.some((l) => l.feuille !== 'DEFINITIVE')
-              ? 'Imprimer la feuille définitive'
-              : 'Réimprimer les feuilles de stock'}
-          </Button>
-        ) : (
-          <Button type="button" disabled={envoi.kind === 'en-cours'} onClick={() => void valider()}>
-            {envoi.kind === 'en-cours'
-              ? 'Validation…'
-              : c.estInconnue
-                ? 'Valider le contrôle et imprimer la feuille définitive'
-                : 'Valider le contrôle et imprimer'}
-          </Button>
+        {!lecture && (
+          <>
+            <Button
+              type="button"
+              disabled={envoi.kind === 'en-cours'}
+              onClick={() => void valider(false)}
+            >
+              {envoi.kind === 'en-cours' ? 'Validation…' : 'Valider le contrôle'}
+            </Button>
+            <Button
+              type="button"
+              disabled={envoi.kind === 'en-cours'}
+              onClick={() => {
+                setImprimerNc(false)
+                void valider(true)
+              }}
+            >
+              Valider et imprimer
+            </Button>
+            <Button
+              type="button"
+              className="disabled:bg-slate-300 disabled:text-slate-600 disabled:opacity-100"
+              disabled={envoi.kind === 'en-cours' || !ncs.length}
+              onClick={() => {
+                setImprimerNc(true)
+                void valider(true)
+              }}
+            >
+              Valider et imprimer la non-conformité
+            </Button>
+            {!ncs.length && (
+              <p className="text-sm text-slate-500">
+                Aucune non-conformité déclarée sur cette palette.
+              </p>
+            )}
+          </>
         )}
       </div>
       {apercu && (
         <ApercuFeuilles
           afficheIds={apercu}
-          avecEtiquettes
+          nonConformites={imprimerNc ? ncs : []}
           onFermer={() => {
             setApercu(null)
             onValide()

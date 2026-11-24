@@ -20,3 +20,7 @@ docs-sources/
 *.bak
 apps/api/prisma/*.db*
 docs/_travail/extraits/*.sql
+# Clés privées des sauvegardes chiffrées et données de la version GV1 : hors dépôt
+cle-dechiffrement*.json
+docs-resources/
+donnees-chiffrees/

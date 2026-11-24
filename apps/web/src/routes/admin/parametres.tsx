@@ -6,7 +6,6 @@ import {
   type ParametreAdmin,
 } from '@circe/shared'
 import { useState } from 'react'
-import { AdminNav } from '../../components/admin/admin-nav.tsx'
 import { Button } from '../../components/button.tsx'
 import { ErrorMessage } from '../../components/error-message.tsx'
 import { Modale } from '../../components/ui/modale.tsx'
@@ -45,15 +44,11 @@ function Parametres() {
     <main className="mx-auto max-w-6xl p-6">
       <p className="text-sm text-slate-500">Administration › Paramétrage</p>
       <h1 className="text-2xl font-semibold">Règles métier</h1>
-      <AdminNav />
       <p className="mt-3 text-sm text-slate-600">
         Un changement s’applique aux prochains traitements. Chaque modification est journalisée.
       </p>
       {message && (
-        <p
-          role="status"
-          className="mt-3 rounded-md border border-slate-300 bg-slate-100 p-2 text-sm"
-        >
+        <p role="status" className="mt-3 rounded-md border border-sky-200 bg-sky-50 p-2 text-sm">
           {message}
         </p>
       )}

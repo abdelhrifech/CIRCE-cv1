@@ -10,7 +10,6 @@ import {
   type UtilisateurAdmin,
 } from '@circe/shared'
 import { useState, type SyntheticEvent } from 'react'
-import { AdminNav } from '../../components/admin/admin-nav.tsx'
 import { Button } from '../../components/button.tsx'
 import { ErrorMessage } from '../../components/error-message.tsx'
 import { Modale } from '../../components/ui/modale.tsx'
@@ -94,7 +93,6 @@ function Utilisateurs() {
     <main className="mx-auto max-w-6xl p-6">
       <p className="text-sm text-slate-500">Administration › Utilisateurs</p>
       <h1 className="text-2xl font-semibold">Utilisateurs</h1>
-      <AdminNav />
       <p className="mt-3 text-sm text-slate-600">
         Rôles et périmètre (site, atelier) des comptes. L’authentification n’est pas gérée ici. Un
         compte désactivé ne peut plus se connecter ; il n’est jamais supprimé (traçabilité).
@@ -160,10 +158,7 @@ function Utilisateurs() {
         }}
       />
       {message && (
-        <p
-          role="status"
-          className="mt-3 rounded-md border border-slate-300 bg-slate-100 p-2 text-sm"
-        >
+        <p role="status" className="mt-3 rounded-md border border-sky-200 bg-sky-50 p-2 text-sm">
           {message}
         </p>
       )}

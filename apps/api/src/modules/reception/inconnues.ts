@@ -1,4 +1,5 @@
 // REC-P07 — Réceptions inconnues (ECR-REC-08 création, ECR-REC-04 liste / identification / signalement).
+import { declarerConstatReception } from '../nonconformite/service.ts'
 import {
   formatSemaineIso,
   STATUTS_INCONNUE,
@@ -112,7 +113,7 @@ export async function creerReceptionInconnue(tx: Tx, identity: Identity, input: 
     data: {
       dateLivraison: maintenant,
       // RG-REC-098 : n° de BL « — » pour une palette arrivée sans BL.
-      reference: input.sansBl ? '—' : input.numeroBl || null,
+      reference: input.sansBl ? 'Sans BL' : input.numeroBl || null,
       imprimeurId: input.imprimeurId,
       createdById: identity.userId,
     },
@@ -191,6 +192,8 @@ export async function creerReceptionInconnue(tx: Tx, identity: Identity, input: 
     parId: identity.userId,
     nouvelleValeur: `affiche ${String(affiche.id)} · ${String(input.quantite)} ex. · ${allee}-${input.rayon}`,
   })
+  if (input.nonConformite)
+    await declarerConstatReception(tx, identity, reception.id, [affiche.id], input.nonConformite)
   return {
     receptionId: reception.id,
     afficheId: affiche.id,

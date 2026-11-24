@@ -89,8 +89,7 @@ function useCompteurs(me: MeResponse | null): Compteurs {
   )
   const compteurs: Compteurs = {}
   if (alertes.etat.kind === 'ready' && alertes.etat.data) {
-    const critiques = alertes.etat.data.parGravite.CRITIQUE
-    compteurs.alertes = { n: alertes.etat.data.alertes.length, chaud: critiques > 0 }
+    compteurs.alertes = { n: alertes.etat.data.alertes.length, chaud: false }
   }
   if (reception.etat.kind === 'ready' && reception.etat.data) {
     const { palettesAControler, affichesOrphelines } = reception.etat.data
@@ -304,15 +303,35 @@ function estCourante(
 ): boolean {
   const chemin = (p: string) => (p.length > 1 ? p.replace(/\/$/, '') : p)
   if (chemin(location.pathname) !== chemin(entree.to)) return false
-  return Object.entries(entree.search ?? {}).every(([k, v]) => {
-    const courant = location.search[k]
-    // Valeur par défaut de l'écran : `type=fixe` (Préparation), ou celle déclarée par l'entrée (`defaut`, ex. vue `trains`).
-    return (
-      (typeof courant === 'string'
-        ? courant
-        : (entree.defaut?.[k] ?? (k === 'type' ? 'fixe' : ''))) === v
-    )
-  })
+  const correspond = (candidate: EntreeNav) =>
+    // Le nouveau dashboard global relève de Pilotage ; le défaut Déroulant reste inchangé ailleurs.
+    !(
+      chemin(location.pathname) === '/pilotage/suivi' &&
+      location.search['pour'] === undefined &&
+      candidate.search?.['pour'] !== undefined
+    ) &&
+    Object.entries(candidate.search ?? {}).every(([k, v]) => {
+      const courant = location.search[k]
+      // Valeur par défaut de l'écran Préparation : `type=fixe`.
+      return (
+        (typeof courant === 'string'
+          ? courant
+          : k === 'type'
+            ? 'fixe'
+            : k === 'pour'
+              ? 'deroulant'
+              : k === 'tab'
+                ? entree.to === '/coordination/themes'
+                  ? 'proches'
+                  : 'suivi'
+                : '') === v
+      )
+    })
+  const candidates = NAV.flatMap((o) => o.entrees).filter(
+    (e) => chemin(e.to) === chemin(location.pathname) && correspond(e),
+  )
+  candidates.sort((a, b) => Object.keys(b.search ?? {}).length - Object.keys(a.search ?? {}).length)
+  return candidates[0]?.id === entree.id
 }
 
 function Bandeau2({ moi }: { moi: EtatMoi }) {
@@ -410,8 +429,13 @@ function Onglet({
           className="z-50 min-w-64 max-w-[22rem] rounded-b-md border border-slate-200 bg-white py-1 shadow-lg"
         >
           <ul onKeyDown={touches}>
-            {onglet.entrees.map((entree) => (
+            {onglet.entrees.map((entree, index) => (
               <li key={entree.id}>
+                {entree.groupe && onglet.entrees[index - 1]?.groupe !== entree.groupe && (
+                  <p className="mt-2 border-t px-3 py-2 text-xs font-semibold text-slate-500">
+                    {entree.groupe}
+                  </p>
+                )}
                 <EntreeMenu
                   entree={entree}
                   me={me}
@@ -446,7 +470,7 @@ function EntreeMenu({
   const autorise = me !== null && can(me, entree.permission)
   const contenu = (
     <>
-      <span>{entree.libelle}</span>
+      <span className={entree.fort ? 'font-bold' : undefined}>{entree.libelle}</span>
       {autorise && compteur && <Pastille n={compteur.n} chaud={compteur.chaud} />}
     </>
   )
@@ -469,7 +493,7 @@ function EntreeMenu({
       search={entree.search}
       aria-current={courante ? 'page' : undefined}
       onClick={onChoisi}
-      className={`flex items-center px-4 py-2 text-sm hover:bg-slate-50 focus-visible:bg-slate-100 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-sky-600 ${
+      className={`${entree.separe ? 'mb-2 border-b-2 pb-3' : ''} flex items-center px-4 py-2 text-sm hover:bg-slate-50 focus-visible:bg-slate-100 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-sky-600 ${
         courante ? 'bg-sky-50 font-medium text-sky-900' : 'text-slate-800'
       }`}
     >

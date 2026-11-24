@@ -51,7 +51,18 @@ export async function lirePhoto(db: Db, identity: Identity, id: number) {
     },
   })
   if (!photo?.fichier) throw new NotFoundError('Photo introuvable')
-  const plateformes = [...photo.receptions, ...photo.affiches].map((x) => x.plateformeId)
+  // BUS-13 : une photo de complément reste consultable par la Préproduction et le commerce du site.
+  const controlesBus = await db.busControleReception.findMany({
+    where: { photoId: id },
+    select: { receptionId: true },
+  })
+  const receptionsBus = await db.reception.findMany({
+    where: { id: { in: controlesBus.map((c) => c.receptionId) } },
+    select: { plateformeId: true },
+  })
+  const plateformes = [...photo.receptions, ...photo.affiches, ...receptionsBus].map(
+    (x) => x.plateformeId,
+  )
   const autorise =
     photo.createdById === identity.userId ||
     plateformes.some((p) => canAccessPlateforme(identity, p))

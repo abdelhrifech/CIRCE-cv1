@@ -72,6 +72,29 @@ async function fiche(c: Ctx, headers = c.coord.headers) {
 
 const affiche = (id: number) => db.affiche.findUniqueOrThrow({ where: { id } })
 
+describe('RG-NEW-REC-004 validation depuis la liste des affiches', () => {
+  it('RG-NEW-REC-004 ne valide que les affiches cochées, même dans un dossier commun', async () => {
+    const c = await contexte()
+    const a = await recevoir(c)
+    const b = await recevoir(c)
+    const r = await valider(c.coord.headers, { afficheIds: [a.afficheId] })
+    expect(r.statusCode).toBe(200)
+    expect((await affiche(a.afficheId)).validationAdmin).toBe(true)
+    expect((await affiche(b.afficheId)).validationAdmin).toBe(false)
+  })
+
+  it('RG-NEW-REC-004 refuse une affiche hors périmètre et un agent de réception', async () => {
+    const c = await contexte()
+    const a = await recevoir(c)
+    expect((await valider(c.headers, { afficheIds: [a.afficheId] })).statusCode).toBe(403)
+    const autreSite = await contexte()
+    expect((await valider(autreSite.coord.headers, { afficheIds: [a.afficheId] })).statusCode).toBe(
+      403,
+    )
+    expect((await affiche(a.afficheId)).validationAdmin).toBe(false)
+  })
+})
+
 describe('RG-X-001 / RG-COO-002 / RG-COO-004 proposition de rattachement à la réception', () => {
   it('RG-X-001 valider la réception propose le rattachement (mode BL) sans poser la validation : « à confirmer : proposé »', async () => {
     const c = await contexte()

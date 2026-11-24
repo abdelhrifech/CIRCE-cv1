@@ -1,10 +1,16 @@
-import { PhotoSchema, ReceptionCreeeSchema, ReferentielsReceptionSchema } from '@circe/shared'
+import {
+  type ConstatNc,
+  PhotoSchema,
+  ReceptionCreeeSchema,
+  ReferentielsReceptionSchema,
+} from '@circe/shared'
 import { useState } from 'react'
 import { ApiError, apiPost, apiRequest } from '../../lib/api-client.ts'
 import type { LignePanier } from '../../lib/panier.ts'
 import { useApi } from '../../lib/use-api.ts'
 import { ErrorMessage } from '../error-message.tsx'
 import { Button } from '../button.tsx'
+import { SaisieConstat } from '../nonconformite/constat.tsx'
 import { Modale } from '../ui/modale.tsx'
 
 interface Photo {
@@ -131,6 +137,8 @@ export function BonLivraison({
   const [photo, setPhoto] = useState<Photo | null>(null)
   const [voirBl, setVoirBl] = useState(false)
   const [numeroBl, setNumeroBl] = useState('')
+  const [sansBl, setSansBl] = useState(false)
+  const [nc, setNc] = useState<ConstatNc | null>(null)
   const [livreurId, setLivreurId] = useState('')
   const [imprimeurId, setImprimeurId] = useState('')
   const [nbColis, setNbColis] = useState(1)
@@ -167,6 +175,8 @@ export function BonLivraison({
     })),
     photoBlId: photo?.id ?? null,
     numeroBl,
+    sansBl,
+    nonConformite: nc ?? undefined,
     livreurId: livreurId ? Number(livreurId) : null,
     imprimeurId: imprimeurId ? Number(imprimeurId) : null,
     nbColis,
@@ -186,6 +196,8 @@ export function BonLivraison({
       })
       // RG-REC-045 : BL, imprimeur, colis et photo remis à zéro ; transporteur et « Déchargé par » conservés.
       setNumeroBl('')
+      setSansBl(false)
+      setNc(null)
       setImprimeurId('')
       setNbColis(1)
       setPhoto(null)
@@ -235,6 +247,17 @@ export function BonLivraison({
             }}
           >
             Reprendre la photo
+          </button>{' '}
+          ·{' '}
+          <button
+            type="button"
+            className="underline"
+            onClick={() => {
+              setPhoto(null)
+              setNumeroBl('')
+            }}
+          >
+            Retirer cette photo
           </button>
         </div>
       ) : (
@@ -242,7 +265,10 @@ export function BonLivraison({
           className="mt-2 rounded-md border border-amber-200 bg-amber-50 p-2 text-sm"
           data-testid="bl-a-photographier"
         >
-          <strong>BL à photographier</strong> : obligatoire, il est joint à chaque réception.{' '}
+          <strong>{sansBl ? 'Palette arrivée sans BL' : 'BL à photographier'}</strong> :{' '}
+          {sansBl
+            ? 'Photo, numéro et imprimeur facultatifs. Le transporteur reste obligatoire.'
+            : 'Photographiez le BL ou déclarez son absence.'}{' '}
           <Button
             type="button"
             className="ml-2"
@@ -253,6 +279,19 @@ export function BonLivraison({
             Photographier le BL
           </Button>
         </div>
+      )}
+
+      {!photo && (
+        <label className="mt-3 flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={sansBl}
+            onChange={(e) => {
+              setSansBl(e.target.checked)
+            }}
+          />
+          Palette arrivée sans BL
+        </label>
       )}
 
       {refs.kind === 'loading' && (
@@ -275,9 +314,10 @@ export function BonLivraison({
           <p className="mt-1">{maintenant}</p>
         </div>
         <label className="text-sm font-medium">
-          N° de BL *
+          {sansBl ? 'N° de BL : Sans BL' : 'N° de BL *'}
           <input
             className={champ}
+            disabled={sansBl}
             value={numeroBl}
             onChange={(e) => {
               setNumeroBl(e.target.value)
@@ -304,7 +344,7 @@ export function BonLivraison({
           </select>
         </label>
         <label className="text-sm font-medium">
-          Imprimeur *
+          {sansBl ? 'Imprimeur (facultatif sans BL)' : 'Imprimeur *'}
           <select
             className={champ}
             value={imprimeurId}
@@ -352,6 +392,21 @@ export function BonLivraison({
         </label>
       </div>
 
+      <label className="mt-4 flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          checked={nc !== null}
+          onChange={(e) => {
+            setNc(e.target.checked ? { types: [], bloquante: null, commentaire: '' } : null)
+          }}
+        />
+        Non-conformité constatée sur cette livraison
+      </label>
+      {nc && (
+        <div className="mt-3">
+          <SaisieConstat value={nc} onChange={setNc} />
+        </div>
+      )}
       <div className="mt-4" aria-live="polite">
         {envoi.kind === 'erreur' && <ErrorMessage error={envoi.error} />}
         {envoi.kind === 'doublon' && (
@@ -379,6 +434,7 @@ export function BonLivraison({
         <ModalePhotoBl
           onJointe={(p) => {
             setPhoto(p)
+            setSansBl(false)
             setModalePhoto(false)
           }}
           onFermer={() => {

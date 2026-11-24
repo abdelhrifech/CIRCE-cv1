@@ -1,6 +1,7 @@
 // REC-P04 — « Valider la réception » (ECR-REC-01) : création ATOMIQUE de la réception (RG-REC-046).
 // Les contrôles sont ceux de verifierBonDeLivraison (RG-REC-037, ordre de la maquette), exécutés dans la
 // même transaction que les écritures.
+import { declarerConstatReception } from '../nonconformite/service.ts'
 import { bumpVersion, updateWithVersion } from '../../core/versioning.ts'
 import type { ReceptionCreee, ValiderReception } from '@circe/shared'
 import type { Db } from '../../core/db.ts'
@@ -107,7 +108,8 @@ export async function validerReception(
   const livraison = await tx.livraison.create({
     data: {
       dateLivraison: maintenant,
-      reference: input.numeroBl.trim(),
+      // RG-NEW-REC-001 : marqueur durable dans le BL et mode MAIN des rattachements.
+      reference: input.sansBl && input.photoBlId === null ? 'Sans BL' : input.numeroBl.trim(),
       imprimeurId: input.imprimeurId,
       livreurId: input.livreurId,
       nbreColis: input.nbColis,
@@ -266,6 +268,14 @@ export async function validerReception(
       lignes.map((l) => l.contNum),
     ),
   )
+  if (input.nonConformite)
+    await declarerConstatReception(
+      tx,
+      identity,
+      reception.id,
+      creees.map((a) => a.id),
+      input.nonConformite,
+    )
   return {
     receptionId: reception.id,
     affiches: creees,

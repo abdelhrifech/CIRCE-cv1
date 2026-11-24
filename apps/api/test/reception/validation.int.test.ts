@@ -21,6 +21,54 @@ beforeAll(() => ctx.demarrer())
 afterAll(() => ctx.arreter())
 
 describe('REC-P04 Valider la réception', () => {
+  it('RG-NEW-REC-001 Sans BL autorise photo, numéro et imprimeur absents, conserve le doute et évite les faux doublons', async () => {
+    const { plateforme, headers } = await site(ctx)
+    for (let i = 0; i < 2; i++) {
+      const l = await ligne(ctx, plateforme.id)
+      const bl = await bonDeLivraison(ctx, headers, [{ ligneAttendueId: l.id, quantite: 7 }])
+      const r = await post(ctx, '/api/receptions', headers, {
+        ...bl,
+        sansBl: true,
+        photoBlId: null,
+        numeroBl: '',
+        imprimeurId: null,
+      })
+      expect(r.statusCode).toBe(201)
+      const body = ReceptionCreeeSchema.parse(r.json())
+      const rec = await db.reception.findUniqueOrThrow({
+        where: { id: body.receptionId },
+        include: { livraison: true },
+      })
+      expect(rec.photoBlId).toBeNull()
+      expect(rec.livraison?.reference).toBe('Sans BL')
+      expect(rec.livraison?.imprimeurId).toBeNull()
+      expect(await db.afficheAttendue.findMany({ where: { ligneAttendueId: l.id } })).toMatchObject(
+        [{ mode: 'MAIN' }],
+      )
+    }
+  })
+
+  it('RG-NEW-REC-001 refuse sans transporteur et ne dispense pas des obligations quand une photo est jointe', async () => {
+    const { plateforme, headers } = await site(ctx)
+    const l = await ligne(ctx, plateforme.id)
+    const bl = await bonDeLivraison(ctx, headers, [{ ligneAttendueId: l.id, quantite: 7 }])
+    const sansTransporteur = await post(ctx, '/api/receptions', headers, {
+      ...bl,
+      sansBl: true,
+      photoBlId: null,
+      livreurId: null,
+    })
+    expect(sansTransporteur.statusCode).toBe(422)
+    const avecPhoto = await post(ctx, '/api/receptions', headers, {
+      ...bl,
+      sansBl: true,
+      numeroBl: '',
+      imprimeurId: null,
+    })
+    expect(avecPhoto.statusCode).toBe(422)
+    expect(await db.afficheAttendue.count({ where: { ligneAttendueId: l.id } })).toBe(0)
+  })
+
   it('RG-REC-038 / RG-REC-039 / RG-REC-041 / RG-REC-042 crée une réception À contrôler, une affiche IDENTIFIEE, un mouvement et un lien', async () => {
     const { plateforme, headers } = await site(ctx)
     const l = await ligne(ctx, plateforme.id, { annonceur: 'ACME' })

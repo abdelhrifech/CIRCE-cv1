@@ -39,6 +39,7 @@ test('REC-P04 / REC-P05 / REC-P06 valider la réception, contrôler la palette, 
     .getByRole('row', { name: /Annonceur Zêta/ })
     .getByRole('button', { name: 'Au panier' })
     .click()
+  await page.getByRole('checkbox', { name: /Ligne 900006 pour ce BL/ }).check()
   await photographierBl(page)
   await page.getByLabel('N° de BL *').fill(bl)
   await page.getByLabel('Transporteur *').selectOption({ label: 'Transporteur E2E' })
@@ -57,15 +58,15 @@ test('REC-P04 / REC-P05 / REC-P06 valider la réception, contrôler la palette, 
   // RG-REC-067 : sans contrôleur → refus de l'API, message de la maquette.
   await controle.getByLabel(/^Allée, affiche/).fill('b')
   await controle.getByLabel(/^Rayon, affiche/).fill('7')
-  await controle.getByRole('button', { name: 'Valider le contrôle et imprimer' }).click()
+  await controle.getByRole('button', { name: 'Valider et imprimer', exact: true }).click()
   await expect(controle.getByTestId('error-message')).toContainText(
     'Le nom du contrôleur est obligatoire (REC-12).',
   )
 
   await controle.getByLabel('Contrôleur (obligatoire)').selectOption({ label: 'Agent E2E' })
-  await controle.getByRole('button', { name: 'Valider le contrôle et imprimer' }).click()
+  await controle.getByRole('button', { name: 'Valider et imprimer', exact: true }).click()
 
-  // ECR-REC-09 : aperçu des feuilles de stock (définitive), impression avec étiquettes rack.
+  // ECR-REC-09 : aperçu des feuilles de stock (définitive), impression des feuilles de stock (maquette du 16/11, sans étiquettes rack).
   const apercu = page.getByRole('dialog', { name: 'Aperçu avant impression' })
   await expect(apercu.getByTestId('resume-feuilles')).toHaveText(
     '1 feuille(s) : 1 définitive(s), 0 temporaire(s).',
@@ -77,14 +78,9 @@ test('REC-P04 / REC-P05 / REC-P06 valider la réception, contrôler la palette, 
   // RG-REC-086 : 2 exemplaires rendus (le second n'apparaît qu'à l'impression).
   await expect(apercu.getByTestId('feuille-stock')).toHaveCount(2)
   await expect(apercu.getByRole('img', { name: /^Code-barres A-\d{13}$/ }).first()).toBeVisible()
-  await apercu
-    .getByRole('button', { name: 'Imprimer (2 exemplaires) et les étiquettes rack' })
-    .click()
+  await apercu.getByRole('button', { name: 'Imprimer (2 exemplaires)', exact: true }).click()
   await expect(apercu).toHaveCount(0)
-  await expect(controle).toContainText('Contrôlée')
-  await expect(
-    controle.getByRole('button', { name: 'Réimprimer les feuilles de stock' }),
-  ).toBeVisible()
+  await expect(controle).toHaveCount(0)
 })
 
 test('REC-P07 réception inconnue : création (refus puis succès), puis identification et rattachement', async ({
@@ -92,7 +88,7 @@ test('REC-P07 réception inconnue : création (refus puis succès), puis identif
 }) => {
   await page.goto('/reception')
   await expect(page.getByRole('table', { name: 'Réceptions attendues' })).toBeVisible()
-  await page.getByRole('button', { name: 'Réception inconnue…' }).click()
+  await page.getByRole('button', { name: 'Réception inconnue' }).click()
   const modale = page.getByRole('dialog', { name: 'Réception inconnue' })
   await modale.getByLabel('Annonceur lu sur l’affiche').fill('ETA LU')
   await modale.getByLabel('Thème ou description').fill('affiche bleue')
@@ -121,16 +117,23 @@ test('REC-P07 réception inconnue : création (refus puis succès), puis identif
   )
 
   // ECR-REC-04 : identifier par n° de dossier et rattacher.
+  await page.getByTestId('onglet-reception').click()
   await page
-    .getByRole('navigation', { name: 'Réception' })
+    .getByTestId('menu-reception')
     .getByRole('link', { name: /Réceptions inconnues/ })
     .click()
   const tableau = page.getByRole('table', { name: 'Réceptions inconnues' })
   await expect(tableau.getByRole('row', { name: /ETA LU/ })).toContainText('À identifier')
+  await tableau
+    .getByRole('row', { name: /ETA LU/ })
+    .getByRole('button', { name: 'Fiche' })
+    .click()
+  await page.getByRole('tab', { name: /Préparations/ }).click()
+  await page.getByRole('button', { name: /Rattacher à un autre dossier/ }).click()
   await page.getByLabel('N° de dossier, DA, annonceur ou thème').fill('900007')
-  await page.getByRole('checkbox', { name: 'Choisir le dossier 900007' }).check()
   await page.getByRole('button', { name: 'Rattacher' }).click()
-  await expect(page.getByTestId('message-inconnues')).toContainText('rattachée')
+  await expect(page.getByRole('dialog').getByRole('status')).toContainText('rattachée')
+  await page.keyboard.press('Escape')
   await expect(tableau.getByRole('row', { name: /ETA LU|Annonceur Êta/ })).toContainText(
     'Rattachée, à contrôler',
   )

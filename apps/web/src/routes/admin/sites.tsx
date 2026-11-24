@@ -1,6 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { SitesAdminSchema } from '@circe/shared'
-import { AdminNav } from '../../components/admin/admin-nav.tsx'
+import { GAMMES_REFERENCE, SitesAdminSchema } from '@circe/shared'
 import { ErrorMessage } from '../../components/error-message.tsx'
 import { Pastille } from '../../components/ui/pastille.tsx'
 import { Button } from '../../components/button.tsx'
@@ -8,9 +7,9 @@ import { apiRequest } from '../../lib/api-client.ts'
 import { requirePermission } from '../../lib/session.ts'
 import { useApi } from '../../lib/use-api.ts'
 import { useState } from 'react'
+import { WorkshopConfigurationPanel } from '../../components/admin/workshop-configuration.tsx'
 
-// Étape 8 (D-02) — ECR-ADM-01 « Sites, ateliers et gammes » : lecture seule (pas de CRUD dans la maquette). Les
-// formats, machines et gammes de fabrication ne sont pas modélisés (ECARTS). Hypothèses : Q-406.
+// EX-ADM-NEW-005 : ateliers opérationnels en lecture ; configuration cible séparée et éditable.
 
 export const Route = createFileRoute('/admin/sites')({
   beforeLoad: requirePermission('parametrage.gerer'),
@@ -30,11 +29,10 @@ function Sites() {
     <main className="mx-auto max-w-5xl p-6">
       <p className="text-sm text-slate-500">Administration › Paramétrage</p>
       <h1 className="text-2xl font-semibold">Sites et ateliers</h1>
-      <AdminNav />
       <p className="mt-3 text-sm text-slate-600">
-        Lecture seule. Mode « Trains » = atelier déroulant ; mode « Unitaire » = atelier fixe,
-        pliage ou bus. L’identifiant d’un atelier sert à renseigner les paramètres de la page «
-        Règles métier ».
+        Référentiel opérationnel en lecture seule. Mode « Trains » = atelier déroulant ; mode «
+        Unitaire » = atelier fixe, pliage ou bus. L’identifiant d’un atelier sert à renseigner les
+        paramètres de la page « Règles métier ».
       </p>
       <form
         className="mt-4 flex flex-wrap items-end gap-3 text-sm"
@@ -113,6 +111,27 @@ function Sites() {
               </table>
             </>
           ))}
+      </section>
+      <WorkshopConfigurationPanel />
+      <section className="mt-6 rounded border bg-white p-5">
+        <h2 className="mb-4 text-lg font-semibold">Gammes de fabrication par mode</h2>
+        <p className="mb-4 text-sm text-slate-600">
+          Référence cible de la maquette, présentée sans modifier les traitements existants.
+        </p>
+        <div className="space-y-5">
+          {GAMMES_REFERENCE.map((g) => (
+            <div key={g.mode}>
+              <h3 className="mb-2 font-semibold">{g.mode}</h3>
+              <ol className="flex flex-wrap gap-2">
+                {g.etapes.map((e, i) => (
+                  <li key={e} className="rounded border bg-sky-50 px-3 py-2 text-sm">
+                    {i + 1}. {e}
+                  </li>
+                ))}
+              </ol>
+            </div>
+          ))}
+        </div>
       </section>
     </main>
   )

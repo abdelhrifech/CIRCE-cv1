@@ -1,3 +1,5 @@
+import { TableMetier, type ColonneMetier } from '../../components/ui/table-metier.tsx'
+import { useSelectionGlissee } from '../../lib/selection-glissee.ts'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import {
   EncollerSchema,
@@ -103,6 +105,13 @@ function Unitaire() {
     afficheur: search.afficheur ?? '',
   })
   const lignes = etat.kind === 'ready' ? etat.data.lignes : []
+  const glissement = useSelectionGlissee(
+    lignes.map((l) => l.cle),
+    [...choix],
+    (ids) => {
+      setChoix(new Set(ids))
+    },
+  )
   const selection = lignes.filter((l) => choix.has(l.cle))
   const bus = search.type === 'bus'
 
@@ -162,22 +171,6 @@ function Unitaire() {
     <main className="mx-auto max-w-7xl p-6">
       <p className="text-sm text-slate-500">Coordination › Préparation</p>
       <h1 className="text-2xl font-semibold">{TITRES[search.type]}</h1>
-      <nav className="mt-2 flex gap-3 text-sm" aria-label="Type de préparation">
-        {TYPES_UNITAIRE.map((t) => (
-          <button
-            key={t}
-            type="button"
-            aria-current={t === search.type ? 'page' : undefined}
-            className={t === search.type ? 'font-semibold underline' : 'text-slate-600 underline'}
-            onClick={() => {
-              setChoix(new Set())
-              void navigate({ search: (s) => ({ ...s, type: t }) })
-            }}
-          >
-            {TITRES[t]}
-          </button>
-        ))}
-      </nav>
 
       <form
         className="mt-4 flex flex-wrap items-end gap-3"
@@ -284,7 +277,7 @@ function Unitaire() {
           data-testid="liberation"
         >
           {etat.data.liberation.semaines.length === 0 && (
-            <p role="note" className="rounded-md border border-slate-300 bg-slate-100 p-2 text-sm">
+            <p role="note" className="rounded-md border border-sky-200 bg-sky-50 p-2 text-sm">
               Aucune semaine de départ à libérer pour ces filtres.
             </p>
           )}
@@ -292,7 +285,7 @@ function Unitaire() {
             <div
               key={`${String(sem.atelierId)}-${sem.depart}`}
               role="note"
-              className={`rounded-md border p-2 text-sm ${sem.libereeLe ? 'border-slate-300 bg-slate-100' : 'border-amber-200 bg-amber-50'}`}
+              className={`rounded-md border p-2 text-sm ${sem.libereeLe ? 'border-sky-200 bg-sky-50' : 'border-amber-200 bg-amber-50'}`}
             >
               {sem.libereeLe ? (
                 <p>
@@ -443,38 +436,28 @@ function Unitaire() {
                 : 'Aucune unité à préparer pour ces filtres.'}
             </p>
           ) : (
-            <table className="w-full text-sm" aria-label="Unités de préparation">
-              <thead>
-                <tr className="border-b text-left text-slate-500">
-                  <th className="py-1">
-                    <input
-                      type="checkbox"
-                      aria-label="Tout sélectionner"
-                      checked={choix.size === lignes.length}
-                      onChange={(e) => {
-                        setChoix(e.target.checked ? new Set(lignes.map((l) => l.cle)) : new Set())
-                      }}
-                    />
-                  </th>
-                  <th>{search.type === 'pliage' ? 'Lot' : bus ? 'Lot' : 'UM'}</th>
-                  <th>Annonceur · thème</th>
-                  <th>{bus ? 'Centre bus' : 'Destinataire'}</th>
-                  <th>Afficheur</th>
-                  <th className="text-right">Qté</th>
-                  <th className="text-right">Entretien</th>
-                  <th className="text-right">Total</th>
-                  <th>Départ</th>
-                  <th>Statut</th>
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                {lignes.map((l) => (
-                  <tr
-                    key={l.cle}
-                    className={`border-b align-top ${l.apresLiberation ? 'bg-red-50' : l.statut === 'A_TRAITER' ? 'bg-amber-50/40' : ''}`}
-                  >
-                    <td className="py-1">
+            <>
+              <label>
+                <input
+                  type="checkbox"
+                  aria-label="Tout sélectionner"
+                  checked={choix.size === lignes.length}
+                  onChange={(e) => {
+                    setChoix(e.target.checked ? new Set(lignes.map((l) => l.cle)) : new Set())
+                  }}
+                />{' '}
+                Tout sélectionner
+              </label>
+              <TableMetier
+                key={search.type}
+                nom="Unités de préparation"
+                tableProps={glissement}
+                lignes={lignes}
+                cle={(l) => l.cle}
+                colonnes={colonnesUnitaire(search.type)}
+                actions={(l) => (
+                  <div className="flex gap-2 whitespace-nowrap">
+                    <label>
                       <input
                         type="checkbox"
                         aria-label={`Sélectionner ${l.theme ?? ''}`}
@@ -485,88 +468,51 @@ function Unitaire() {
                           else n.delete(l.cle)
                           setChoix(n)
                         }}
-                      />
-                    </td>
-                    <td>{l.unite?.code ?? '—'}</td>
-                    <td>
-                      {l.annonceur ?? '—'} · {l.theme ?? '—'}
-                      {l.repiquage ? ` (${l.repiquage})` : ''}{' '}
-                      <span title="Affiche reçue : ✓ validée, • proposée">
-                        {AFFICHE[l.afficheRecue]}
-                      </span>
-                      {l.corrigeePlateforme && (
-                        <Pastille ton="info">corrigé par la plateforme</Pastille>
-                      )}
-                      <p className="text-xs text-slate-500">Dossier {l.dossier ?? '—'}</p>
-                    </td>
-                    <td>{l.destinataire ?? '—'}</td>
-                    <td>{l.afficheur ? `Équipe ${l.afficheur}` : '—'}</td>
-                    <td className="text-right">{l.qte}</td>
-                    <td
-                      className="text-right"
-                      title={`Entretien ${String(l.pourcentageEntretien)} % (calculé à l'afficheur)`}
-                    >
-                      {l.entretien}
-                    </td>
-                    <td className="text-right">{l.total}</td>
-                    <td>
-                      {l.depart ?? '—'}
-                      {l.jourAffichage ? ` · ${l.jourAffichage.slice(0, 10)}` : ''}
-                    </td>
-                    <td>
-                      <Pastille ton={l.aLiberer ? 'neutre' : (STATUTS[l.statut]?.ton ?? 'neutre')}>
-                        {l.aLiberer ? 'À libérer' : (STATUTS[l.statut]?.libelle ?? l.statut)}
-                      </Pastille>{' '}
-                      {l.apresLiberation && (
-                        <Pastille ton="surveiller">Arrivé après libération</Pastille>
-                      )}{' '}
-                      {l.rendue && <Pastille ton="info">main rendue</Pastille>}{' '}
-                      {l.enProduction && <Pastille ton="ok">en production</Pastille>}
-                    </td>
-                    <td className="whitespace-nowrap">
-                      {!bus && (
-                        <Button
-                          type="button"
-                          className="mr-1"
-                          disabled={!peut('intitule.corriger')}
-                          onClick={() => {
-                            setModale({ kind: 'intitule', ligne: l })
-                          }}
-                        >
-                          Corriger l’intitulé
-                        </Button>
-                      )}
-                      {bus && (
-                        <Button
-                          type="button"
-                          className="mr-1"
-                          disabled={!peut('intitule.corriger')}
-                          onClick={() => {
-                            setModale({ kind: 'intitule', ligne: l })
-                          }}
-                        >
-                          Textes de bague
-                        </Button>
-                      )}
+                      />{' '}
+                      Sélection
+                    </label>{' '}
+                    {!bus && (
                       <Button
                         type="button"
-                        disabled={!ecriture || l.refs.length !== 1}
-                        title={
-                          l.refs.length === 1
-                            ? undefined
-                            : 'Ligne regroupée : modifiez une unité à la fois'
-                        }
+                        className="mr-1"
+                        disabled={!peut('intitule.corriger')}
                         onClick={() => {
-                          setModale({ kind: 'quantite', ligne: l })
+                          setModale({ kind: 'intitule', ligne: l })
                         }}
                       >
-                        Quantité
+                        Corriger l’intitulé
                       </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    )}
+                    {bus && (
+                      <Button
+                        type="button"
+                        className="mr-1"
+                        disabled={!peut('intitule.corriger')}
+                        onClick={() => {
+                          setModale({ kind: 'intitule', ligne: l })
+                        }}
+                      >
+                        Textes de bague
+                      </Button>
+                    )}
+                    <Button
+                      type="button"
+                      disabled={!ecriture || l.refs.length !== 1}
+                      title={
+                        l.refs.length === 1
+                          ? undefined
+                          : 'Ligne regroupée : modifiez une unité à la fois'
+                      }
+                      onClick={() => {
+                        setModale({ kind: 'quantite', ligne: l })
+                      }}
+                    >
+                      Quantité
+                    </Button>
+                  </div>
+                )}
+              />
+            </>
           ))}
       </section>
 
@@ -1074,7 +1020,7 @@ function ModaleEncoller({
         if (!o) onFermer(null)
       }}
     >
-      <p className="mb-2 rounded-md border border-slate-300 bg-slate-100 p-2 text-sm" role="note">
+      <p className="mb-2 rounded-md border border-sky-200 bg-sky-50 p-2 text-sm" role="note">
         Bus Nanterre : calcul Broadcast (+8 % +20 %), ajusté globalement puis par centre (hypothèse
         Q-196).
       </p>
@@ -1221,4 +1167,120 @@ function FormulaireEncoller({
       </div>
     </>
   )
+}
+
+// EX-NEW16-COO-001 — ordre des colonnes Circé, métadonnées de l’UM et ajouts de la maquette.
+function colonnesUnitaire(type: TypeUnitaire): ColonneMetier<LigneUnitaire>[] {
+  const cols: ColonneMetier<LigneUnitaire>[] = [
+    { id: 'type', titre: 'Type prépa', valeur: (l) => l.typePreparation },
+    { id: 'dossier', titre: 'Dossier', valeur: (l) => l.dossier },
+    { id: 'annonceur', titre: 'Annonceur', valeur: (l) => l.annonceur },
+    { id: 'theme', titre: 'Thème', valeur: (l) => l.theme },
+    { id: 'repiquage', titre: 'Repiquage', valeur: (l) => l.repiquage },
+    {
+      id: 'dest',
+      titre: type === 'bus' ? 'Centre bus' : 'Destinataire',
+      valeur: (l) => l.destinataire,
+    },
+    { id: 'qte', titre: 'Qté', valeur: (l) => l.qte },
+    { id: 'format', titre: 'Format', valeur: (l) => l.format },
+    {
+      id: 'statut',
+      titre: 'Statut',
+      valeur: (l) => (l.aLiberer ? 'À libérer' : (STATUTS[l.statut]?.libelle ?? l.statut)),
+      rendu: (l) => (
+        <Pastille
+          ton={l.aLiberer ? 'neutre' : (STATUTS[l.statut]?.ton ?? 'neutre')}
+          production={l.aLiberer ? 'A_TRAITER' : l.statut}
+        >
+          {l.aLiberer ? 'À libérer' : (STATUTS[l.statut]?.libelle ?? l.statut)}
+        </Pastille>
+      ),
+    },
+    { id: 'dateAff', titre: 'Date Affichage', valeur: (l) => l.jourAffichage?.slice(0, 10) ?? '' },
+    {
+      id: 'commentaireUM',
+      titre: 'Commentaire UM',
+      valeur: (l) => l.detailsUm?.commentaires.join(' / ') ?? '',
+    },
+    { id: 'colis', titre: 'Code colis', valeur: (l) => l.detailsUm?.colis.join(', ') ?? '' },
+    { id: 'qtePrep', titre: 'Qté préparée', valeur: (l) => l.detailsUm?.quantitePreparee ?? 0 },
+    { id: 'afficheur', titre: 'Afficheur', valeur: (l) => l.afficheur },
+    { id: 'repart', titre: 'Répart', valeur: (l) => l.detailsUm?.repartitions.join(', ') ?? '' },
+    {
+      id: 'prepCode',
+      titre: 'Préparation',
+      valeur: (l) => l.detailsUm?.preparations.join(', ') ?? '',
+    },
+    { id: 'id', titre: 'UM', valeur: (l) => l.unite?.code ?? '—' },
+    {
+      id: 'atelier',
+      titre: 'Atelier',
+      valeur: (l) => `${l.atelier.libelle} · ${l.atelier.plateforme}`,
+    },
+    {
+      id: 'nAffiche',
+      titre: 'numéro affiche',
+      valeur: (l) => l.detailsUm?.affiches.join(', ') ?? '',
+    },
+    {
+      id: 'dateCrea',
+      titre: 'Date Création',
+      valeur: (l) => l.detailsUm?.creation?.slice(0, 10) ?? '',
+      cachee: type === 'fixe',
+    },
+    { id: 'entretien', titre: 'Entretien', valeur: (l) => l.entretien, ajout: true },
+    { id: 'total', titre: 'Total', valeur: (l) => l.total, ajout: true },
+    { id: 'depart', titre: 'Départ', valeur: (l) => l.depart, ajout: true },
+    {
+      id: 'repere',
+      titre: 'Repère',
+      valeur: (l) =>
+        [
+          l.apresLiberation ? 'Arrivé après libération' : '',
+          l.rendue ? 'main rendue' : '',
+          l.enProduction ? 'en production' : '',
+          l.corrigeePlateforme ? 'corrigé par la plateforme' : '',
+        ]
+          .filter(Boolean)
+          .join(' · '),
+      ajout: true,
+    },
+    {
+      id: 'afficheRecue',
+      titre: 'Affiche reçue',
+      valeur: (l) => AFFICHE[l.afficheRecue],
+      ajout: true,
+    },
+  ]
+  const ordre =
+    type === 'pliage'
+      ? [
+          'dossier',
+          'annonceur',
+          'theme',
+          'dest',
+          'qte',
+          'format',
+          'statut',
+          'dateAff',
+          'commentaireUM',
+          'colis',
+          'qtePrep',
+          'afficheur',
+          'repart',
+          'atelier',
+          'prepCode',
+          'id',
+          'dateCrea',
+          'type',
+          'nAffiche',
+        ]
+      : []
+  return ordre.length
+    ? [
+        ...ordre.flatMap((id) => cols.filter((c) => c.id === id)),
+        ...cols.filter((c) => !ordre.includes(c.id)),
+      ]
+    : cols
 }

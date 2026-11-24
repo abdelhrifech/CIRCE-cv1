@@ -114,7 +114,14 @@ export async function ajouterReferentiel(
 ) {
   assertDroitReception(identity, 'referentiel.gerer')
   const existants = await table(tx, ref).findMany({ select: { libelle: true } })
-  if (existants.some((e) => e.libelle.trim().toLowerCase() === libelle.trim().toLowerCase())) {
+  const normaliser = (v: string) =>
+    v
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLocaleLowerCase('fr')
+  if (existants.some((e) => normaliser(e.libelle) === normaliser(libelle))) {
     throw new ConflictError(`« ${libelle} » existe déjà.`, {
       code: 'REC_REFERENTIEL_DOUBLON',
       regle: 'RG-REC-179',

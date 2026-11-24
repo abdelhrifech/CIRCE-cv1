@@ -1,3 +1,4 @@
+import { ModalePhotoBl } from './bon-livraison.tsx'
 import {
   CandidatsSchema,
   FicheAfficheSchema,
@@ -199,10 +200,15 @@ function Detail({
     rayon: a.rayon ?? '',
     aConserver: a.aConserver,
     commentaire: a.commentaire ?? '',
+    repiquage: a.repiquage ?? '',
+    conservation: a.conservation,
+    zonePicking: a.zonePicking ?? false,
+    photoId: a.photoId ?? null,
   })
   const [envoi, setEnvoi] = useState<
     { kind: 'repos' | 'en-cours' | 'ok' } | { kind: 'erreur'; error: unknown }
   >({ kind: 'repos' })
+  const [photoOuverte, setPhotoOuverte] = useState(false)
   const peutModifier =
     moi.kind === 'ready' && can(moi.data, 'affiche.modifier') && !a.fusionneeHeritee
   const peutValider = moi.kind === 'ready' && can(moi.data, 'validation_admin.valider')
@@ -268,6 +274,44 @@ function Detail({
             Contrôler la palette
           </Link>
         </div>
+      )}
+      <div className="mt-3 flex flex-wrap items-center gap-4">
+        {f.photoId != null && (
+          <img
+            src={`/api/photos/${f.photoId}`}
+            alt="Visuel de l’affiche"
+            className="h-36 w-44 rounded border object-contain"
+          />
+        )}
+        {peutModifier && (
+          <button
+            type="button"
+            className="underline"
+            onClick={() => {
+              setPhotoOuverte(true)
+            }}
+          >
+            {f.photoId == null
+              ? 'Ajouter une photo de l’affiche'
+              : 'Remplacer la photo de l’affiche'}
+          </button>
+        )}
+        <p>
+          Date d’entrée : {dateCourte(a.recueLe)} · Format : {a.format} · Semaines :{' '}
+          {a.departs.join(' + ') || '—'}
+        </p>
+      </div>
+      {photoOuverte && (
+        <ModalePhotoBl
+          titre="Photo de l’affiche"
+          onFermer={() => {
+            setPhotoOuverte(false)
+          }}
+          onJointe={(p) => {
+            setF((x) => ({ ...x, photoId: p.id }))
+            setPhotoOuverte(false)
+          }}
+        />
       )}
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         <label className="font-medium">
@@ -380,6 +424,42 @@ function Detail({
           />
           Affiche à conserver (reliquat d’entretien)
         </label>
+        <label className="font-medium">
+          Repiquage
+          <input
+            className={champ}
+            disabled={!peutModifier}
+            value={f.repiquage}
+            onChange={(e) => {
+              setF({ ...f, repiquage: e.target.value })
+            }}
+          />
+        </label>
+        <label className="font-medium">
+          Conservation (semaines)
+          <input
+            type="number"
+            min={1}
+
+            className={champ}
+            disabled={!peutModifier}
+            value={f.conservation}
+            onChange={(e) => {
+              setF({ ...f, conservation: Number(e.target.value) })
+            }}
+          />
+        </label>
+        <label className="font-medium">
+          <input
+            type="checkbox"
+            disabled={!peutModifier}
+            checked={f.zonePicking}
+            onChange={(e) => {
+              setF({ ...f, zonePicking: e.target.checked })
+            }}
+          />{' '}
+          Zone picking
+        </label>
         <label className="font-medium sm:col-span-2">
           Commentaire
           <textarea
@@ -458,8 +538,8 @@ function Detail({
         ) : (
           !peutValider && (
             <p className="mt-1 text-slate-600">
-              Aucune validation sans la Coordination : à confirmer dans Déroulant › Liste des
-              instructions, sans attendre la préparation.
+              Aucune validation sans la Coordination : à confirmer dans Pré-production › Validation
+              admin et Instruction OK, sans attendre la préparation.
             </p>
           )
         )}

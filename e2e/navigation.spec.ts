@@ -31,16 +31,15 @@ test('ECR-NAV-01 EX-TRA-008 la coque affiche deux bandeaux, sans menu latéral',
   for (const titre of [
     'Pilotage',
     'Réception',
+    'Non-conformité',
+    'Déroulant',
     '2 m² fixe',
     'Pliage',
-    'Déroulant',
     'Bus',
     'Expédition',
     'Administration',
   ])
     await expect(nav.getByRole('button', { name: new RegExp(`^${titre}`) })).toBeVisible()
-  // Maquette du 16/11/2026 : l'onglet Pré-production est supprimé
-  await expect(nav.getByRole('button', { name: /^Pré-production/ })).toHaveCount(0)
   // Hors cible : « Simuler », « Besoins », « Aide »
   await expect(entete.getByText('Simuler')).toHaveCount(0)
   await expect(entete.getByText('Besoins')).toHaveCount(0)
@@ -84,10 +83,10 @@ test('ECR-NAV-01 une entrée ouvre sa page et porte aria-current', async ({ page
 test('ECR-NAV-01 les entrées de la maquette sans écran sont absentes', async ({ page }) => {
   await ouvrir(page, '/moi')
   const nav = page.getByRole('navigation', { name: 'Navigation principale' })
-  await expect(nav.getByRole('button', { name: /Stocks/ })).toHaveCount(0)
+  await expect(nav.getByRole('button', { name: /Stocks/ })).toBeVisible()
   await page.getByTestId('onglet-pilotage').click()
   const menu = page.getByTestId('menu-pilotage')
-  await expect(menu.getByText('Suivi de prod')).toHaveCount(0)
+  await expect(menu.getByText('Suivi de prod', { exact: true })).toBeVisible()
   await page.keyboard.press('Escape')
   await page.getByTestId('onglet-fixe').click()
   await expect(page.getByTestId('menu-fixe').getByText('Fichiers multi-rouleuse')).toHaveCount(0)
@@ -173,55 +172,4 @@ test('ECR-NAV-01 erreur du chargement du profil : message et réessai', async ({
   await expect(
     page.getByTestId('shell-me-error').getByRole('button', { name: 'Réessayer' }),
   ).toBeVisible()
-})
-
-test('ECR-NAV-01 maquette du 16/11 : pages de l’ex-Pré-production redistribuées, aucune page perdue', async ({
-  page,
-}) => {
-  await ouvrir(page, '/moi')
-  await profil(page, 'dev.admin')
-  await ouvrir(page, '/moi')
-  await page.getByTestId('onglet-pilotage').click()
-  await expect(
-    page.getByTestId('menu-pilotage').getByRole('link', { name: 'Vérification des thèmes' }),
-  ).toBeVisible()
-  // Pilotage : Réservations, Alertes, Vérification des thèmes (ordre de la maquette du 16/11)
-  const pilotage = await page.getByTestId('menu-pilotage').getByRole('link').allTextContents()
-  expect(pilotage.map((t) => t.replace(/\d+$/, '').trim())).toEqual([
-    'État des réservations vivant',
-    'Alertes',
-    'Vérification des thèmes',
-  ])
-  await page.keyboard.press('Escape')
-  // Déroulant : ordre de la maquette, une entrée par vue de la Liste des trains
-  await page.getByTestId('onglet-deroulant').click()
-  const deroulant = page.getByTestId('menu-deroulant')
-  const libelles = (await deroulant.getByRole('link').allTextContents()).map((t) => t.trim())
-  expect(libelles.slice(0, 6)).toEqual([
-    'Liste des instructions',
-    'Liste des trains',
-    'Suivi par thème',
-    'Préparation',
-    'Suivi 8 m² (demies)',
-    'Fichiers Vendôme',
-  ])
-  await deroulant.getByRole('link', { name: 'Suivi par thème' }).click()
-  await expect(page).toHaveURL(/\/coordination\/trains\?.*tab=besoin/)
-  await page.getByTestId('onglet-deroulant').click()
-  await expect(
-    page.getByTestId('menu-deroulant').getByRole('link', { name: 'Suivi par thème' }),
-  ).toHaveAttribute('aria-current', 'page')
-  await expect(
-    page.getByTestId('menu-deroulant').getByRole('link', { name: 'Liste des trains' }),
-  ).not.toHaveAttribute('aria-current', 'page')
-  await page.keyboard.press('Escape')
-  await page.getByTestId('onglet-admin').click()
-  const admin = page.getByTestId('menu-admin')
-  await expect(admin.getByRole('link', { name: 'Déblocage préparations' })).toBeVisible()
-  await expect(admin.getByRole('link', { name: 'Chargements Broadcast' })).toBeVisible()
-  await page.keyboard.press('Escape')
-  // Liste des affiches en 3e position du menu Réception
-  await page.getByTestId('onglet-reception').click()
-  const liens = await page.getByTestId('menu-reception').getByRole('link').allTextContents()
-  expect(liens.findIndex((t) => /Liste des affiches/.test(t))).toBe(2)
 })

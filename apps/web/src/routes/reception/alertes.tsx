@@ -1,7 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { AlertesSchema } from '@circe/shared'
 import { ErrorMessage } from '../../components/error-message.tsx'
-import { MenuReception } from '../../components/reception/menu-reception.tsx'
 import { Pastille, type Ton } from '../../components/ui/pastille.tsx'
 import { apiRequest } from '../../lib/api-client.ts'
 import { requirePermission } from '../../lib/session.ts'
@@ -29,9 +28,7 @@ function AlertesReception() {
     <main className="mx-auto max-w-7xl p-6">
       <p className="text-sm text-slate-500">Réception</p>
       <h1 className="text-2xl font-semibold">Alertes</h1>
-      <div className="mt-3">
-        <MenuReception />
-      </div>
+
       <section className="mt-4 rounded-lg border border-slate-200 bg-white">
         {etat.kind === 'loading' && <p className="p-3 text-sm text-slate-500">Chargement…</p>}
         {etat.kind === 'error' && (

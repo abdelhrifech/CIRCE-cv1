@@ -899,3 +899,45 @@ Recomptée par script (`docs/_travail/controle-tracabilite.mjs`) le 2026-11-06 (
 | RG · REC | 189 | 119 | 34 | 19 | 0 | 17 |
 | RG · X | 54 | 33 | 20 | 0 | 1 | 0 |
 | **Total** | 858 | 394 | 343 | 32 | 66 | 23 |
+
+
+## Complément — nouvelles spécifications du 12 novembre 2026
+
+Ce complément trace les évolutions de la nouvelle maquette et de la note Bus. Il ne recalcule pas la synthèse historique ci-dessus et ne clôture pas les écarts antérieurs. Les précisions, hypothèses et limites font partie du statut de réalisation.
+
+| Identifiant | Source nouvelle | Changement à vérifier et réaliser | État |
+|---|---|---|---|
+| RG-NEW-REC-001 | reception.js, arrivée 09/11 | Sans BL explicite : photo, numéro et imprimeur facultatifs, transporteur obligatoire ; traçabilité Sans BL | Réalisé, vérifié |
+| RG-NEW-REC-002 | reception.js, auPanier | Ajout manuel non coché ; sélection explicite et glissement | Réalisé, voir précisions |
+| RG-NEW-REC-003 | reception.js, contrôle | Validation indépendante de l'impression ; feuilles à imprimer ; disparition du contrôle terminé | Réalisé, voir précisions |
+| RG-NEW-REC-004 | reception.js, liste affiches | Validation admin en lot, cas sûrs précochés, doutes confirmés par une personne | Réalisé, voir précisions |
+| EX-NEW-REC-005 | reception.js, identification.js | Recherche compacte, fiche inconnue, champs affiche, BL facultatif, visuel sur feuille | Réalisé, voir précisions |
+| EX-NEW-NAV-001 | core.js, ui.js | Suppression Pré-production, ordre et contexte des menus, suppression introductions | Réalisé, voir précisions |
+| EX-NEW-PIL-001 | tableau.js | Carrés personnalisables, compteurs/listes filtrés, notes 500 caractères | Réalisé, voir précisions |
+| EX-NEW-PIL-002 | alertes.js | Sans gravité à l'écran, filtre type et ordre chronologique | Réalisé, voir précisions |
+| EX-NEW-J3-001 | j3.js | Trois tableaux hebdomadaires alimentés par EDR, saisies et totaux | Réalisé, voir précisions |
+| EX-NEW-NC-001 | nonconformite.js | Formulaires réception/agence, fichiers persistés, référentiel déclarants | Réalisé, voir précisions |
+| RG-NEW-NC-002 | nonconformite.js, reception.js | Portée déduite, décisions Préproduction/Plateforme, suivi et alertes | Réalisé, voir précisions |
+| EX-NEW-BUS-001 | bus.js, note BUS-01 à 26 | Cinq vues, référentiels DSP/centre/parc/format, réception et préparation | Réalisé, voir précisions |
+| RG-NEW-BUS-002 | note BUS-19/20 | Ajustement manuel centre × parc × format, historique, vente inchangée | Réalisé, voir précisions |
+| EX-NEW-COO-001 | instructions.js, unitaire.js, expedition.js | À traiter/Préparation/Colis par type, tous ateliers avec filtre | Réalisé, voir précisions |
+| EX-NEW-ADM-001 | parametrage.js, xlsxread.js | Déclarants, import et référentiel Bus | Réalisé, voir précisions |
+
+Règles effectivement implémentées : [mémoire fonctionnelle et technique](REGLES_METIER_NOUVELLES_SPECS_2026_11_12.md). Sources, décision utilisateur et vérifications : [registre des évolutions](EVOLUTIONS_NOUVELLES_SPECS_2026_11_12.md).
+
+Preuves principales : `apps/api/test/bus/parcours.int.test.ts`, `apps/api/test/nonconformite/parcours.int.test.ts`, `apps/api/test/pilotage/nouveautes.int.test.ts`, tests de réception et de permissions, `e2e/admin-nouvelles-specs.spec.ts` et parcours de réception existants adaptés.
+
+## Complément de traçabilité — maquette-new, 20 novembre 2026
+
+Ces identifiants décrivent l’incrément hors Réception/Coordination ; ils ne requalifient pas les anciennes RG gelées.
+
+| ID | Source | Implémentation | Validation | Statut |
+|---|---|---|---|---|
+| EX-STK-NEW-001 | stock.js:24–90 | API modules/stocks/lecture.ts ; web routes/stocks | stocks/fin-campagne.int.test.ts ; admin-maquette-new.spec.ts | IMPLÉMENTÉ, limites de volume tracées |
+| RG-STK-NEW-001 | stock.js:8–18,80–90 ; REC §2 | modules/stocks/actions.ts ; permission stock.consulter dédiée | rollback lot, refus quantité, accès Expédition sans droit Réception ; E2E conservation | IMPLÉMENTÉ |
+| RG-STK-NEW-002 | fincampagne.js:35–119 ; data.js:1269–1301 ; décision utilisateur | modules/stocks/fin-campagne.ts et configuration.ts ; migration additive ; 2 pages web | futur propre/partagé, Bordeaux/MUI, rôles, versions, confirmation, renvoi/destruction ; paramètres bornés | IMPLÉMENTÉ, recette complète à poursuivre |
+| EX-ADM-NEW-001 | parametrage.js:217–374 | modules/admin/maquette.ts, configuration-atelier.ts ; pages Admin hors gel | maquette-new.int.test.ts ; E2E chargement rubriques | PARTIEL : raccordement moteurs, machines/ateliers et ordonnancement |
+| EX-PIL-NEW-001 | reprises.js:217–260 ; suivi.js:85–100 | analyse par rouleur et détail ; tableaux existants conservés | analyse-production.test.ts ; contrôle visuel et régression | PARTIEL : activité/équipe et graphiques globaux |
+| EX-EXP-NEW-001 | reprises.js:267–291 | routes/expedition/exterieur.tsx sur API existante | E2E page ; données réelles uniquement | PARTIEL : canal et flux transporteur absents du contrat actuel |
+
+Rapport complet : `IMPLEMENTATION_MAQUETTE_NEW_2026_11_19.md`. Contrôle du gel : `node scripts/verifier-gel.mjs`.

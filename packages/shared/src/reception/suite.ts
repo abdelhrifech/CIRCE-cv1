@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { ConstatNcSchema } from '../nonconformite.ts'
 import { EtatValidationSchema, MotifDouteSchema } from '../coordination.ts'
 import { ModeRattachementSchema } from './schemas.ts'
 import { DateJourSchema } from '../semaines.ts'
@@ -116,6 +117,7 @@ export const ControleValideSchema = z.object({
 
 // ── REC-P06 : feuilles de stock et impressions ──
 export const FeuilleSchema = z.object({
+  photoId: n.nullable().optional(),
   afficheId: n,
   codeBarres: z.string(),
   type: z.enum(['DEFINITIVE', 'TEMPORAIRE']),
@@ -151,6 +153,10 @@ export const FeuillesSchema = z.object({
 })
 
 export const ImpressionSchema = z.object({
+  nonConformites: z
+    .array(z.object({ id: z.number().int().positive(), version: z.number().int().positive() }))
+    .max(100)
+    .optional(),
   afficheIds: z.array(n).min(1).max(500),
   /** FEUILLE, ETIQUETTE_RACK ou les deux (RG-REC-086). */
   contenu: z.enum(['FEUILLE', 'ETIQUETTE_RACK', 'FEUILLE_ET_ETIQUETTE']),
@@ -183,6 +189,7 @@ export const StatutInconnueSchema = z.enum(STATUTS_INCONNUE)
 export type StatutInconnue = z.infer<typeof StatutInconnueSchema>
 
 export const CreerInconnueSchema = z.object({
+  nonConformite: ConstatNcSchema.optional(),
   plateformeId: n,
   supportId: n,
   annonceur: z.string().trim().max(100).default(''),
@@ -252,11 +259,16 @@ export const TAGS_AFFICHE = [
   'RECEPTION_INCONNUE',
   'COMPLEMENT',
   'FEUILLE_A_REFAIRE',
+  'FEUILLE_A_IMPRIMER',
 ] as const
 export const TagAfficheSchema = z.enum(TAGS_AFFICHE)
 
 export const AfficheListeSchema = z.object({
+  version: n.optional(),
+  zonePicking: z.boolean().optional(),
+  fusionneeHeritee: z.boolean().optional(),
   id: n,
+  validation: z.enum(['RECEPTION_INCONNUE', 'VALIDEE', 'A_CONFIRMER_PROPOSE', 'A_CONFIRMER_DOUTE']),
   recueLe: iso,
   annonceur: z.string().nullable(),
   theme: z.string().nullable(),
@@ -287,6 +299,10 @@ export const ListeAffichesSchema = z.object({
 
 // RG-REC-122 : filtres de la liste ; une affiche sans semaine reste visible au filtre Départ.
 export const ListeAffichesQuerySchema = z.object({
+  picking: z.enum(['oui', 'non']).optional(),
+  validation: z
+    .enum(['RECEPTION_INCONNUE', 'VALIDEE', 'A_CONFIRMER_PROPOSE', 'A_CONFIRMER_DOUTE'])
+    .optional(),
   dossier: z.coerce.number().int().optional(),
   depart: z
     .string()
@@ -303,6 +319,11 @@ export const ListeAffichesQuerySchema = z.object({
 export type ListeAffichesQuery = z.infer<typeof ListeAffichesQuerySchema>
 
 export const FicheAfficheSchema = AfficheListeSchema.extend({
+  supportId: n.optional(),
+  photoId: n.nullable().optional(),
+  repiquage: z.string().nullable().optional(),
+  zonePicking: z.boolean().optional(),
+  dossierSaisi: n.nullable().optional(),
   version: n,
   commentaire: z.string().nullable(),
   allee: z.string().nullable(),
@@ -362,6 +383,10 @@ export const FicheAfficheSchema = AfficheListeSchema.extend({
 export type FicheAffiche = z.infer<typeof FicheAfficheSchema>
 
 export const ModifierAfficheSchema = z.object({
+  photoId: n.nullable().optional(),
+  repiquage: z.string().trim().max(250).optional(),
+  conservation: z.number().int().min(1).optional(),
+  zonePicking: z.boolean().optional(),
   version: n,
   annonceur: z.string().trim().max(100).optional(),
   theme: z.string().trim().max(250).optional(),

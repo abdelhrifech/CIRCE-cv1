@@ -82,19 +82,26 @@ export async function verifierBonDeLivraison(
     )
   }
 
-  // RG-REC-026 : photo du BL obligatoire, même quand les lignes viennent de la recherche.
-  if (bl.photoBlId === null) {
+  // RG-NEW-REC-001 : avec une photo, le circuit BL reste obligatoire.
+  const sansBl = bl.sansBl === true && bl.photoBlId === null
+  // RG-REC-026 : photo obligatoire sauf déclaration explicite Sans BL.
+  if (bl.photoBlId === null && !sansBl) {
     throw new BusinessError(
       'Photographiez le BL avant de valider : il est joint à chaque réception, même quand les lignes viennent de la recherche.',
       { code: 'REC_PHOTO_BL_MANQUANTE', regle: 'RG-REC-026' },
     )
   }
-  await verifierPhotoJoignable(client, identity, bl.photoBlId)
+  if (bl.photoBlId !== null) await verifierPhotoJoignable(client, identity, bl.photoBlId)
 
   // RG-REC-033 : n° de BL, transporteur et imprimeur obligatoires.
-  if (bl.numeroBl.trim() === '' || bl.livreurId === null || bl.imprimeurId === null) {
+  if (
+    (!sansBl && (bl.numeroBl.trim() === '' || bl.imprimeurId === null)) ||
+    bl.livreurId === null
+  ) {
     throw new BusinessError(
-      'N° de BL, transporteur et imprimeur sont obligatoires, comme dans Circé.',
+      sansBl
+        ? 'Le transporteur est obligatoire, même sans BL.'
+        : 'N° de BL, transporteur et imprimeur sont obligatoires, comme dans Circé.',
       {
         code: 'REC_BL_CHAMPS_OBLIGATOIRES',
         regle: 'RG-REC-033',
@@ -110,12 +117,14 @@ export async function verifierBonDeLivraison(
   // RG-REC-035 : listes fermées ; jamais de création à la volée (Q-115).
   const [livreur, imprimeur] = await Promise.all([
     client.livreur.findFirst({ where: { id: bl.livreurId, actif: true } }),
-    client.imprimeur.findFirst({ where: { id: bl.imprimeurId, actif: true } }),
+    bl.imprimeurId === null
+      ? null
+      : client.imprimeur.findFirst({ where: { id: bl.imprimeurId, actif: true } }),
   ])
   const agentInconnu =
     bl.dechargeParId !== null &&
     !(await agentsDeReception(client, [plateformeId])).some((a) => a.id === bl.dechargeParId)
-  if (!livreur || !imprimeur || agentInconnu) {
+  if (!livreur || (!imprimeur && (!sansBl || bl.imprimeurId !== null)) || agentInconnu) {
     throw new BusinessError(
       "Valeur absente du référentiel : l'administrateur l'ajoute dans Administration.",
       {
@@ -140,11 +149,13 @@ export async function verifierBonDeLivraison(
   }
 
   // RG-REC-036 / Q-114 : n° de BL déjà réceptionné sur la plateforme → avertissement à confirmer.
-  const deja = await client.reception.findMany({
-    where: { plateformeId, livraison: { reference: bl.numeroBl.trim() } },
-    select: { id: true },
-    orderBy: { id: 'asc' },
-  })
+  const deja = sansBl
+    ? []
+    : await client.reception.findMany({
+        where: { plateformeId, livraison: { reference: bl.numeroBl.trim() } },
+        select: { id: true },
+        orderBy: { id: 'asc' },
+      })
   const avertissements: VerificationBl['avertissements'] =
     deja.length > 0
       ? [
@@ -166,7 +177,7 @@ export async function verifierBonDeLivraison(
     lignes: retenues.map((l) => ({
       ligneAttendueId: l.ligneAttendueId,
       quantite: l.quantite,
-      mode: 'BL' as const,
+      mode: sansBl ? ('MAIN' as const) : ('BL' as const),
     })),
     lignesIgnorees: ignorees,
     nombreLignes: retenues.length,

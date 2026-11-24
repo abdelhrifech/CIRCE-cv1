@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { BusLigneBroadcastSchema } from './bus.ts'
 
 // COO-P06 — intégration Broadcast : contrat d'entrée d'un lot (cinq flux, RG-COO-104), journal de chargement
 // (RG-COO-116), « Rafraîchir un dossier » (RG-COO-132). La récupération chez Broadcast (procédures INTERFACE /
@@ -172,6 +173,8 @@ export const LotIntegrationSchema = z.object({
    * absents de la lecture (un lot partiel ne ferme rien hors de ses dossiers). */
   lectureComplete: z.boolean(),
   etatReservations: z.array(LigneEtatReservationsSchema).optional(),
+  /** BUS-01 : lignes de production par centre, parc et format (contrat interne, source réelle Q-005). */
+  bus: z.array(BusLigneBroadcastSchema).optional(),
   destinataires: z.array(DestinataireBroadcastSchema).optional(),
   preparations: z.array(GroupePreparationSchema).optional(),
   trains: z.array(FaceBroadcastSchema).optional(),

@@ -54,7 +54,11 @@ test('RG-COO-268 / 269 / RG-X-087 clore le colis, puis fin de journée : colis �
   await expect(page.getByRole('status')).toContainText('UM-E2E-502 ajouté au colis C-')
   await page.getByRole('button', { name: 'Clore le colis' }).click()
   await expect(page.getByRole('status')).toContainText('expédié (à expédier)')
-  await page.getByRole('link', { name: 'Colis', exact: true }).click()
+  await page.getByTestId('onglet-expedition').click()
+  await page
+    .getByTestId('menu-expedition')
+    .getByRole('link', { name: 'Colis', exact: true })
+    .click()
   await expect(page).toHaveURL(/\/expedition\/colis/)
   await page.goto('/expedition/colis?dossier=2190502')
   const table = page.getByRole('table', { name: 'Colis' })
@@ -88,7 +92,9 @@ test('ECR-EXP-03 Départs camions (D-14) : avancement du colisage par départ et
   page,
 }) => {
   await page.goto('/expedition')
-  await page.getByRole('link', { name: 'Départs camions' }).click()
+  await expect(page.getByTestId('shell-utilisateur')).toBeVisible()
+  await page.getByTestId('onglet-expedition').click()
+  await page.getByTestId('menu-expedition').getByRole('link', { name: 'Départs camions' }).click()
   await expect(page).toHaveURL(/\/expedition\/departs/)
   await expect(page.getByRole('heading', { name: 'Expédition · Départs camions' })).toBeVisible()
   await page.goto('/expedition/departs?destinataire=Destinataire+EXP+A')

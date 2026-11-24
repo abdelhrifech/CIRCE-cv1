@@ -42,7 +42,7 @@ export function ModaleCorrection({
       }}
     >
       {dejaDemandeeLe && (
-        <p className="mb-2 rounded-md border border-slate-300 bg-slate-100 p-2 text-sm" role="note">
+        <p className="mb-2 rounded-md border border-sky-200 bg-sky-50 p-2 text-sm" role="note">
           Une demande est déjà enregistrée le{' '}
           {new Date(dejaDemandeeLe).toLocaleString('fr-FR', {
             dateStyle: 'short',

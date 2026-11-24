@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { PROFILS_DEMO } from '@circe/shared'
 
 // Relais /api/* vers l'API (CLAUDE.md §3). L'URL de l'API est lue à l'exécution (API_URL).
 
@@ -12,10 +13,9 @@ async function injectDevIdentity(headers: Headers): Promise<void> {
   const secret = process.env['DEV_IDENTITY_SECRET']
   if (process.env['NODE_ENV'] === 'production' || !secret) return
   // ECR-NAV-01 : le sélecteur de profil de dev pose le cookie `circe_dev_user`. Il remplace DEV_IDENTITY_USER
-  // seulement s'il vaut `dev.<rôle>` valide ; tout autre contenu est ignoré (le secret reste côté serveur).
-  const choisi = /(?:^|;\s*)circe_dev_user=(dev\.(?:coord|cheq|recep|expe|admin|com))(?:;|$)/.exec(
-    headers.get('cookie') ?? '',
-  )?.[1]
+  // seulement s'il appartient au catalogue de démo ; tout autre contenu est ignoré (secret côté serveur).
+  const cookie = /(?:^|;\s*)circe_dev_user=([^;]+)(?:;|$)/.exec(headers.get('cookie') ?? '')?.[1]
+  const choisi = PROFILS_DEMO.find((profil) => profil.identifiant === cookie)?.identifiant
   const user = choisi ?? process.env['DEV_IDENTITY_USER']
   if (!user) return
   const { DEV_IDENTITY_HEADER, signDevIdentity } = await import('@circe/shared/dev-identity')

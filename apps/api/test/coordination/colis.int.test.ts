@@ -1333,7 +1333,7 @@ describe('ECR-EXP-02 liste des colis', () => {
 
 describe('RG-COO-165 / 167 / 168 permissions, périmètre et site choisi', () => {
   it.each(ROLES)(
-    'RG-COO-165 / Q-421 %s : lectures et écritures du colisage (cheq, expe et admin autorisés ; les autres 403)',
+    'RG-COO-165 %s : lectures et écritures du colisage (cheq et expe autorisés ; les autres 403)',
     async (role) => {
       const s = await siteColis()
       const { colis } = await colisAvecUm(s)

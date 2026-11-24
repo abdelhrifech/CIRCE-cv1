@@ -41,10 +41,9 @@ test('ECR-TRA-01 / RG-COO-068 alerte « Thème modifié dans Broadcast », ouver
 }) => {
   await page.goto('/pilotage/alertes?depart=TOUTES')
   await expect(page.getByRole('heading', { name: 'Alertes' })).toBeVisible()
-  await expect(page.getByLabel('Indicateurs').getByText('Critiques')).toBeVisible()
-  const chip = page.getByRole('button', { name: /^Thème modifié dans Broadcast \d+$/ })
-  await chip.click()
-  await expect(chip).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByText('Critiques', { exact: true })).toHaveCount(0)
+  await page.getByText(/^Type \(/).click()
+  await page.getByRole('checkbox', { name: /^Thème modifié dans Broadcast/ }).check()
   const ligne = page
     .getByRole('table', { name: 'Alertes' })
     .getByRole('row')
@@ -54,7 +53,7 @@ test('ECR-TRA-01 / RG-COO-068 alerte « Thème modifié dans Broadcast », ouver
     'Broadcast indique « Thème Broadcast E2E », Circé a « Thème Circé E2E »',
   )
   // Q-220 : l'acquittement n'est ouvert à aucun rôle tant que « qui acquitte » n'est pas décidé.
-  await expect(ligne.getByRole('button', { name: 'Acquitter' })).toBeDisabled()
+  await expect(ligne.getByRole('button', { name: 'Archiver' })).toBeDisabled()
   await ligne.getByRole('link', { name: 'Ouvrir' }).click()
   await expect(page.getByRole('heading', { name: 'Thèmes modifiés dans Broadcast' })).toBeVisible()
   const table = page.getByRole('table', { name: 'Thèmes modifiés dans Broadcast' })

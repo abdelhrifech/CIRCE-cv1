@@ -122,7 +122,7 @@ describe('REC-P07 Création', () => {
       where: { id: c.receptionId },
       include: { livraison: true },
     })
-    expect(rec.livraison?.reference).toBe('—')
+    expect(rec.livraison?.reference).toBe('Sans BL')
   })
 
   it('RG-REC-117 rien n’est écrit si un contrôle échoue', async () => {

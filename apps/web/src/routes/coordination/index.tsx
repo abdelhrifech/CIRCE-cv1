@@ -1,3 +1,6 @@
+import { TableMetier } from '../../components/ui/table-metier.tsx'
+import { BoutonExportTableau } from '../../components/ui/export-tableau.tsx'
+import { useSelectionGlissee } from '../../lib/selection-glissee.ts'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import {
   AteliersPerimetreSchema,
@@ -49,7 +52,7 @@ const SearchSchema = z.object({
     z.enum(['A_CONFIRMER', 'VALIDEE', 'AUCUNE_AFFICHE_RECUE']).optional(),
   ),
   /** ECR-COO-05 « Voir les dossiers » : dossiers du déroulant seulement. */
-  pour: z.enum(['deroulant']).optional(),
+  pour: z.enum(['deroulant', 'fixe', 'pliage']).optional(),
   /** ECR-COO-02 : fiche dossier ouverte. */
   fiche: z.coerce.number().int().optional(),
   page: z.coerce.number().int().min(1).optional(),
@@ -87,7 +90,7 @@ function query(s: Search) {
   }
   const aFaire = s.aFaire ?? 'A_FAIRE'
   if (aFaire !== 'TOUS') p.set('aFaire', aFaire)
-  if (s.pour === 'deroulant') p.set('pour', 'DEROULANT')
+  if (s.pour || s.dossier === undefined) p.set('pour', (s.pour ?? 'deroulant').toUpperCase())
   return p.toString()
 }
 
@@ -138,6 +141,17 @@ function ValidationAdminEtInstructionOk() {
   const peutValider = moi.kind === 'ready' && can(moi.data, 'validation_admin.valider')
   const casSurs = items.filter((d) => d.validationAdmin.casSur)
   const selection = selectionChoisie ?? (peutValider ? casSurs.map((d) => d.id) : [])
+  const glissement = useSelectionGlissee(
+    items
+      .filter(
+        (d) =>
+          d.instructions.some((i) => i.actions.includes('INSTRUCTION_OK')) ||
+          d.validationAdmin.aConfirmer > 0,
+      )
+      .map((d) => d.id),
+    selection,
+    setSelection,
+  )
   const aValider = items
     .filter((d) => selection.includes(d.id))
     .flatMap((d) => d.instructions.filter((i) => i.actions.includes('INSTRUCTION_OK')))
@@ -169,9 +183,17 @@ function ValidationAdminEtInstructionOk() {
   const champ = 'ml-1 rounded-md border border-slate-300 px-2 py-1 text-sm'
   return (
     <main className="mx-auto max-w-7xl p-6">
-      <p className="text-sm text-slate-500">Déroulant · tous les ateliers</p>
-      <h1 className="text-2xl font-semibold">Validation admin et Instruction OK</h1>
-      <p className="mt-2 rounded-md border border-slate-300 bg-slate-100 p-2 text-sm" role="note">
+      <p className="text-sm text-slate-500">
+        {(search.pour ?? 'deroulant') === 'deroulant'
+          ? 'Déroulant'
+          : search.pour === 'fixe'
+            ? '2 m² fixe'
+            : 'Pliage'}
+      </p>
+      <h1 className="text-2xl font-semibold">
+        {(search.pour ?? 'deroulant') === 'deroulant' ? 'Liste des instructions' : 'À traiter'}
+      </h1>
+      <p className="mt-2 rounded-md border border-sky-200 bg-sky-50 p-2 text-sm" role="note">
         <strong>Aucune validation sans vous : Circé propose, vous confirmez.</strong> À la réception
         d’une affiche, Circé propose son rattachement au dossier, sans attendre la préparation ni
         l’Instruction OK. Les cas sûrs sont pré-cochés : « Valider la sélection » confirme le lot en
@@ -358,47 +380,173 @@ function ValidationAdminEtInstructionOk() {
           <p className="p-3 text-sm text-slate-600">Aucune ligne pour ces filtres.</p>
         )}
         {etat.kind === 'ready' && etat.data.items.length > 0 && (
-          <table className="w-full text-sm" aria-label="Dossiers">
-            <thead className="bg-slate-50 text-slate-600">
-              <tr>
-                <th scope="col" className="px-3 py-2">
-                  <span className="sr-only">Sélection</span>
-                </th>
-                {[
-                  'Dossier',
-                  'Annonceur',
-                  'Atelier',
-                  'Départ',
-                  'Validation admin',
-                  'Préparation',
-                  'Instruction OK',
-                  'Écart BC / Circé',
-                  ...(colVisuels ? ['Visuels'] : []),
-                ].map((h) => (
-                  <th key={h} scope="col" className="px-3 py-2 text-left font-medium">
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {etat.data.items.map((d) => (
-                <LigneDossier
-                  key={d.id}
-                  d={d}
-                  selectionnee={selection.includes(d.id)}
-                  onSelection={(oui) => {
-                    setSelection(oui ? [...selection, d.id] : selection.filter((x) => x !== d.id))
+          <>
+            {(search.pour === 'fixe' || search.pour === 'pliage') &&
+            etat.data.items.some((d) => (d.lignesPreparation?.length ?? 0) > 0) ? (
+              <>
+                <TableMetier
+                  nom="Dossiers"
+                  lignes={etat.data.items.flatMap((d) =>
+                    (d.lignesPreparation ?? []).map((l) => ({ d, l })),
+                  )}
+                  cle={(r) => r.l.id}
+                  colonnes={[
+                    { id: 'type', titre: 'Type', valeur: (r) => r.l.type },
+                    { id: 'repart', titre: 'Répart', valeur: (r) => r.l.repartition ?? r.l.id },
+                    { id: 'dossier', titre: 'Dossier', valeur: (r) => r.d.dossier },
+                    { id: 'annonceur', titre: 'Annonceur', valeur: (r) => r.d.annonceur },
+                    { id: 'qte', titre: 'Quantité', valeur: (r) => r.l.quantite },
+                    { id: 'theme', titre: 'Visuel', valeur: (r) => r.l.theme },
+                    { id: 'repiquage', titre: 'Repiquage', valeur: (r) => r.l.repiquage },
+                    { id: 'format', titre: 'Format', valeur: (r) => r.l.format },
+                    { id: 'dest', titre: 'Destinataire', valeur: (r) => r.l.destinataire },
+                    { id: 'depart', titre: 'Départ', valeur: (r) => r.l.depart },
+                    { id: 'atelier', titre: 'Atelier', valeur: (r) => r.l.atelier },
+                    {
+                      id: 'validation',
+                      titre: 'Validation admin',
+                      valeur: (r) => r.d.validationAdmin.etat,
+                      ajout: true,
+                    },
+                    {
+                      id: 'prepa',
+                      titre: 'Préparation',
+                      valeur: (r) => r.d.preparation,
+                      ajout: true,
+                    },
+                    {
+                      id: 'ecart',
+                      titre: 'Écart BC / Circé',
+                      valeur: (r) => r.d.ecart,
+                      ajout: true,
+                    },
+                  ]}
+                  onOuvrir={(r) => {
+                    changer({ fiche: r.d.id, page: search.page })
                   }}
-                  onFiche={() => {
-                    changer({ fiche: d.id, page: search.page })
-                  }}
-                  onDemande={setDemande}
-                  avecVisuels={colVisuels}
+                  actions={(r) => (
+                    <div>
+                      <button
+                        type="button"
+                        className="underline"
+                        onClick={() => {
+                          changer({ fiche: r.d.id, page: search.page })
+                        }}
+                      >
+                        Ouvrir le dossier {r.d.dossier}
+                      </button>
+                      <label>
+                        <input
+                          type="checkbox"
+                          aria-label={`Sélectionner dossier ${r.d.dossier} ligne ${r.l.id}`}
+                          checked={selection.includes(r.d.id)}
+                          onChange={(e) => {
+                            setSelection(
+                              e.target.checked
+                                ? [...new Set([...selection, r.d.id])]
+                                : selection.filter((id) => id !== r.d.id),
+                            )
+                          }}
+                        />{' '}
+                        Dossier
+                      </label>
+                    </div>
+                  )}
                 />
-              ))}
-            </tbody>
-          </table>
+                {etat.data.items.some((d) => !d.lignesPreparation?.length) && (
+                  <section className="mt-4">
+                    <h2 className="font-semibold">Dossiers sans répartition reçue</h2>
+                    <table className="w-full text-sm" aria-label="Dossiers sans répartition">
+                      <thead>
+                        <tr>
+                          <th>Sélection</th>
+                          <th>Dossier</th>
+                          <th>Annonceur</th>
+                          <th>Atelier</th>
+                          <th>Départ</th>
+                          <th>Validation admin</th>
+                          <th>Préparation</th>
+                          <th>Écart BC / Circé</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {etat.data.items
+                          .filter((d) => !d.lignesPreparation?.length)
+                          .map((d) => (
+                            <LigneDossier
+                              key={d.id}
+                              d={d}
+                              selectionnee={selection.includes(d.id)}
+                              onSelection={(oui) => {
+                                setSelection(
+                                  oui
+                                    ? [...new Set([...selection, d.id])]
+                                    : selection.filter((id) => id !== d.id),
+                                )
+                              }}
+                              onFiche={() => {
+                                changer({ fiche: d.id, page: search.page })
+                              }}
+                              onDemande={setDemande}
+                              avecVisuels={false}
+                              avecInstructionOk={false}
+                            />
+                          ))}
+                      </tbody>
+                    </table>
+                  </section>
+                )}
+              </>
+            ) : (
+              <>
+                <BoutonExportTableau nom="coordination-index" tableau="Dossiers" />
+                <table {...glissement} className="w-full text-sm" aria-label="Dossiers">
+                  <thead className="bg-slate-50 text-slate-600">
+                    <tr>
+                      <th scope="col" className="px-3 py-2">
+                        <span className="sr-only">Sélection</span>
+                      </th>
+                      {[
+                        'Dossier',
+                        'Annonceur',
+                        'Atelier',
+                        'Départ',
+                        'Validation admin',
+                        'Préparation',
+                        ...((search.pour ?? 'deroulant') === 'deroulant' ? ['Instruction OK'] : []),
+                        'Écart BC / Circé',
+                        ...(colVisuels ? ['Visuels'] : []),
+                      ].map((h) => (
+                        <th key={h} scope="col" className="px-3 py-2 text-left font-medium">
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {etat.data.items.map((d) => (
+                      <LigneDossier
+                        key={d.id}
+                        d={d}
+                        selectionnee={selection.includes(d.id)}
+                        onSelection={(oui) => {
+                          setSelection(
+                            oui ? [...selection, d.id] : selection.filter((x) => x !== d.id),
+                          )
+                        }}
+                        onFiche={() => {
+                          changer({ fiche: d.id, page: search.page })
+                        }}
+                        onDemande={setDemande}
+                        avecVisuels={colVisuels}
+                        avecInstructionOk={(search.pour ?? 'deroulant') === 'deroulant'}
+                      />
+                    ))}
+                  </tbody>
+                </table>
+              </>
+            )}
+          </>
         )}
         {etat.kind === 'ready' && etat.data.total > etat.data.pageSize && (
           <div className="flex justify-between p-3 text-sm">
@@ -461,6 +609,7 @@ function LigneDossier({
   onFiche,
   onDemande,
   avecVisuels,
+  avecInstructionOk,
 }: {
   d: DossierCoordination
   selectionnee: boolean
@@ -468,6 +617,7 @@ function LigneDossier({
   onFiche: () => void
   onDemande: (x: Demande) => void
   avecVisuels: boolean
+  avecInstructionOk: boolean
 }) {
   const prep = PREPARATION[d.preparation]
   const selectionnable =
@@ -476,6 +626,7 @@ function LigneDossier({
   const va = pastilleValidation(d.validationAdmin)
   return (
     <tr
+      data-selection-id={selectionnable ? d.id : undefined}
       className={`border-t border-slate-100 align-top ${(d.ecart !== null && d.ecart !== 0) || d.deadlineDepassee ? 'bg-red-50' : d.aFaire ? 'bg-amber-50' : d.validationAdmin.etat === 'VALIDEE' ? 'bg-emerald-50' : ''}`}
     >
       <td className="px-3 py-2">
@@ -525,46 +676,48 @@ function LigneDossier({
           {d.deadlinePrepa && ` · deadline ${echeance(d.deadlinePrepa)}`}
         </Pastille>
       </td>
-      <td className="px-3 py-2">
-        {d.preparation === 'ANNULE' ? (
-          // RG-COO-062 : dossier annulé → « — ».
-          '—'
-        ) : d.instructions.length === 0 ? (
-          '—'
-        ) : (
-          <ul className="space-y-1" aria-label={`Instructions du dossier ${String(d.dossier)}`}>
-            {d.instructions.map((i) => (
-              <li key={i.code} className="flex flex-wrap items-center gap-2">
-                <span className="font-mono text-xs">{i.code}</span>
-                {i.depart && <span className="text-xs text-slate-500">{semaine(i.depart)}</span>}
-                <Pastille ton={INSTRUCTION[i.statut]?.ton ?? 'neutre'}>
-                  {libelleInstruction(i, d.preparation)}
-                </Pastille>
-                {i.actions
-                  .filter((a): a is Demande['vers'] => a !== 'INSTRUCTION_OK')
-                  .map((a) => (
-                    <button
-                      key={a}
-                      type="button"
-                      className="text-xs underline"
-                      onClick={() => {
-                        onDemande({
-                          code: i.code,
-                          version: i.version,
-                          vers: a,
-                          depuis: i.statut,
-                          dossier: d.dossier,
-                        })
-                      }}
-                    >
-                      {ACTION[a]}
-                    </button>
-                  ))}
-              </li>
-            ))}
-          </ul>
-        )}
-      </td>
+      {avecInstructionOk && (
+        <td className="px-3 py-2">
+          {d.preparation === 'ANNULE' ? (
+            // RG-COO-062 : dossier annulé → « — ».
+            '—'
+          ) : d.instructions.length === 0 ? (
+            '—'
+          ) : (
+            <ul className="space-y-1" aria-label={`Instructions du dossier ${String(d.dossier)}`}>
+              {d.instructions.map((i) => (
+                <li key={i.code} className="flex flex-wrap items-center gap-2">
+                  <span className="font-mono text-xs">{i.code}</span>
+                  {i.depart && <span className="text-xs text-slate-500">{semaine(i.depart)}</span>}
+                  <Pastille ton={INSTRUCTION[i.statut]?.ton ?? 'neutre'}>
+                    {libelleInstruction(i, d.preparation)}
+                  </Pastille>
+                  {i.actions
+                    .filter((a): a is Demande['vers'] => a !== 'INSTRUCTION_OK')
+                    .map((a) => (
+                      <button
+                        key={a}
+                        type="button"
+                        className="text-xs underline"
+                        onClick={() => {
+                          onDemande({
+                            code: i.code,
+                            version: i.version,
+                            vers: a,
+                            depuis: i.statut,
+                            dossier: d.dossier,
+                          })
+                        }}
+                      >
+                        {ACTION[a]}
+                      </button>
+                    ))}
+                </li>
+              ))}
+            </ul>
+          )}
+        </td>
+      )}
       <td className="px-3 py-2">
         {d.ecart === null ? (
           '—'

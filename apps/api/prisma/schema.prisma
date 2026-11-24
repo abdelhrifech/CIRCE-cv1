@@ -113,6 +113,11 @@ enum TypeAtelier {
 }
 
 enum TypeEntite {
+  FIN_CAMPAGNE
+  NON_CONFORMITE
+  SUIVI_J3
+  TABLEAU_PERSONNEL
+  LIGNE_BUS
   RECEPTION
   AFFICHE
   LIGNE_ATTENDUE
@@ -143,6 +148,8 @@ enum TypeEntite {
 
 /// Actions du journal d'audit (Q-308) : 16 actions legacy + actions V2 (extensible par migration).
 enum ActionAudit {
+  DECISION_FIN_CAMPAGNE
+  EXECUTION_FIN_CAMPAGNE
   CREATION_AFFICHE
   MODIFICATION_DOSSIER
   MODIFICATION_SEMAINE
@@ -1515,6 +1522,7 @@ model AlerteAcquittement {
   id        Int      @id @default(autoincrement())
   cle       String   @unique
   signature String
+  snapshot String @default("")
   parId     Int      @map("par_id")
   le        DateTime @default(now())
 
@@ -1862,4 +1870,226 @@ model TacheExecution {
 
   @@index([tache, debut])
   @@map("tache_execution")
+}
+
+
+/// EX-NEW-NC-001 / RG-NEW-NC-002. Le payload est validé par NcDonneesSchema, versionné et audité.
+model NonConformite {
+  id Int @id @default(autoincrement())
+  plateformeId Int
+  type String
+  origine String
+  receptionId Int?
+  afficheIds String @default("[]")
+  bloquante Boolean?
+  donnees String
+  decisions String @default("[]")
+  commentaireDecision String @default("")
+  reponses String @default("[]")
+  version Int @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdById Int
+  updatedById Int?
+  fichiers NonConformiteFichier[]
+  @@index([plateformeId, type])
+  @@map("non_conformite")
+}
+
+model NonConformiteFichier {
+  id Int @id @default(autoincrement())
+  nonConformiteId Int
+  nom String
+  mimeType String
+  taille Int
+  contenu Bytes
+  nonConformite NonConformite @relation(fields: [nonConformiteId], references: [id], onDelete: Restrict)
+  @@map("non_conformite_fichier")
+}
+
+/// Liste administrative versionnée. Source : parametrage.js, référentiel déclarants.
+model DeclarantsNc {
+  id Int @id @default(1)
+  noms String @default("[]")
+  version Int @default(1)
+  updatedAt DateTime @updatedAt
+  updatedById Int?
+  @@map("declarants_nc")
+}
+
+model J3Feuille {
+  id Int @id @default(autoincrement())
+  plateformeId Int
+  section String
+  semaine String
+  updatedAt DateTime @updatedAt
+  lignes J3Ligne[]
+  @@unique([plateformeId, section, semaine])
+  @@map("j3_feuille")
+}
+model J3Ligne {
+  id Int @id @default(autoincrement())
+  feuilleId Int
+  dossierId Int
+  donnees String
+  version Int @default(1)
+  updatedAt DateTime @updatedAt
+  updatedById Int
+  feuille J3Feuille @relation(fields: [feuilleId], references: [id], onDelete: Restrict)
+  @@unique([feuilleId, dossierId])
+  @@map("j3_ligne")
+}
+model TableauPersonnel {
+  userId Int @id
+  carres String
+  version Int @default(1)
+  updatedAt DateTime @updatedAt
+  @@map("tableau_personnel")
+}
+
+/// BUS-02/03/21 : codes de patrimoine stables ; sous-traitant = plateformeId nul.
+model BusReferentiel {
+  id Int @id @default(1)
+  donnees String
+  version Int @default(1)
+  updatedAt DateTime @updatedAt
+  updatedById Int
+  @@map("bus_referentiel")
+}
+model BusLigne {
+  id Int @id @default(autoincrement())
+  idExterne String @unique
+  plateformeId Int
+  dossierId Int
+  ligneAttendueId Int
+  centreCode String
+  parc String
+  formatCode String
+  semaine String
+  finPose String
+  vendu Int
+  quantiteBroadcast Int
+  attendu Int
+  entretienPourcent Float
+  quantiteAjustee Int?
+  ajusteParId Int?
+  ajusteLe DateTime?
+  resteEnPlace Boolean @default(false)
+  version Int @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([plateformeId, semaine])
+  @@index([ligneAttendueId])
+  @@map("bus_ligne")
+}
+model BusControleReception {
+  id Int @id @default(autoincrement())
+  receptionId Int @unique
+  ligneAttendueId Int
+  entretien Boolean
+  themeConforme Boolean
+  photoId Int
+  tenue String @default("")
+  allongement String @default("")
+  massicotage String @default("")
+  nc String @default("")
+  commentaire String @default("")
+  createdById Int
+  createdAt DateTime @default(now())
+  @@map("bus_controle_reception")
+}
+
+/// RG-STK-NEW-002 — décision distincte par site et dossier, sans changer les entités Réception/Coordination.
+model FinCampagne {
+  id Int @id @default(autoincrement())
+  plateformeId Int
+  dossier Int
+  decision String
+  jusqua String?
+  motif String?
+  destinataire String?
+  quantiteRetour Int?
+  quantiteEnvoyee Int @default(0)
+  quantiteDetruite Int @default(0)
+  version Int @default(1)
+  updatedAt DateTime @updatedAt
+  parId Int
+  @@unique([plateformeId,dossier])
+  @@map("fin_campagne")
+}
+
+/// Référentiel administratif indépendant, sans changement des moteurs de Coordination gelés.
+model MachineConfiguration {
+  id Int @id @default(autoincrement())
+  nom String @unique
+  type String
+  fichier Boolean @default(false)
+  tiroirsMax Int?
+  sortie String?
+  repertoire String?
+  bagues String?
+  version Int @default(1)
+  updatedAt DateTime @updatedAt
+  @@map("machine_configuration")
+}
+model BoucleTransportConfiguration {
+  id Int @id @default(autoincrement())
+  plateformeId Int
+  nom String
+  canal String
+  jour Int
+  heure String
+  destinataires String @default("[]")
+  version Int @default(1)
+  updatedAt DateTime @updatedAt
+  @@unique([plateformeId,nom])
+  @@map("boucle_transport_configuration")
+}
+model ListeDistributionConfiguration {
+  id Int @id @default(autoincrement())
+  nom String @unique
+  plateformeId Int?
+  roles String
+  usage String
+  version Int @default(1)
+  updatedAt DateTime @updatedAt
+  @@map("liste_distribution_configuration")
+}
+
+/// EX-ADM-NEW-005 — maquette parametrage.js:222–233 ; Kickoff p.73.
+/// Métadonnées autonomes : références logiques contrôlées par le service ; aucun effet sur Coordination.
+model WorkshopConfiguration {
+  id                 Int      @id @default(autoincrement())
+  workshopId         Int      @unique
+  productionFlow     String
+  formatIds          String   @default("[]")
+  machineIds         String   @default("[]")
+  productionSteps    String   @default("[]")
+  schedulingCriteria String   @default("[]")
+  version            Int      @default(1)
+  updatedAt          DateTime @updatedAt
+
+  @@map("workshop_configuration")
+}
+
+/// Métadonnées explicites vérifiées ; aucune relation ajoutée aux tables gelées.
+model TransportColisMetadata {
+  colisId Int @id
+  version Int @default(1)
+  donnees String
+  verifieLe String
+  verifiePar Int
+  @@map("transport_colis_metadata")
+}
+
+// Modèle entièrement autonome, aucun FK/champ/relation ajouté aux modèles gelés.
+model ProductionDeliveryForecast {
+  id Int @id @default(autoincrement())
+  expectedLineId Int @unique @map("expected_line_id")
+  date String? @map("delivery_date") // YYYY-MM-DD, jour civil de livraison
+  comment String @default("")
+  version Int @default(1)
+  updatedAt DateTime @updatedAt @map("updated_at")
+  updatedById Int @map("updated_by_id")
+  @@map("production_delivery_forecast")
 }

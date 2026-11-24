@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { ConstatNcSchema } from '../nonconformite.ts'
 
 // REC-P03 — Panier, photo du BL et bon de livraison (ECR-REC-01, ECR-REC-07, ECR-REC-11, ECR-REC-12).
 
@@ -50,6 +51,8 @@ export const LignePanierSchema = z.object({
 export const BonLivraisonSchema = z.object({
   lignes: z.array(LignePanierSchema).max(500),
   photoBlId: z.number().int().positive().nullable(),
+  /** RG-NEW-REC-001 : déclaration explicite, jamais déduite d'une photo absente. */
+  sansBl: z.boolean().optional(),
   numeroBl: z.string().trim().max(50).default(''),
   livreurId: z.number().int().positive().nullable(),
   imprimeurId: z.number().int().positive().nullable(),
@@ -66,7 +69,7 @@ export const VerificationBlSchema = z.object({
     z.object({
       ligneAttendueId: z.number().int(),
       quantite: z.number().int(),
-      mode: z.literal('BL'),
+      mode: z.enum(['BL', 'MAIN']),
     }),
   ),
   /** RG-REC-023 / Q-166 : lignes cochées à quantité 0, ignorées avec mention. */
@@ -107,6 +110,7 @@ export type VisuelLigne = z.infer<typeof VisuelLigneSchema>
 
 /** REC-P04 — « Valider la réception » : le bon de livraison vérifié + compléments, intitulés, confirmation. */
 export const ValiderReceptionSchema = BonLivraisonSchema.extend({
+  nonConformite: ConstatNcSchema.optional(),
   lignes: z
     .array(
       LignePanierSchema.extend({

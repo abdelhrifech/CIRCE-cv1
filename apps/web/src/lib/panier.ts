@@ -17,7 +17,7 @@ export interface LignePanier {
   affiches: number[]
   /** RG-REC-023 : Qté du BL, ≥ 0, par défaut le reste attendu (ou l'attendu s'il n'y a plus de reste). */
   quantite: number
-  /** RG-REC-021 : cochée d'office à l'ajout. */
+  /** RG-NEW-REC-002 : l'agent coche explicitement les lignes du BL. */
   cochee: boolean
   /** RG-REC-040 : « Complément de l'affiche n° » (affiche déjà reçue sur cette ligne). */
   complementAfficheId: number | null
@@ -38,7 +38,7 @@ export function depuisLigne(l: LigneAttendue): LignePanier {
     recu: l.recu,
     affiches: l.affiches,
     quantite: l.reste > 0 ? l.reste : l.attendu,
-    cochee: true,
+    cochee: false,
     complementAfficheId: null,
     intituleSaisi: '',
   }

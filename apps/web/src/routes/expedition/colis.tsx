@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import {
-  ListeColisSchema,
+  TransportListeSchema,
   ResultatFinDeJourneeSchema,
   STATUTS_COLIS,
   type StatutColis,
@@ -8,15 +8,18 @@ import {
 import { useState, type SyntheticEvent } from 'react'
 import { z } from 'zod'
 import { Button } from '../../components/button.tsx'
-import {
-  ExpeditionNav,
-  IndicateurExpedition,
-} from '../../components/coordination/expedition-nav.tsx'
+import { IndicateurExpedition } from '../../components/coordination/expedition-nav.tsx'
 import { ErrorMessage } from '../../components/error-message.tsx'
 import { Modale } from '../../components/ui/modale.tsx'
 import { Pastille, type Ton } from '../../components/ui/pastille.tsx'
 import { apiPost, apiRequest } from '../../lib/api-client.ts'
 import { requirePermission } from '../../lib/session.ts'
+import {
+  TransportDetails,
+  CodesUnites,
+  TransportSaisie,
+  GeodisIndisponible,
+} from '../../components/expedition/transport.tsx'
 import { useApi } from '../../lib/use-api.ts'
 
 // COO-P13 — ECR-EXP-02 « Colis » (RG-COO-268, 269, 271, RG-X-087). « Fin de journée » : colis « Clos · à expédier »
@@ -25,6 +28,7 @@ import { useApi } from '../../lib/use-api.ts'
 // « Expédié le » = date de la fin de journée ; le récépissé est le code externe du transporteur (Q-411).
 
 const SearchSchema = z.object({
+  type: z.enum(['fixe', 'pliage']).optional(),
   dossier: z.coerce.number().int().positive().optional(),
   depart: z
     .string()
@@ -56,8 +60,8 @@ function ListeDesColis() {
   for (const [k, v] of Object.entries(search) as [string, string | number | undefined][])
     if (v !== undefined && v !== '') qs.set(k, String(v))
   const { etat, recharger } = useApi(`colis-${qs.toString()}`, (signal) =>
-    apiRequest('GET', `/api/coordination/colis?${qs.toString()}`, {
-      schema: ListeColisSchema,
+    apiRequest('GET', `/api/transport/colis?${qs.toString()}`, {
+      schema: TransportListeSchema,
       signal,
     }),
   )
@@ -112,9 +116,12 @@ function ListeDesColis() {
 
   return (
     <main className="mx-auto max-w-7xl p-6">
-      <p className="text-sm text-slate-500">Expédition</p>
-      <h1 className="text-2xl font-semibold">Expédition · Colis</h1>
-      <ExpeditionNav />
+      <p className="text-sm text-slate-500">
+        {search.type === 'fixe' ? '2 m² fixe' : search.type === 'pliage' ? 'Pliage' : 'Expédition'}
+      </p>
+      <h1 className="text-2xl font-semibold">
+        {search.type ? 'Liste des colis' : 'Expédition · Colis'}
+      </h1>
       <p className="mt-2 flex items-center gap-3 rounded-md border border-slate-200 bg-slate-50 p-2 text-sm">
         <span>
           Les colis clos passent « Expédié » à la fin de journée ; les sorties de stock sont
@@ -222,15 +229,19 @@ function ListeDesColis() {
         <IndicateurExpedition titre="Clos · à expédier" valeur={d?.indicateurs.clos ?? null} />
         <IndicateurExpedition titre="Expédiés" valeur={d?.indicateurs.expedies ?? null} />
         <IndicateurExpedition
-          titre="Livrés (preuve reçue)"
-          valeur={d?.indicateurs.livres ?? null}
+          titre="Livraisons avec preuve enregistrée"
+          valeur={
+            d
+              ? d.colis.filter(
+                  (c) => c.transport?.donnees.dateLivraison && c.transport.donnees.preuveUrl,
+                ).length
+              : null
+          }
         />
       </section>
+      <GeodisIndisponible />
       {message && (
-        <p
-          role="status"
-          className="mt-2 rounded-md border border-slate-300 bg-slate-100 p-2 text-sm"
-        >
+        <p role="status" className="mt-2 rounded-md border border-sky-200 bg-sky-50 p-2 text-sm">
           {message}
         </p>
       )}
@@ -254,8 +265,10 @@ function ListeDesColis() {
                 <th>Unités</th>
                 <th>Poids</th>
                 <th>Statut</th>
-                <th>Récépissé</th>
-                <th>Preuve de livraison</th>
+                <th title="Référence transport historique conservée ; distincte du numéro de suivi vérifié">
+                  Récépissé historique
+                </th>
+                <th>Canal, suivi et preuve</th>
                 <th>Clos le</th>
                 <th>Expédié le</th>
               </tr>
@@ -268,6 +281,7 @@ function ListeDesColis() {
                 >
                   <td className="py-1">
                     <code>{c.code}</code>
+                    <CodesUnites id={c.id} />
                   </td>
                   <td>{c.depart ?? '—'}</td>
                   <td>{c.destinataire.nom}</td>
@@ -277,7 +291,12 @@ function ListeDesColis() {
                     <Pastille ton={STATUT[c.statut].ton}>{STATUT[c.statut].libelle}</Pastille>
                   </td>
                   <td>{c.codeExterne ?? '—'}</td>
-                  <td>—</td>
+                  <td>
+                    <TransportDetails transport={c.transport} boucles={d.boucles} />
+                    {d.peutImporter && (
+                      <TransportSaisie colis={c} boucles={d.boucles} onSauvee={recharger} />
+                    )}
+                  </td>
                   <td>{dateHeure(c.dateExpedition)}</td>
                   <td>{dateHeure(c.expedieLe)}</td>
                 </tr>

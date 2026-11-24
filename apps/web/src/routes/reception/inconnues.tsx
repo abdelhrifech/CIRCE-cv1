@@ -1,3 +1,4 @@
+import { BoutonExportTableau } from '../../components/ui/export-tableau.tsx'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import {
   InconnuesSchema,
@@ -12,7 +13,6 @@ import { Button } from '../../components/button.tsx'
 import { ErrorMessage } from '../../components/error-message.tsx'
 import { ApercuFeuilles } from '../../components/reception/apercu-feuilles.tsx'
 import { FicheAfficheModale, RechercheDossiers } from '../../components/reception/fiche-affiche.tsx'
-import { MenuReception } from '../../components/reception/menu-reception.tsx'
 import { Pastille } from '../../components/ui/pastille.tsx'
 import { apiPost, apiRequest } from '../../lib/api-client.ts'
 import { dateCourte, duree } from '../../lib/duree.ts'
@@ -60,13 +60,7 @@ function ReceptionsInconnues() {
     <main className="mx-auto max-w-7xl p-6">
       <p className="text-sm text-slate-500">Réception</p>
       <h1 className="text-2xl font-semibold">Réceptions inconnues</h1>
-      <p className="text-sm text-slate-600">
-        Affiches reçues sans dossier : à identifier (par le visuel ou le n° de dossier), puis
-        rattacher.
-      </p>
-      <div className="mt-3">
-        <MenuReception />
-      </div>
+
       <fieldset className="mt-4 flex flex-wrap gap-3 text-sm">
         <legend className="font-medium">Statut</legend>
         {STATUTS_INCONNUE.map((s) => (
@@ -102,76 +96,81 @@ function ReceptionsInconnues() {
           <p className="p-3 text-sm text-slate-600">Aucune réception inconnue avec ce statut.</p>
         )}
         {items.length > 0 && (
-          <table className="w-full text-sm" aria-label="Réceptions inconnues">
-            <thead className="bg-slate-50 text-slate-600">
-              <tr>
-                {[
-                  'N° affiche',
-                  'Lu sur l’affiche',
-                  'Site',
-                  'Qté',
-                  'Reçue le',
-                  'En attente depuis',
-                  'Statut',
-                  'Dossier(s)',
-                  'Emplacement',
-                  '',
-                ].map((h) => (
-                  <th key={h} scope="col" className="px-3 py-2 text-left font-medium">
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((l) => (
-                <tr
-                  key={l.afficheId}
-                  className={`cursor-pointer border-t border-slate-100 ${choisie?.afficheId === l.afficheId ? 'bg-sky-50' : l.statut === 'A_IDENTIFIER' && l.enRetard ? 'bg-orange-50' : ''}`}
-                  onClick={() => {
-                    void navigate({
-                      search: (prev) => ({ ...prev, id: l.afficheId }),
-                      replace: true,
-                    })
-                  }}
-                >
-                  <td className="px-3 py-2 font-mono">{l.afficheId}</td>
-                  <td className="px-3 py-2">
-                    {l.annonceur ?? '—'} · {l.description ?? '—'}
-                  </td>
-                  <td className="px-3 py-2">{l.site.nom}</td>
-                  <td className="px-3 py-2">{l.quantite}</td>
-                  <td className="px-3 py-2">{dateCourte(l.recueLe)}</td>
-                  <td className="px-3 py-2">
-                    {l.enAttenteMinutes === null ? '—' : duree(l.enAttenteMinutes)}{' '}
-                    {l.enRetard && <Pastille ton="important">Important</Pastille>}
-                  </td>
-                  <td className="px-3 py-2">
-                    <Pastille ton={LIBELLE_STATUT_INCONNUE[l.statut]?.ton ?? 'neutre'}>
-                      {LIBELLE_STATUT_INCONNUE[l.statut]?.libelle ?? l.statut}
-                      {l.statut === 'INTROUVABLE' && l.signaleLe
-                        ? ` le ${dateCourte(l.signaleLe)}`
-                        : ''}
-                    </Pastille>
-                  </td>
-                  <td className="px-3 py-2">{l.dossiers.join(', ') || '—'}</td>
-                  <td className="px-3 py-2">{l.emplacement}</td>
-                  <td className="px-3 py-2">
-                    <button
-                      type="button"
-                      className="underline"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setFiche(l.afficheId)
-                      }}
-                    >
-                      Fiche
-                    </button>
-                  </td>
+          <>
+            <BoutonExportTableau nom="reception-inconnues" tableau="Réceptions inconnues" />
+            <table className="w-full text-sm" aria-label="Réceptions inconnues">
+              <thead className="bg-slate-50 text-slate-600">
+                <tr>
+                  {[
+                    'N° affiche',
+                    'Lu sur l’affiche',
+                    'Site',
+                    'Qté',
+                    'Reçue le',
+                    'En attente depuis',
+                    'Statut',
+                    'Dossier(s)',
+                    'Emplacement',
+                    '',
+                  ].map((h) => (
+                    <th key={h} scope="col" className="px-3 py-2 text-left font-medium">
+                      {h}
+                    </th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {items.map((l) => (
+                  <tr
+                    key={l.afficheId}
+                    className={`cursor-pointer border-t border-slate-100 ${choisie?.afficheId === l.afficheId ? 'bg-sky-50' : l.statut === 'A_IDENTIFIER' && l.enRetard ? 'bg-orange-50' : ''}`}
+                    onClick={() => {
+                      if (l.statut === 'A_IDENTIFIER' || l.statut === 'INTROUVABLE')
+                        setFiche(l.afficheId)
+                      void navigate({
+                        search: (prev) => ({ ...prev, id: l.afficheId }),
+                        replace: true,
+                      })
+                    }}
+                  >
+                    <td className="px-3 py-2 font-mono">{l.afficheId}</td>
+                    <td className="px-3 py-2">
+                      {l.annonceur ?? '—'} · {l.description ?? '—'}
+                    </td>
+                    <td className="px-3 py-2">{l.site.nom}</td>
+                    <td className="px-3 py-2">{l.quantite}</td>
+                    <td className="px-3 py-2">{dateCourte(l.recueLe)}</td>
+                    <td className="px-3 py-2">
+                      {l.enAttenteMinutes === null ? '—' : duree(l.enAttenteMinutes)}{' '}
+                      {l.enRetard && <Pastille ton="important">Important</Pastille>}
+                    </td>
+                    <td className="px-3 py-2">
+                      <Pastille ton={LIBELLE_STATUT_INCONNUE[l.statut]?.ton ?? 'neutre'}>
+                        {LIBELLE_STATUT_INCONNUE[l.statut]?.libelle ?? l.statut}
+                        {l.statut === 'INTROUVABLE' && l.signaleLe
+                          ? ` le ${dateCourte(l.signaleLe)}`
+                          : ''}
+                      </Pastille>
+                    </td>
+                    <td className="px-3 py-2">{l.dossiers.join(', ') || '—'}</td>
+                    <td className="px-3 py-2">{l.emplacement}</td>
+                    <td className="px-3 py-2">
+                      <button
+                        type="button"
+                        className="underline"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setFiche(l.afficheId)
+                        }}
+                      >
+                        Fiche
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </>
         )}
       </section>
       {etat.kind === 'ready' && items.length === 0 && (
@@ -180,7 +179,7 @@ function ReceptionsInconnues() {
           inconnue… »).
         </p>
       )}
-      {choisie && (
+      {choisie && choisie.statut !== 'A_IDENTIFIER' && choisie.statut !== 'INTROUVABLE' && (
         <Detail
           key={`${String(choisie.afficheId)}-${String(choisie.version)}`}
           l={choisie}

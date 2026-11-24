@@ -31,8 +31,8 @@ const ligne = (id: number, reste = 6, attendu = 10): LigneAttendue => ({
 })
 
 describe('panier (RG-REC-021 à 023)', () => {
-  it('RG-REC-021 une ligne ajoutée est cochée d’office ; RG-REC-023 quantité par défaut = reste', () => {
-    expect(depuisLigne(ligne(1))).toMatchObject({ cochee: true, quantite: 6 })
+  it('RG-REC-021 RG-NEW-REC-002 une ligne ajoutée attend une sélection explicite ; RG-REC-023 quantité par défaut = reste', () => {
+    expect(depuisLigne(ligne(1))).toMatchObject({ cochee: false, quantite: 6 })
   })
 
   it('RG-REC-023 sans reste, la quantité par défaut est l’attendu', () => {
@@ -51,10 +51,10 @@ describe('panier (RG-REC-021 à 023)', () => {
 
   it('RG-REC-021 retirer, cocher, état de la case « tout »', () => {
     let p = ajouter([], [ligne(1), ligne(2)]).panier
-    expect(etatTout(p)).toBe('tout')
-    p = cocher(p, 1, false)
+    expect(etatTout(p)).toBe('rien')
+    p = cocher(p, 1, true)
     expect(etatTout(p)).toBe('partiel')
-    p = cocher(p, 2, false)
+    p = cocher(p, 1, false)
     expect(etatTout(p)).toBe('rien')
     expect(retirer(p, 1).map((x) => x.ligneAttendueId)).toEqual([2])
   })
@@ -67,7 +67,7 @@ describe('panier (RG-REC-021 à 023)', () => {
   })
 
   it('RG-REC-022 seules les lignes cochées quittent le panier', () => {
-    const p = cocher(ajouter([], [ligne(1), ligne(2)]).panier, 2, false)
+    const p = cocher(ajouter([], [ligne(1), ligne(2)]).panier, 1, true)
     expect(retirerCochees(p).map((x) => x.ligneAttendueId)).toEqual([2])
   })
 })

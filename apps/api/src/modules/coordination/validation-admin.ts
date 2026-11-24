@@ -5,7 +5,7 @@
 import type { AfficheValidation, EtatValidation, MotifDoute, ValiderSelection } from '@circe/shared'
 import { parPaquets } from '../../core/paquets.ts'
 import type { Db } from '../../core/db.ts'
-import { BusinessError } from '../../core/errors.ts'
+import { BusinessError, ForbiddenError } from '../../core/errors.ts'
 import type { Identity } from '../../core/identity.ts'
 import { ecrireJournal } from '../../core/tracabilite.ts'
 import type { Tx } from '../../core/transaction.ts'
@@ -301,8 +301,40 @@ const plateformesDe = (identity: Identity) =>
 // quantité. RG-COO-001 : aucune garde sur la prépa ni l'Instruction OK. RG-COO-167 : périmètre.
 export async function validerSelection(tx: Tx, identity: Identity, input: ValiderSelection) {
   assertDroitCoordination(identity, 'validation_admin.valider', 'RG-COO-009')
+  // RG-NEW-REC-004 : sélection par affiche, contrôlée avant de résoudre ses dossiers.
+  const dossierIds = new Set(input.dossierIds)
+  if (input.afficheIds) {
+    const choisies = await tx.affiche.findMany({
+      where: { id: { in: input.afficheIds } },
+      include: {
+        rattachements: {
+          where: { actif: true },
+          select: { ligneAttendue: { select: { contNum: true } } },
+        },
+      },
+    })
+    if (
+      choisies.length !== new Set(input.afficheIds).size ||
+      choisies.some(
+        (a) =>
+          !identity.perimetre.toutesPlateformes &&
+          !identity.perimetre.plateformeIds.includes(a.plateformeId),
+      )
+    )
+      throw new ForbiddenError('Affiche absente ou hors de votre périmètre.')
+    const numeros = choisies.flatMap((a) =>
+      a.rattachements.flatMap((l) =>
+        l.ligneAttendue.contNum === null ? [] : [l.ligneAttendue.contNum],
+      ),
+    )
+    for (const d of await tx.dossier.findMany({
+      where: { contNum: { in: numeros } },
+      select: { id: true },
+    }))
+      dossierIds.add(d.id)
+  }
   const dossiers = []
-  for (const id of [...new Set(input.dossierIds)]) {
+  for (const id of dossierIds) {
     dossiers.push(await dossierDuPerimetre(tx, identity, id))
   }
   // Dossier annulé : pastille « — » (RG-COO-019), rien à valider (maquette : seuls les dossiers « à faire »).
@@ -315,7 +347,10 @@ export async function validerSelection(tx: Tx, identity: Identity, input: Valide
   const aConfirmer = new Map<number, AfficheDuDossier>()
   for (const liste of parDossier.values())
     for (const a of liste)
-      if (a.etat === 'A_CONFIRMER_PROPOSE' || a.etat === 'A_CONFIRMER_DOUTE')
+      if (
+        (!input.afficheIds || input.afficheIds.includes(a.id)) &&
+        (a.etat === 'A_CONFIRMER_PROPOSE' || a.etat === 'A_CONFIRMER_DOUTE')
+      )
         aConfirmer.set(a.id, a)
   if (aConfirmer.size === 0) {
     throw new BusinessError(

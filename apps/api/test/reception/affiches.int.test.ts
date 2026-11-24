@@ -538,3 +538,49 @@ describe('REC-P08 Validation admin', () => {
     expect(erreur(r).regle).toBe('RG-REC-111')
   })
 })
+
+describe('EX-NEW-REC-005 fiche étendue', () => {
+  it('enregistre repiquage, conservation, picking et photo avec version et audit ; refuse une photo hors périmètre', async () => {
+    const s = await site(ctx)
+    const rv = await receptionValidee(ctx, s.headers, s.plateforme.id, 10)
+    const avant = await fiche(rv.afficheId, s.headers)
+    const rec = await db.reception.findUniqueOrThrow({ where: { id: rv.receptionId } })
+    const image = await f.createPhoto(db, { createdById: rec.createdById })
+    const r = await patch(rv.afficheId, s.headers, {
+      version: avant.version,
+      repiquage: 'Centre fictif',
+      conservation: 12,
+      zonePicking: true,
+      photoId: image.id,
+    })
+    expect(r.statusCode, r.body).toBe(200)
+    const apres = await fiche(rv.afficheId, s.headers)
+    expect(apres).toMatchObject({
+      repiquage: 'Centre fictif',
+      conservation: 12,
+      zonePicking: true,
+      photoId: image.id,
+      version: avant.version + 1,
+    })
+    expect(apres.historique.some((h) => h.nouveau?.includes('Centre fictif'))).toBe(true)
+    expect(
+      (await patch(rv.afficheId, s.headers, { version: avant.version, repiquage: 'Obsolète' }))
+        .statusCode,
+    ).toBe(409)
+    const autreSite = await site(ctx)
+    const autreReception = await receptionValidee(
+      ctx,
+      autreSite.headers,
+      autreSite.plateforme.id,
+      10,
+    )
+    const autreRec = await db.reception.findUniqueOrThrow({
+      where: { id: autreReception.receptionId },
+    })
+    const privee = await f.createPhoto(db, { createdById: autreRec.createdById })
+    expect(
+      (await patch(rv.afficheId, s.headers, { version: apres.version, photoId: privee.id }))
+        .statusCode,
+    ).toBe(403)
+  })
+})

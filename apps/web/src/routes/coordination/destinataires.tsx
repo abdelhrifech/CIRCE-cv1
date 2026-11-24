@@ -136,10 +136,7 @@ function Destinataires() {
         </Button>
       </form>
       {message && (
-        <p
-          role="status"
-          className="mt-3 rounded-md border border-slate-300 bg-slate-100 p-2 text-sm"
-        >
+        <p role="status" className="mt-3 rounded-md border border-sky-200 bg-sky-50 p-2 text-sm">
           {message}
         </p>
       )}

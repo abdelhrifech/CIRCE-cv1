@@ -2,6 +2,7 @@
 // une ligne par dossier, statut de préparation (RG-COO-063) et instructions (RG-COO-040), périmètre
 // atelier / site (RG-COO-167). COO-P03 : pastille de validation admin (RG-COO-019), cas sûrs (RG-COO-011).
 import { formatSemaineIso, lireSemaineIso, type ListeDossiersQuery } from '@circe/shared'
+import { lireTypes, typeDe } from './unitaire.ts'
 import { lireParametreTexte } from '../reception/parametres.ts'
 import { lireDeadline } from './reservations.ts'
 import { groupesAVerifier, lignesThemeModifie } from './themes.ts'
@@ -211,6 +212,7 @@ export async function listerDossiers(db: Db, identity: Identity, q: ListeDossier
   const deadline = lireDeadline(await lireParametreTexte(db, 'coordination.deadlinePrepa'))
   const maintenant = new Date()
   const marques = await marquesVisuels(db, identity, maintenant)
+  const typesUnitaire = q.pour === 'FIXE' || q.pour === 'PLIAGE' ? await lireTypes(db) : null
   const items = []
   const PAQUET = 400
   for (let debut = 0; debut < tous.length; debut += PAQUET) {
@@ -241,6 +243,8 @@ export async function listerDossiers(db: Db, identity: Identity, q: ListeDossier
         themeExclu: true,
         qteBc: true,
         qtePrepa: true,
+        atelierId: true,
+        atelier: { select: { type: true } },
       },
     })
     // ANO-062 : dernière demande de correction de chaque dossier du paquet, lue en UNE requête.
@@ -251,17 +255,51 @@ export async function listerDossiers(db: Db, identity: Identity, q: ListeDossier
       select: { dossierId: true, le: true },
     }))
       corrections.set(c.dossierId, c.le)
+    // EX-NEW-COO-001 : les contextes fixe/pliage viennent des types de préparation structurés.
+    const repTypes = typesUnitaire
+      ? await db.repartition.findMany({
+          where: { contNum: { in: dossiers.map((d) => d.contNum) } },
+          select: { contNum: true, typePreparationId: true },
+        })
+      : []
+    const bcTypes = typesUnitaire
+      ? await db.prepaBroadcast.findMany({
+          where: { idDossierDeVenteChapeau: { in: dossiers.map((d) => d.contNum) } },
+          select: { idDossierDeVenteChapeau: true, idTypePreparation: true },
+        })
+      : []
+    const dossierDuType = (contNum: number | null) => {
+      if (!typesUnitaire) return true
+      const type = q.pour === 'PLIAGE' ? 'pliage' : 'fixe'
+      const connus = [
+        ...repTypes.filter((r) => r.contNum === contNum).map((r) => r.typePreparationId),
+        ...bcTypes
+          .filter((r) => r.idDossierDeVenteChapeau === contNum)
+          .map((r) => r.idTypePreparation),
+      ]
+      return connus.length
+        ? connus.some((id) => typeDe({ typePreparationId: id }, typesUnitaire) === type)
+        : type === 'fixe'
+    }
     // `pour=DEROULANT` : instructions des ateliers déroulants seulement ; un dossier sans telle instruction est écarté.
     const retenue = (i: (typeof dossiers)[number]['instructions'][number]) =>
       peutVoirAtelier(identity, i.atelier) &&
       (!q.atelierId || i.atelierId === q.atelierId) &&
-      (q.pour !== 'DEROULANT' || i.atelier?.type === 'SCROLL')
+      (q.pour === 'DEROULANT'
+        ? i.atelier?.type === 'SCROLL'
+        : q.pour === 'FIXE' || q.pour === 'PLIAGE'
+          ? i.atelier?.type === 'FIXE' && dossierDuType(i.contNum)
+          : true)
     const visibles = dossiers.filter(
       (d) =>
         d.instructions.some(retenue) ||
         (q.atelierId === undefined &&
-          q.pour === undefined &&
-          lignes.some((l) => l.contNum === d.contNum)),
+          (q.pour === undefined ||
+            ((q.pour === 'FIXE' || q.pour === 'PLIAGE') && dossierDuType(d.contNum))) &&
+          lignes.some(
+            (l) =>
+              l.contNum === d.contNum && (q.pour === undefined || l.atelier?.type !== 'SCROLL'),
+          )),
     )
     const affiches = await affichesDesDossiers(
       db,
@@ -298,7 +336,42 @@ export async function listerDossiers(db: Db, identity: Identity, q: ListeDossier
   }
   const page = items.slice((q.page - 1) * q.pageSize, q.page * q.pageSize)
   return {
-    items: page,
+    items: await Promise.all(
+      page.map(async (d) => {
+        if (!typesUnitaire) return d
+        const reps = await db.repartition.findMany({
+          where: { contNum: d.dossier, retire: false },
+          include: { atelier: true, destinataire: true, support: true, typePreparation: true },
+          orderBy: { id: 'asc' },
+        })
+        return {
+          ...d,
+          lignesPreparation: reps
+            .filter(
+              (r) =>
+                peutVoirAtelier(identity, r.atelier) &&
+                (!q.atelierId || r.atelierId === q.atelierId) &&
+                typeDe(r, typesUnitaire) === (q.pour === 'PLIAGE' ? 'pliage' : 'fixe'),
+            )
+            .map((r) => ({
+              id: r.id,
+              type: r.typePreparation?.libelle ?? null,
+              repartition: r.repartition?.toString() ?? null,
+              theme: r.theme,
+              repiquage: r.repiquage,
+              format: r.support?.nom ?? null,
+              quantite: r.qte,
+              destinataire: r.destinataire?.nom ?? null,
+              depart:
+                r.semAnnee && r.semNum
+                  ? formatSemaineIso({ annee: r.semAnnee, semaine: r.semNum })
+                  : null,
+              atelier: r.atelier?.libelle ?? null,
+              dateAffichage: r.dateAffichage?.toISOString() ?? null,
+            })),
+        }
+      }),
+    ),
     total: items.length,
     // RG-COO-011 : « n » = dossiers cas sûrs sous le filtre courant (toutes pages).
     casSurs: items.filter((i) => i.validationAdmin.casSur).length,

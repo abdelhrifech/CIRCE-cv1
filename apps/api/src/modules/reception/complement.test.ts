@@ -41,7 +41,7 @@ const CONSULTER: Record<Role, boolean> = {
   cheq: true,
   recep: true,
   expe: false,
-  admin: true, // Q-421 : l'administrateur a tous les droits
+  admin: true,
   com: true,
 }
 // §2 « Valider / Annuler la validation » (RG-REC-003).
@@ -117,7 +117,7 @@ describe('RG-REC-002 catalogue : lignes de la matrice §2 utilisées par le socl
     }
   })
 
-  it('RG-REC-002 / Q-421 « Mettre au rebut » : cheq, recep, expe et admin (super-utilisateur) seulement', () => {
+  it('RG-REC-002 « Mettre au rebut » : cheq, recep, expe et administrateur', () => {
     for (const role of ROLES) {
       expect(hasPermission({ roles: [role] }, 'stock.rebut'), role).toBe(
         ['cheq', 'recep', 'expe', 'admin'].includes(role),

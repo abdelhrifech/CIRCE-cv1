@@ -1,3 +1,5 @@
+import { FeuilleNc } from '../nonconformite/feuille.tsx'
+import type { Nc } from '@circe/shared'
 import { FeuillesSchema, ImpressionResultatSchema, type Feuille } from '@circe/shared'
 import { useState } from 'react'
 import { apiPost, apiRequest } from '../../lib/api-client.ts'
@@ -42,6 +44,13 @@ function FeuilleA4({ f }: { f: Feuille }) {
           ? `Dossier identifié : ${f.dossiers.join(', ')}`
           : 'Réception inconnue · rangée en zone tampon · à remplacer par la feuille définitive'}
       </p>
+      {f.photoId != null && (
+        <img
+          src={`/api/photos/${f.photoId}`}
+          alt="Visuel de l’affiche"
+          className="float-right ml-3 h-28 w-32 object-contain"
+        />
+      )}
       <p className="text-center text-6xl font-bold">{f.afficheId}</p>
       <p className="text-center text-3xl">{f.format}</p>
       <div className="mt-2 grid grid-cols-3 gap-2 border border-slate-400 p-2 text-sm">
@@ -73,11 +82,11 @@ function FeuilleA4({ f }: { f: Feuille }) {
         <dt>Annonceur</dt>
         <dd>{f.annonceur ?? '—'}</dd>
         <dt>Thème</dt>
-        <dd>{f.theme ?? '—'}</dd>
+        <dd className="break-words">{f.theme ?? '—'}</dd>
         <dt>Repiquage</dt>
         <dd>{f.repiquage ?? '—'}</dd>
         <dt>Commentaire</dt>
-        <dd>{f.commentaire ?? '—'}</dd>
+        <dd className="break-words">{f.commentaire ?? '—'}</dd>
         <dt>Affiche à conserver</dt>
         <dd>{f.aConserver ? 'Oui' : 'Non'}</dd>
       </dl>
@@ -116,6 +125,7 @@ function FeuilleA4({ f }: { f: Feuille }) {
 }
 
 interface ApercuProps {
+  nonConformites?: Nc[]
   afficheIds: number[]
   avecEtiquettes?: boolean
   /** RG-REC-090 : « Étiquettes rack » seules (une étiquette rack = la feuille de stock, RG-REC-076). */
@@ -129,6 +139,7 @@ interface ApercuProps {
  */
 export function ApercuFeuilles({
   afficheIds,
+  nonConformites = [],
   avecEtiquettes = false,
   etiquettesSeules = false,
   onFermer,
@@ -160,6 +171,7 @@ export function ApercuFeuilles({
         schema: ImpressionResultatSchema,
         body: {
           afficheIds,
+          nonConformites: nonConformites.map((nc) => ({ id: nc.id, version: nc.version })),
           contenu: etiquettesSeules
             ? 'ETIQUETTE_RACK'
             : etiquettes
@@ -206,6 +218,7 @@ export function ApercuFeuilles({
                 </div>
               )),
             )}
+            {nonConformites.length > 0 && <FeuilleNc items={nonConformites} />}
           </div>
           {envoi.kind === 'erreur' && (
             <div className="mt-2">

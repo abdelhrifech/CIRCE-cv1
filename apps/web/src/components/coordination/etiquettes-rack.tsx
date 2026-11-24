@@ -32,7 +32,7 @@ export function EtiquettesRack({ cle }: { cle: number }) {
   const peutImprimer = moi.kind === 'ready' && can(moi.data, 'reception.imprimer')
   return (
     <section
-      className="mt-2 rounded-md border border-slate-300 bg-slate-100 p-2 text-sm"
+      className="mt-2 rounded-md border border-sky-200 bg-sky-50 p-2 text-sm"
       aria-label="Étiquettes rack à imprimer"
     >
       <strong>Étiquettes rack à imprimer</strong> (affiches confirmées par la Coordination) :

@@ -11,12 +11,23 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AccesRefuseRouteImport } from './routes/acces-refuse'
+import { Route as BusRouteImport } from './routes/bus'
 import { Route as MoiRouteImport } from './routes/moi'
+import { Route as NonConformiteRouteImport } from './routes/non-conformite'
 import { Route as AdminAlertesRouteImport } from './routes/admin/alertes'
+import { Route as AdminBusRouteImport } from './routes/admin/bus'
+import { Route as AdminDeclarantsRouteImport } from './routes/admin/declarants'
+import { Route as AdminDupliquerTrainRouteImport } from './routes/admin/dupliquer-train'
+import { Route as AdminFinCampagneRouteImport } from './routes/admin/fin-campagne'
+import { Route as AdminJournalRouteImport } from './routes/admin/journal'
+import { Route as AdminMachinesRouteImport } from './routes/admin/machines'
+import { Route as AdminMailsRouteImport } from './routes/admin/mails'
 import { Route as AdminParametresRouteImport } from './routes/admin/parametres'
 import { Route as AdminPlateformesRouteImport } from './routes/admin/plateformes'
 import { Route as AdminReferentielsRouteImport } from './routes/admin/referentiels'
 import { Route as AdminSitesRouteImport } from './routes/admin/sites'
+import { Route as AdminStatutsRouteImport } from './routes/admin/statuts'
+import { Route as AdminTransportRouteImport } from './routes/admin/transport'
 import { Route as AdminUtilisateursRouteImport } from './routes/admin/utilisateurs'
 import { Route as ApiSplatRouteImport } from './routes/api/$'
 import { Route as CoordinationIndexRouteImport } from './routes/coordination/index'
@@ -33,12 +44,22 @@ import { Route as CoordinationUnitaireRouteImport } from './routes/coordination/
 import { Route as ExpeditionIndexRouteImport } from './routes/expedition/index'
 import { Route as ExpeditionColisRouteImport } from './routes/expedition/colis'
 import { Route as ExpeditionDepartsRouteImport } from './routes/expedition/departs'
+import { Route as ExpeditionExterieurRouteImport } from './routes/expedition/exterieur'
 import { Route as PilotageAlertesRouteImport } from './routes/pilotage/alertes'
+import { Route as PilotageAnalyseRouteImport } from './routes/pilotage/analyse'
 import { Route as PilotageReservationsRouteImport } from './routes/pilotage/reservations'
+import { Route as PilotageSuiviRouteImport } from './routes/pilotage/suivi'
+import { Route as PilotageTableauRouteImport } from './routes/pilotage/tableau'
 import { Route as ReceptionIndexRouteImport } from './routes/reception/index'
 import { Route as ReceptionAffichesRouteImport } from './routes/reception/affiches'
 import { Route as ReceptionAlertesRouteImport } from './routes/reception/alertes'
+import { Route as ReceptionFusionRouteImport } from './routes/reception/fusion'
 import { Route as ReceptionInconnuesRouteImport } from './routes/reception/inconnues'
+import { Route as ReceptionJ3RouteImport } from './routes/reception/j3'
+import { Route as ReceptionPickingRouteImport } from './routes/reception/picking'
+import { Route as StocksIndexRouteImport } from './routes/stocks/index'
+import { Route as StocksFinCampagneRouteImport } from './routes/stocks/fin-campagne'
+import { Route as StocksMouvementsRouteImport } from './routes/stocks/mouvements'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -50,14 +71,59 @@ const AccesRefuseRoute = AccesRefuseRouteImport.update({
   path: '/acces-refuse',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BusRoute = BusRouteImport.update({
+  id: '/bus',
+  path: '/bus',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MoiRoute = MoiRouteImport.update({
   id: '/moi',
   path: '/moi',
   getParentRoute: () => rootRouteImport,
 } as any)
+const NonConformiteRoute = NonConformiteRouteImport.update({
+  id: '/non-conformite',
+  path: '/non-conformite',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminAlertesRoute = AdminAlertesRouteImport.update({
   id: '/admin/alertes',
   path: '/admin/alertes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminBusRoute = AdminBusRouteImport.update({
+  id: '/admin/bus',
+  path: '/admin/bus',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminDeclarantsRoute = AdminDeclarantsRouteImport.update({
+  id: '/admin/declarants',
+  path: '/admin/declarants',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminDupliquerTrainRoute = AdminDupliquerTrainRouteImport.update({
+  id: '/admin/dupliquer-train',
+  path: '/admin/dupliquer-train',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminFinCampagneRoute = AdminFinCampagneRouteImport.update({
+  id: '/admin/fin-campagne',
+  path: '/admin/fin-campagne',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminJournalRoute = AdminJournalRouteImport.update({
+  id: '/admin/journal',
+  path: '/admin/journal',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminMachinesRoute = AdminMachinesRouteImport.update({
+  id: '/admin/machines',
+  path: '/admin/machines',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminMailsRoute = AdminMailsRouteImport.update({
+  id: '/admin/mails',
+  path: '/admin/mails',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminParametresRoute = AdminParametresRouteImport.update({
@@ -78,6 +144,16 @@ const AdminReferentielsRoute = AdminReferentielsRouteImport.update({
 const AdminSitesRoute = AdminSitesRouteImport.update({
   id: '/admin/sites',
   path: '/admin/sites',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminStatutsRoute = AdminStatutsRouteImport.update({
+  id: '/admin/statuts',
+  path: '/admin/statuts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminTransportRoute = AdminTransportRouteImport.update({
+  id: '/admin/transport',
+  path: '/admin/transport',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminUtilisateursRoute = AdminUtilisateursRouteImport.update({
@@ -161,14 +237,34 @@ const ExpeditionDepartsRoute = ExpeditionDepartsRouteImport.update({
   path: '/expedition/departs',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ExpeditionExterieurRoute = ExpeditionExterieurRouteImport.update({
+  id: '/expedition/exterieur',
+  path: '/expedition/exterieur',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PilotageAlertesRoute = PilotageAlertesRouteImport.update({
   id: '/pilotage/alertes',
   path: '/pilotage/alertes',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PilotageAnalyseRoute = PilotageAnalyseRouteImport.update({
+  id: '/pilotage/analyse',
+  path: '/pilotage/analyse',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PilotageReservationsRoute = PilotageReservationsRouteImport.update({
   id: '/pilotage/reservations',
   path: '/pilotage/reservations',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PilotageSuiviRoute = PilotageSuiviRouteImport.update({
+  id: '/pilotage/suivi',
+  path: '/pilotage/suivi',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PilotageTableauRoute = PilotageTableauRouteImport.update({
+  id: '/pilotage/tableau',
+  path: '/pilotage/tableau',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReceptionIndexRoute = ReceptionIndexRouteImport.update({
@@ -186,21 +282,62 @@ const ReceptionAlertesRoute = ReceptionAlertesRouteImport.update({
   path: '/reception/alertes',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReceptionFusionRoute = ReceptionFusionRouteImport.update({
+  id: '/reception/fusion',
+  path: '/reception/fusion',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ReceptionInconnuesRoute = ReceptionInconnuesRouteImport.update({
   id: '/reception/inconnues',
   path: '/reception/inconnues',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReceptionJ3Route = ReceptionJ3RouteImport.update({
+  id: '/reception/j3',
+  path: '/reception/j3',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReceptionPickingRoute = ReceptionPickingRouteImport.update({
+  id: '/reception/picking',
+  path: '/reception/picking',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StocksIndexRoute = StocksIndexRouteImport.update({
+  id: '/stocks/',
+  path: '/stocks/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StocksFinCampagneRoute = StocksFinCampagneRouteImport.update({
+  id: '/stocks/fin-campagne',
+  path: '/stocks/fin-campagne',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StocksMouvementsRoute = StocksMouvementsRouteImport.update({
+  id: '/stocks/mouvements',
+  path: '/stocks/mouvements',
   getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/acces-refuse': typeof AccesRefuseRoute
+  '/bus': typeof BusRoute
   '/moi': typeof MoiRoute
+  '/non-conformite': typeof NonConformiteRoute
   '/admin/alertes': typeof AdminAlertesRoute
+  '/admin/bus': typeof AdminBusRoute
+  '/admin/declarants': typeof AdminDeclarantsRoute
+  '/admin/dupliquer-train': typeof AdminDupliquerTrainRoute
+  '/admin/fin-campagne': typeof AdminFinCampagneRoute
+  '/admin/journal': typeof AdminJournalRoute
+  '/admin/machines': typeof AdminMachinesRoute
+  '/admin/mails': typeof AdminMailsRoute
   '/admin/parametres': typeof AdminParametresRoute
   '/admin/plateformes': typeof AdminPlateformesRoute
   '/admin/referentiels': typeof AdminReferentielsRoute
   '/admin/sites': typeof AdminSitesRoute
+  '/admin/statuts': typeof AdminStatutsRoute
+  '/admin/transport': typeof AdminTransportRoute
   '/admin/utilisateurs': typeof AdminUtilisateursRoute
   '/api/$': typeof ApiSplatRoute
   '/coordination/bagues': typeof CoordinationBaguesRoute
@@ -215,24 +352,45 @@ export interface FileRoutesByFullPath {
   '/coordination/unitaire': typeof CoordinationUnitaireRoute
   '/expedition/colis': typeof ExpeditionColisRoute
   '/expedition/departs': typeof ExpeditionDepartsRoute
+  '/expedition/exterieur': typeof ExpeditionExterieurRoute
   '/pilotage/alertes': typeof PilotageAlertesRoute
+  '/pilotage/analyse': typeof PilotageAnalyseRoute
   '/pilotage/reservations': typeof PilotageReservationsRoute
+  '/pilotage/suivi': typeof PilotageSuiviRoute
+  '/pilotage/tableau': typeof PilotageTableauRoute
   '/reception/affiches': typeof ReceptionAffichesRoute
   '/reception/alertes': typeof ReceptionAlertesRoute
+  '/reception/fusion': typeof ReceptionFusionRoute
   '/reception/inconnues': typeof ReceptionInconnuesRoute
+  '/reception/j3': typeof ReceptionJ3Route
+  '/reception/picking': typeof ReceptionPickingRoute
+  '/stocks/fin-campagne': typeof StocksFinCampagneRoute
+  '/stocks/mouvements': typeof StocksMouvementsRoute
   '/coordination/': typeof CoordinationIndexRoute
   '/expedition/': typeof ExpeditionIndexRoute
   '/reception/': typeof ReceptionIndexRoute
+  '/stocks/': typeof StocksIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/acces-refuse': typeof AccesRefuseRoute
+  '/bus': typeof BusRoute
   '/moi': typeof MoiRoute
+  '/non-conformite': typeof NonConformiteRoute
   '/admin/alertes': typeof AdminAlertesRoute
+  '/admin/bus': typeof AdminBusRoute
+  '/admin/declarants': typeof AdminDeclarantsRoute
+  '/admin/dupliquer-train': typeof AdminDupliquerTrainRoute
+  '/admin/fin-campagne': typeof AdminFinCampagneRoute
+  '/admin/journal': typeof AdminJournalRoute
+  '/admin/machines': typeof AdminMachinesRoute
+  '/admin/mails': typeof AdminMailsRoute
   '/admin/parametres': typeof AdminParametresRoute
   '/admin/plateformes': typeof AdminPlateformesRoute
   '/admin/referentiels': typeof AdminReferentielsRoute
   '/admin/sites': typeof AdminSitesRoute
+  '/admin/statuts': typeof AdminStatutsRoute
+  '/admin/transport': typeof AdminTransportRoute
   '/admin/utilisateurs': typeof AdminUtilisateursRoute
   '/api/$': typeof ApiSplatRoute
   '/coordination/bagues': typeof CoordinationBaguesRoute
@@ -247,25 +405,46 @@ export interface FileRoutesByTo {
   '/coordination/unitaire': typeof CoordinationUnitaireRoute
   '/expedition/colis': typeof ExpeditionColisRoute
   '/expedition/departs': typeof ExpeditionDepartsRoute
+  '/expedition/exterieur': typeof ExpeditionExterieurRoute
   '/pilotage/alertes': typeof PilotageAlertesRoute
+  '/pilotage/analyse': typeof PilotageAnalyseRoute
   '/pilotage/reservations': typeof PilotageReservationsRoute
+  '/pilotage/suivi': typeof PilotageSuiviRoute
+  '/pilotage/tableau': typeof PilotageTableauRoute
   '/reception/affiches': typeof ReceptionAffichesRoute
   '/reception/alertes': typeof ReceptionAlertesRoute
+  '/reception/fusion': typeof ReceptionFusionRoute
   '/reception/inconnues': typeof ReceptionInconnuesRoute
+  '/reception/j3': typeof ReceptionJ3Route
+  '/reception/picking': typeof ReceptionPickingRoute
+  '/stocks/fin-campagne': typeof StocksFinCampagneRoute
+  '/stocks/mouvements': typeof StocksMouvementsRoute
   '/coordination': typeof CoordinationIndexRoute
   '/expedition': typeof ExpeditionIndexRoute
   '/reception': typeof ReceptionIndexRoute
+  '/stocks': typeof StocksIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/acces-refuse': typeof AccesRefuseRoute
+  '/bus': typeof BusRoute
   '/moi': typeof MoiRoute
+  '/non-conformite': typeof NonConformiteRoute
   '/admin/alertes': typeof AdminAlertesRoute
+  '/admin/bus': typeof AdminBusRoute
+  '/admin/declarants': typeof AdminDeclarantsRoute
+  '/admin/dupliquer-train': typeof AdminDupliquerTrainRoute
+  '/admin/fin-campagne': typeof AdminFinCampagneRoute
+  '/admin/journal': typeof AdminJournalRoute
+  '/admin/machines': typeof AdminMachinesRoute
+  '/admin/mails': typeof AdminMailsRoute
   '/admin/parametres': typeof AdminParametresRoute
   '/admin/plateformes': typeof AdminPlateformesRoute
   '/admin/referentiels': typeof AdminReferentielsRoute
   '/admin/sites': typeof AdminSitesRoute
+  '/admin/statuts': typeof AdminStatutsRoute
+  '/admin/transport': typeof AdminTransportRoute
   '/admin/utilisateurs': typeof AdminUtilisateursRoute
   '/api/$': typeof ApiSplatRoute
   '/coordination/bagues': typeof CoordinationBaguesRoute
@@ -280,26 +459,47 @@ export interface FileRoutesById {
   '/coordination/unitaire': typeof CoordinationUnitaireRoute
   '/expedition/colis': typeof ExpeditionColisRoute
   '/expedition/departs': typeof ExpeditionDepartsRoute
+  '/expedition/exterieur': typeof ExpeditionExterieurRoute
   '/pilotage/alertes': typeof PilotageAlertesRoute
+  '/pilotage/analyse': typeof PilotageAnalyseRoute
   '/pilotage/reservations': typeof PilotageReservationsRoute
+  '/pilotage/suivi': typeof PilotageSuiviRoute
+  '/pilotage/tableau': typeof PilotageTableauRoute
   '/reception/affiches': typeof ReceptionAffichesRoute
   '/reception/alertes': typeof ReceptionAlertesRoute
+  '/reception/fusion': typeof ReceptionFusionRoute
   '/reception/inconnues': typeof ReceptionInconnuesRoute
+  '/reception/j3': typeof ReceptionJ3Route
+  '/reception/picking': typeof ReceptionPickingRoute
+  '/stocks/fin-campagne': typeof StocksFinCampagneRoute
+  '/stocks/mouvements': typeof StocksMouvementsRoute
   '/coordination/': typeof CoordinationIndexRoute
   '/expedition/': typeof ExpeditionIndexRoute
   '/reception/': typeof ReceptionIndexRoute
+  '/stocks/': typeof StocksIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/acces-refuse'
+    | '/bus'
     | '/moi'
+    | '/non-conformite'
     | '/admin/alertes'
+    | '/admin/bus'
+    | '/admin/declarants'
+    | '/admin/dupliquer-train'
+    | '/admin/fin-campagne'
+    | '/admin/journal'
+    | '/admin/machines'
+    | '/admin/mails'
     | '/admin/parametres'
     | '/admin/plateformes'
     | '/admin/referentiels'
     | '/admin/sites'
+    | '/admin/statuts'
+    | '/admin/transport'
     | '/admin/utilisateurs'
     | '/api/$'
     | '/coordination/bagues'
@@ -314,24 +514,45 @@ export interface FileRouteTypes {
     | '/coordination/unitaire'
     | '/expedition/colis'
     | '/expedition/departs'
+    | '/expedition/exterieur'
     | '/pilotage/alertes'
+    | '/pilotage/analyse'
     | '/pilotage/reservations'
+    | '/pilotage/suivi'
+    | '/pilotage/tableau'
     | '/reception/affiches'
     | '/reception/alertes'
+    | '/reception/fusion'
     | '/reception/inconnues'
+    | '/reception/j3'
+    | '/reception/picking'
+    | '/stocks/fin-campagne'
+    | '/stocks/mouvements'
     | '/coordination/'
     | '/expedition/'
     | '/reception/'
+    | '/stocks/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/acces-refuse'
+    | '/bus'
     | '/moi'
+    | '/non-conformite'
     | '/admin/alertes'
+    | '/admin/bus'
+    | '/admin/declarants'
+    | '/admin/dupliquer-train'
+    | '/admin/fin-campagne'
+    | '/admin/journal'
+    | '/admin/machines'
+    | '/admin/mails'
     | '/admin/parametres'
     | '/admin/plateformes'
     | '/admin/referentiels'
     | '/admin/sites'
+    | '/admin/statuts'
+    | '/admin/transport'
     | '/admin/utilisateurs'
     | '/api/$'
     | '/coordination/bagues'
@@ -346,24 +567,45 @@ export interface FileRouteTypes {
     | '/coordination/unitaire'
     | '/expedition/colis'
     | '/expedition/departs'
+    | '/expedition/exterieur'
     | '/pilotage/alertes'
+    | '/pilotage/analyse'
     | '/pilotage/reservations'
+    | '/pilotage/suivi'
+    | '/pilotage/tableau'
     | '/reception/affiches'
     | '/reception/alertes'
+    | '/reception/fusion'
     | '/reception/inconnues'
+    | '/reception/j3'
+    | '/reception/picking'
+    | '/stocks/fin-campagne'
+    | '/stocks/mouvements'
     | '/coordination'
     | '/expedition'
     | '/reception'
+    | '/stocks'
   id:
     | '__root__'
     | '/'
     | '/acces-refuse'
+    | '/bus'
     | '/moi'
+    | '/non-conformite'
     | '/admin/alertes'
+    | '/admin/bus'
+    | '/admin/declarants'
+    | '/admin/dupliquer-train'
+    | '/admin/fin-campagne'
+    | '/admin/journal'
+    | '/admin/machines'
+    | '/admin/mails'
     | '/admin/parametres'
     | '/admin/plateformes'
     | '/admin/referentiels'
     | '/admin/sites'
+    | '/admin/statuts'
+    | '/admin/transport'
     | '/admin/utilisateurs'
     | '/api/$'
     | '/coordination/bagues'
@@ -378,25 +620,46 @@ export interface FileRouteTypes {
     | '/coordination/unitaire'
     | '/expedition/colis'
     | '/expedition/departs'
+    | '/expedition/exterieur'
     | '/pilotage/alertes'
+    | '/pilotage/analyse'
     | '/pilotage/reservations'
+    | '/pilotage/suivi'
+    | '/pilotage/tableau'
     | '/reception/affiches'
     | '/reception/alertes'
+    | '/reception/fusion'
     | '/reception/inconnues'
+    | '/reception/j3'
+    | '/reception/picking'
+    | '/stocks/fin-campagne'
+    | '/stocks/mouvements'
     | '/coordination/'
     | '/expedition/'
     | '/reception/'
+    | '/stocks/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AccesRefuseRoute: typeof AccesRefuseRoute
+  BusRoute: typeof BusRoute
   MoiRoute: typeof MoiRoute
+  NonConformiteRoute: typeof NonConformiteRoute
   AdminAlertesRoute: typeof AdminAlertesRoute
+  AdminBusRoute: typeof AdminBusRoute
+  AdminDeclarantsRoute: typeof AdminDeclarantsRoute
+  AdminDupliquerTrainRoute: typeof AdminDupliquerTrainRoute
+  AdminFinCampagneRoute: typeof AdminFinCampagneRoute
+  AdminJournalRoute: typeof AdminJournalRoute
+  AdminMachinesRoute: typeof AdminMachinesRoute
+  AdminMailsRoute: typeof AdminMailsRoute
   AdminParametresRoute: typeof AdminParametresRoute
   AdminPlateformesRoute: typeof AdminPlateformesRoute
   AdminReferentielsRoute: typeof AdminReferentielsRoute
   AdminSitesRoute: typeof AdminSitesRoute
+  AdminStatutsRoute: typeof AdminStatutsRoute
+  AdminTransportRoute: typeof AdminTransportRoute
   AdminUtilisateursRoute: typeof AdminUtilisateursRoute
   ApiSplatRoute: typeof ApiSplatRoute
   CoordinationBaguesRoute: typeof CoordinationBaguesRoute
@@ -411,14 +674,24 @@ export interface RootRouteChildren {
   CoordinationUnitaireRoute: typeof CoordinationUnitaireRoute
   ExpeditionColisRoute: typeof ExpeditionColisRoute
   ExpeditionDepartsRoute: typeof ExpeditionDepartsRoute
+  ExpeditionExterieurRoute: typeof ExpeditionExterieurRoute
   PilotageAlertesRoute: typeof PilotageAlertesRoute
+  PilotageAnalyseRoute: typeof PilotageAnalyseRoute
   PilotageReservationsRoute: typeof PilotageReservationsRoute
+  PilotageSuiviRoute: typeof PilotageSuiviRoute
+  PilotageTableauRoute: typeof PilotageTableauRoute
   ReceptionAffichesRoute: typeof ReceptionAffichesRoute
   ReceptionAlertesRoute: typeof ReceptionAlertesRoute
+  ReceptionFusionRoute: typeof ReceptionFusionRoute
   ReceptionInconnuesRoute: typeof ReceptionInconnuesRoute
+  ReceptionJ3Route: typeof ReceptionJ3Route
+  ReceptionPickingRoute: typeof ReceptionPickingRoute
+  StocksFinCampagneRoute: typeof StocksFinCampagneRoute
+  StocksMouvementsRoute: typeof StocksMouvementsRoute
   CoordinationIndexRoute: typeof CoordinationIndexRoute
   ExpeditionIndexRoute: typeof ExpeditionIndexRoute
   ReceptionIndexRoute: typeof ReceptionIndexRoute
+  StocksIndexRoute: typeof StocksIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -437,6 +710,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AccesRefuseRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/bus': {
+      id: '/bus'
+      path: '/bus'
+      fullPath: '/bus'
+      preLoaderRoute: typeof BusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/moi': {
       id: '/moi'
       path: '/moi'
@@ -444,11 +724,67 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MoiRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/non-conformite': {
+      id: '/non-conformite'
+      path: '/non-conformite'
+      fullPath: '/non-conformite'
+      preLoaderRoute: typeof NonConformiteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/alertes': {
       id: '/admin/alertes'
       path: '/admin/alertes'
       fullPath: '/admin/alertes'
       preLoaderRoute: typeof AdminAlertesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/bus': {
+      id: '/admin/bus'
+      path: '/admin/bus'
+      fullPath: '/admin/bus'
+      preLoaderRoute: typeof AdminBusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/declarants': {
+      id: '/admin/declarants'
+      path: '/admin/declarants'
+      fullPath: '/admin/declarants'
+      preLoaderRoute: typeof AdminDeclarantsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/dupliquer-train': {
+      id: '/admin/dupliquer-train'
+      path: '/admin/dupliquer-train'
+      fullPath: '/admin/dupliquer-train'
+      preLoaderRoute: typeof AdminDupliquerTrainRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/fin-campagne': {
+      id: '/admin/fin-campagne'
+      path: '/admin/fin-campagne'
+      fullPath: '/admin/fin-campagne'
+      preLoaderRoute: typeof AdminFinCampagneRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/journal': {
+      id: '/admin/journal'
+      path: '/admin/journal'
+      fullPath: '/admin/journal'
+      preLoaderRoute: typeof AdminJournalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/machines': {
+      id: '/admin/machines'
+      path: '/admin/machines'
+      fullPath: '/admin/machines'
+      preLoaderRoute: typeof AdminMachinesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/mails': {
+      id: '/admin/mails'
+      path: '/admin/mails'
+      fullPath: '/admin/mails'
+      preLoaderRoute: typeof AdminMailsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/parametres': {
@@ -477,6 +813,20 @@ declare module '@tanstack/react-router' {
       path: '/admin/sites'
       fullPath: '/admin/sites'
       preLoaderRoute: typeof AdminSitesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/statuts': {
+      id: '/admin/statuts'
+      path: '/admin/statuts'
+      fullPath: '/admin/statuts'
+      preLoaderRoute: typeof AdminStatutsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/transport': {
+      id: '/admin/transport'
+      path: '/admin/transport'
+      fullPath: '/admin/transport'
+      preLoaderRoute: typeof AdminTransportRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/utilisateurs': {
@@ -591,6 +941,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ExpeditionDepartsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/expedition/exterieur': {
+      id: '/expedition/exterieur'
+      path: '/expedition/exterieur'
+      fullPath: '/expedition/exterieur'
+      preLoaderRoute: typeof ExpeditionExterieurRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/pilotage/alertes': {
       id: '/pilotage/alertes'
       path: '/pilotage/alertes'
@@ -598,11 +955,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PilotageAlertesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/pilotage/analyse': {
+      id: '/pilotage/analyse'
+      path: '/pilotage/analyse'
+      fullPath: '/pilotage/analyse'
+      preLoaderRoute: typeof PilotageAnalyseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/pilotage/reservations': {
       id: '/pilotage/reservations'
       path: '/pilotage/reservations'
       fullPath: '/pilotage/reservations'
       preLoaderRoute: typeof PilotageReservationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pilotage/suivi': {
+      id: '/pilotage/suivi'
+      path: '/pilotage/suivi'
+      fullPath: '/pilotage/suivi'
+      preLoaderRoute: typeof PilotageSuiviRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pilotage/tableau': {
+      id: '/pilotage/tableau'
+      path: '/pilotage/tableau'
+      fullPath: '/pilotage/tableau'
+      preLoaderRoute: typeof PilotageTableauRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reception/': {
@@ -626,11 +1004,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReceptionAlertesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reception/fusion': {
+      id: '/reception/fusion'
+      path: '/reception/fusion'
+      fullPath: '/reception/fusion'
+      preLoaderRoute: typeof ReceptionFusionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reception/inconnues': {
       id: '/reception/inconnues'
       path: '/reception/inconnues'
       fullPath: '/reception/inconnues'
       preLoaderRoute: typeof ReceptionInconnuesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reception/j3': {
+      id: '/reception/j3'
+      path: '/reception/j3'
+      fullPath: '/reception/j3'
+      preLoaderRoute: typeof ReceptionJ3RouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reception/picking': {
+      id: '/reception/picking'
+      path: '/reception/picking'
+      fullPath: '/reception/picking'
+      preLoaderRoute: typeof ReceptionPickingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/stocks/': {
+      id: '/stocks/'
+      path: '/stocks'
+      fullPath: '/stocks/'
+      preLoaderRoute: typeof StocksIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/stocks/fin-campagne': {
+      id: '/stocks/fin-campagne'
+      path: '/stocks/fin-campagne'
+      fullPath: '/stocks/fin-campagne'
+      preLoaderRoute: typeof StocksFinCampagneRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/stocks/mouvements': {
+      id: '/stocks/mouvements'
+      path: '/stocks/mouvements'
+      fullPath: '/stocks/mouvements'
+      preLoaderRoute: typeof StocksMouvementsRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -639,12 +1059,23 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccesRefuseRoute: AccesRefuseRoute,
+  BusRoute: BusRoute,
   MoiRoute: MoiRoute,
+  NonConformiteRoute: NonConformiteRoute,
   AdminAlertesRoute: AdminAlertesRoute,
+  AdminBusRoute: AdminBusRoute,
+  AdminDeclarantsRoute: AdminDeclarantsRoute,
+  AdminDupliquerTrainRoute: AdminDupliquerTrainRoute,
+  AdminFinCampagneRoute: AdminFinCampagneRoute,
+  AdminJournalRoute: AdminJournalRoute,
+  AdminMachinesRoute: AdminMachinesRoute,
+  AdminMailsRoute: AdminMailsRoute,
   AdminParametresRoute: AdminParametresRoute,
   AdminPlateformesRoute: AdminPlateformesRoute,
   AdminReferentielsRoute: AdminReferentielsRoute,
   AdminSitesRoute: AdminSitesRoute,
+  AdminStatutsRoute: AdminStatutsRoute,
+  AdminTransportRoute: AdminTransportRoute,
   AdminUtilisateursRoute: AdminUtilisateursRoute,
   ApiSplatRoute: ApiSplatRoute,
   CoordinationBaguesRoute: CoordinationBaguesRoute,
@@ -659,14 +1090,24 @@ const rootRouteChildren: RootRouteChildren = {
   CoordinationUnitaireRoute: CoordinationUnitaireRoute,
   ExpeditionColisRoute: ExpeditionColisRoute,
   ExpeditionDepartsRoute: ExpeditionDepartsRoute,
+  ExpeditionExterieurRoute: ExpeditionExterieurRoute,
   PilotageAlertesRoute: PilotageAlertesRoute,
+  PilotageAnalyseRoute: PilotageAnalyseRoute,
   PilotageReservationsRoute: PilotageReservationsRoute,
+  PilotageSuiviRoute: PilotageSuiviRoute,
+  PilotageTableauRoute: PilotageTableauRoute,
   ReceptionAffichesRoute: ReceptionAffichesRoute,
   ReceptionAlertesRoute: ReceptionAlertesRoute,
+  ReceptionFusionRoute: ReceptionFusionRoute,
   ReceptionInconnuesRoute: ReceptionInconnuesRoute,
+  ReceptionJ3Route: ReceptionJ3Route,
+  ReceptionPickingRoute: ReceptionPickingRoute,
+  StocksFinCampagneRoute: StocksFinCampagneRoute,
+  StocksMouvementsRoute: StocksMouvementsRoute,
   CoordinationIndexRoute: CoordinationIndexRoute,
   ExpeditionIndexRoute: ExpeditionIndexRoute,
   ReceptionIndexRoute: ReceptionIndexRoute,
+  StocksIndexRoute: StocksIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

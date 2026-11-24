@@ -87,10 +87,7 @@ export function VueSuivi8m2({
   return (
     <section className="mt-4" aria-label="Suivi 8 m²">
       {message && (
-        <p
-          role="status"
-          className="mb-2 rounded-md border border-slate-300 bg-slate-100 p-2 text-sm"
-        >
+        <p role="status" className="mb-2 rounded-md border border-sky-200 bg-sky-50 p-2 text-sm">
           {message}
         </p>
       )}

@@ -1,22 +1,20 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, useNavigate, Link } from '@tanstack/react-router'
 import {
   AcquitterAlertesResultatSchema,
-  GRAVITES_ALERTE,
-  LIBELLES_GRAVITES,
-  LIBELLES_TYPES_ALERTE,
   ListeAlertesSchema,
-  TYPES_ALERTE,
   formatSemaineIso,
   lundiSemaineIso,
   semaineIsoDe,
   type AlertePilotage,
-  type GraviteAlerte,
-  type TypeAlerte,
 } from '@circe/shared'
 import { useState } from 'react'
+import { FacetFilters } from '../../components/filters/facet-filters.tsx'
+import { alertFacets, filteredAlerts } from '../../lib/pilotage-alert-filters.ts'
+import type { FacetSelection } from '../../lib/faceted-filters.ts'
 import { z } from 'zod'
 import { ErrorMessage } from '../../components/error-message.tsx'
-import { Pastille, type Ton } from '../../components/ui/pastille.tsx'
+import { Pastille } from '../../components/ui/pastille.tsx'
+import { exporterExcel } from '../../lib/excel.ts'
 import { apiRequest } from '../../lib/api-client.ts'
 import { requirePermission } from '../../lib/session.ts'
 import { useApi } from '../../lib/use-api.ts'
@@ -28,12 +26,20 @@ import { useApi } from '../../lib/use-api.ts'
 
 const SearchSchema = z.object({
   dossier: z.coerce.number().int().optional(),
+  dossiers: z
+    .string()
+    .regex(/^\d+(,\d+)*$/)
+    .optional(),
   /** Semaines de départ séparées par des virgules ; « TOUTES » = sans filtre ; absent = S et S+1. */
   depart: z.string().optional(),
-  gravite: z.string().optional(),
   type: z.string().optional(),
   etat: z.enum(['OUVERTES', 'ACQUITTEES']).optional(),
+  vue: z.enum(['ouvertes', 'archivees']).optional(),
   site: z.coerce.number().int().optional(),
+  sites: z
+    .string()
+    .regex(/^\d+(,\d+)*$/)
+    .optional(),
 })
 type Search = z.infer<typeof SearchSchema>
 
@@ -42,25 +48,6 @@ export const Route = createFileRoute('/pilotage/alertes')({
   beforeLoad: requirePermission('alerte.consulter'),
   component: Alertes,
 })
-
-const TON: Record<GraviteAlerte, Ton> = {
-  CRITIQUE: 'critique',
-  IMPORTANT: 'important',
-  A_SURVEILLER: 'surveiller',
-  INFORMATION: 'info',
-}
-const LIBELLE_GRAVITE: Record<GraviteAlerte, string> = {
-  CRITIQUE: 'Critique',
-  IMPORTANT: 'Important',
-  A_SURVEILLER: 'À surveiller',
-  INFORMATION: 'Information',
-}
-const TEINTE: Record<GraviteAlerte, string> = {
-  CRITIQUE: 'bg-red-50',
-  IMPORTANT: 'bg-orange-50',
-  A_SURVEILLER: 'bg-amber-50',
-  INFORMATION: 'bg-sky-50',
-}
 
 /** S et S+1 (maquette : filtre Départ par défaut). */
 function departsParDefaut(maintenant = new Date()) {
@@ -80,52 +67,42 @@ const dateCourte = (iso: string) =>
     timeZone: 'UTC',
   })
 
-function query(s: Search) {
-  const p = new URLSearchParams()
-  if (s.dossier !== undefined) p.set('dossier', String(s.dossier))
-  const departs = s.depart === 'TOUTES' ? [] : s.depart ? liste(s.depart) : departsParDefaut()
-  if (departs.length) p.set('depart', departs.join(','))
-  if (s.gravite) p.set('gravite', s.gravite)
-  if (s.type) p.set('type', s.type)
-  if (s.etat) p.set('etat', s.etat)
-  if (s.site !== undefined) p.set('site', String(s.site))
-  return p.toString()
-}
-
 function Alertes() {
   const search = Route.useSearch()
   const navigate = useNavigate({ from: Route.fullPath })
-  const q = query(search)
-  const { etat, recharger } = useApi(`alertes?${q}`, (signal) =>
-    apiRequest('GET', `/api/alertes?${q}`, { schema: ListeAlertesSchema, signal }),
-  )
+  const archived =
+    search.etat === 'ACQUITTEES' || (search.etat === undefined && search.vue === 'archivees')
+  const { etat, recharger } = useApi('pilotage-alertes-completes', async (signal) => {
+    // L’API renvoie des listes complètes, déjà contrôlées par les permissions et le périmètre.
+    // Les facettes portent sur toute la liste de l’onglet, jamais sur une page partielle.
+    const [open, archived] = await Promise.all([
+      apiRequest('GET', '/api/alertes?etat=OUVERTES', { schema: ListeAlertesSchema, signal }),
+      apiRequest('GET', '/api/alertes?etat=ACQUITTEES', { schema: ListeAlertesSchema, signal }),
+    ])
+    return { open, archived }
+  })
   const [selection, setSelection] = useState<string[]>([])
   const [envoi, setEnvoi] = useState(false)
   const [erreur, setErreur] = useState<unknown>(null)
   const [message, setMessage] = useState<string | null>(null)
-  const [saisieInvalide, setSaisieInvalide] = useState(false)
   const changer = (p: Partial<Search>) => {
     setSelection([])
     void navigate({ search: (prev) => ({ ...prev, ...p }), replace: true })
-  }
-  const gravites = liste(search.gravite) as GraviteAlerte[]
-  const types = liste(search.type) as TypeAlerte[]
-  const basculerType = (t: TypeAlerte) => {
-    const s = new Set(types)
-    if (s.has(t)) s.delete(t)
-    else s.add(t)
-    changer({ type: [...s].join(',') || undefined })
   }
   const acquitter = async (cles: string[]) => {
     setEnvoi(true)
     setErreur(null)
     setMessage(null)
     try {
-      const r = await apiRequest('POST', '/api/alertes/acquittements', {
-        schema: AcquitterAlertesResultatSchema,
-        body: { cles },
-        idempotencyKey: true,
-      })
+      const r = await apiRequest(
+        'POST',
+        archived ? '/api/alertes/restaurations' : '/api/alertes/acquittements',
+        {
+          schema: AcquitterAlertesResultatSchema,
+          body: { cles },
+          idempotencyKey: true,
+        },
+      )
       setMessage(r.message)
       setSelection([])
       recharger()
@@ -135,18 +112,59 @@ function Alertes() {
       setEnvoi(false)
     }
   }
-  const champ = 'ml-1 rounded-md border border-slate-300 px-2 py-1 text-sm'
-  const data = etat.kind === 'ready' ? etat.data : null
-  const sites = data
-    ? [
-        ...new Map(
-          data.alertes
-            .filter((a) => a.plateformeId !== null && a.site)
-            .map((a) => [a.plateformeId, a.site]),
-        ),
-      ]
-    : []
-  const departDefaut = departsParDefaut()
+  const all = etat.kind === 'ready' ? etat.data : null
+  const data = all ? (archived ? all.archived : all.open) : null
+  const selected: FacetSelection = {
+    dossier: liste(
+      search.dossiers ?? (search.dossier === undefined ? undefined : String(search.dossier)),
+    ),
+    depart:
+      search.depart === 'TOUTES'
+        ? []
+        : search.depart
+          ? liste(search.depart)
+          : (data?.departsParDefaut ?? departsParDefaut()),
+    type: liste(search.type),
+    site: liste(search.sites ?? (search.site === undefined ? undefined : String(search.site))),
+  }
+  const alerts = data?.alertes ?? []
+  const rows = filteredAlerts(alerts, selected, archived)
+  const facets = alertFacets(alerts, selected.depart).map((facet) =>
+    facet.id === 'type' ? { ...facet, label: `Type (${selected.type?.length || 'tous'})` } : facet,
+  )
+  const changeFacets = (next: FacetSelection) => {
+    changer({
+      dossiers: next.dossier?.join(',') || undefined,
+      dossier: undefined,
+      depart: next.depart?.join(',') || 'TOUTES',
+      type: next.type?.join(',') || undefined,
+      sites: next.site?.join(',') || undefined,
+      site: undefined,
+    })
+  }
+  const exportAlerts = (items: AlertePilotage[]) => {
+    exporterExcel(
+      archived ? 'alertes-archivees' : 'alertes',
+      [
+        'Alerte',
+        'Message',
+        'Site',
+        'Départ',
+        'Échéance / date',
+        ...(archived ? ['Archivée le', 'Archivée par'] : []),
+        'Règle',
+      ],
+      items.map((alert) => [
+        alert.titre,
+        alert.message,
+        alert.site ?? '',
+        alert.depart ?? '',
+        alert.date ?? '',
+        ...(archived ? [alert.acquittee?.le ?? '', alert.acquittee?.par ?? ''] : []),
+        alert.regle,
+      ]),
+    )
+  }
   const peutAcquitter = data?.peutAcquitter ?? false
   const motifAcquittement = peutAcquitter
     ? undefined
@@ -157,168 +175,61 @@ function Alertes() {
         <div>
           <p className="text-sm text-slate-500">Pilotage</p>
           <h1 className="text-2xl font-semibold">Alertes</h1>
-          <p className="mt-1 max-w-3xl text-sm text-slate-600">
-            Les exceptions remplacent les mails et les pointages Excel. Chaque alerte vient d’une
-            règle paramétrable (seuil, gravité, destinataires, mail ou non) : voir Administration ›
-            Paramétrage › Alertes et mails.
-          </p>
         </div>
-        <button
-          type="button"
-          disabled
-          title="Administration › Paramétrage › Alertes et mails : écran à venir (D-08)."
-          className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-400"
+        <Link
+          to="/admin/alertes"
+          className="rounded-md border border-slate-300 px-3 py-1.5 text-sm"
         >
           Règles et destinataires
-        </button>
+        </Link>
       </div>
 
-      <div className="mt-3 flex flex-wrap items-end gap-3 text-sm">
-        <label>
-          N° de dossier
-          <input
-            className={`${champ} w-28`}
-            defaultValue={search.dossier ?? ''}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                const v = e.currentTarget.value.trim()
-                const invalide = v !== '' && !/^\d+$/.test(v)
-                setSaisieInvalide(invalide)
-                if (!invalide) changer({ dossier: v ? Number(v) : undefined })
-              }
-            }}
-          />
-          {saisieInvalide && (
-            <span role="alert" className="ml-2 text-xs text-red-700">
-              Un n° de dossier ne contient que des chiffres.
-            </span>
-          )}
-        </label>
-        <label>
-          Départ
-          <select
-            className={champ}
-            value={search.depart ?? ''}
-            onChange={(e) => {
-              changer({ depart: e.target.value || undefined })
-            }}
-          >
-            <option value="">
-              {departDefaut.map(semaine).join(' + ')} (alertes sans semaine incluses)
-            </option>
-            {departDefaut.map((s) => (
-              <option key={s} value={s}>
-                {semaine(s)}
-              </option>
-            ))}
-            <option value="TOUTES">Toutes les semaines</option>
-          </select>
-        </label>
-        <label>
-          État
-          <select
-            className={champ}
-            value={search.etat ?? 'OUVERTES'}
-            onChange={(e) => {
-              changer({ etat: e.target.value === 'OUVERTES' ? undefined : 'ACQUITTEES' })
-            }}
-          >
-            <option value="OUVERTES">Ouvertes</option>
-            <option value="ACQUITTEES">Acquittées</option>
-          </select>
-        </label>
-        <label>
-          Site
-          <select
-            className={champ}
-            value={search.site ?? ''}
-            onChange={(e) => {
-              changer({ site: e.target.value ? Number(e.target.value) : undefined })
-            }}
-          >
-            <option value="">Tous</option>
-            {sites.map(([id, nom]) => (
-              <option key={String(id)} value={String(id)}>
-                {nom}
-              </option>
-            ))}
-          </select>
-        </label>
-        <button
-          type="button"
-          className="text-sm underline"
-          onClick={() => {
-            setSelection([])
-            void navigate({ search: {}, replace: true })
-          }}
-        >
-          Réinitialiser
-        </button>
-      </div>
-
-      {/* 4 indicateurs par gravité (cliquables → filtre Gravité). */}
-      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4" aria-label="Indicateurs">
-        {GRAVITES_ALERTE.map((g) => {
-          const actif = gravites.length === 1 && gravites[0] === g
-          return (
-            <button
-              key={g}
-              type="button"
-              aria-pressed={actif}
-              title="Filtrer sur cette gravité"
-              className={`rounded-lg border p-3 text-left ${actif ? 'border-sky-500 bg-sky-50' : 'border-slate-200 bg-white'}`}
-              onClick={() => {
-                changer({ gravite: actif ? undefined : g })
-              }}
-            >
-              <span className="block text-xs text-slate-500">{LIBELLES_GRAVITES[g].libelle}</span>
-              <span className="text-xl font-semibold">{data ? data.parGravite[g] : '…'}</span>
-              {LIBELLES_GRAVITES[g].sous && (
-                <span className="block text-xs text-slate-500">{LIBELLES_GRAVITES[g].sous}</span>
-              )}
-            </button>
-          )
-        })}
-      </div>
-
-      {/* Pastilles de type, choix multiple, avec compteur. */}
+      <p className="mt-2 text-sm text-slate-600">
+        Les exceptions remplacent les mails et les pointages Excel. Chaque alerte permet d’ouvrir
+        l’écran concerné.
+      </p>
       <div
-        className="mt-3 flex flex-wrap gap-1"
-        role="toolbar"
-        aria-label="Filtrer par type d’alerte (plusieurs choix possibles)"
+        role="tablist"
+        aria-label="Alertes ouvertes ou archivées"
+        className="mt-4 flex flex-wrap items-center gap-3"
       >
-        <button
-          type="button"
-          aria-pressed={types.length === 0}
-          className={`rounded-md border px-2 py-1 text-xs ${types.length === 0 ? 'border-sky-600 bg-sky-600 text-white' : 'border-slate-300'}`}
-          onClick={() => {
-            changer({ type: undefined })
-          }}
-        >
-          Tous les types{' '}
-          <span className="ml-1 font-semibold">
-            {data ? Object.values(data.parType).reduce((t, n) => t + n, 0) : '…'}
-          </span>
-        </button>
-        {TYPES_ALERTE.map((t) => {
-          const n = data?.parType[t] ?? 0
-          const on = types.includes(t)
+        {(['OUVERTES', 'ACQUITTEES'] as const).map((value) => {
+          const active = archived === (value === 'ACQUITTEES')
           return (
             <button
-              key={t}
               type="button"
-              aria-pressed={on}
-              disabled={!n && !on}
-              className={`rounded-md border px-2 py-1 text-xs disabled:opacity-40 ${on ? 'border-sky-600 bg-sky-600 text-white' : 'border-slate-300'}`}
+              key={value}
+              role="tab"
+              aria-selected={active}
+              className="min-w-44 rounded border px-4 py-2 font-semibold aria-selected:bg-slate-800 aria-selected:text-white"
               onClick={() => {
-                basculerType(t)
+                changer({ etat: value, vue: undefined })
               }}
             >
-              {LIBELLES_TYPES_ALERTE[t]} <span className="ml-1 font-semibold">{n}</span>
+              {active ? '✓ ' : ''}
+              {value === 'OUVERTES' ? 'Ouvertes' : 'Archivées'} (
+              {all
+                ? value === 'OUVERTES'
+                  ? all.open.alertes.length
+                  : all.archived.alertes.length
+                : '…'}
+              )
             </button>
           )
         })}
+        <p className="text-sm text-slate-600">
+          {archived
+            ? 'Une alerte archivée par erreur : « Restaurer » la remet dans les ouvertes.'
+            : '« Archiver » range l’alerte dans l’onglet Archivées, d’où on peut la restaurer.'}
+        </p>
       </div>
+      {data && (
+        <FacetFilters rows={alerts} facets={facets} selected={selected} onChange={changeFacets} />
+      )}
+      <p className="text-xs text-slate-500">
+        Les alertes sans semaine de départ ou sans site restent affichées. Plusieurs valeurs d’un
+        même filtre se cumulent.
+      </p>
 
       {message && (
         <p
@@ -334,7 +245,29 @@ function Alertes() {
         </div>
       )}
 
-      <div className="mt-3 flex items-center gap-2 text-sm">
+      <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
+        <button
+          type="button"
+          className="underline"
+          disabled={!rows.length}
+          onClick={() => {
+            exportAlerts(rows)
+          }}
+        >
+          Exporter
+        </button>
+        {selection.length > 0 && (
+          <button
+            type="button"
+            className="underline"
+            onClick={() => {
+              exportAlerts(rows.filter((alert) => selection.includes(alert.cle)))
+            }}
+          >
+            Exporter la sélection ({selection.length})
+          </button>
+        )}
+        <span className="text-slate-500">{rows.length} alerte(s)</span>
         <button
           type="button"
           disabled={!peutAcquitter || selection.length === 0 || envoi}
@@ -342,7 +275,8 @@ function Alertes() {
           className="rounded-md border border-slate-300 px-3 py-1.5 disabled:opacity-40"
           onClick={() => void acquitter(selection)}
         >
-          Acquitter{selection.length ? ` (${String(selection.length)})` : ''}
+          {archived ? 'Restaurer' : 'Archiver'}
+          {selection.length ? ` (${String(selection.length)})` : ''}
         </button>
       </div>
 
@@ -353,30 +287,49 @@ function Alertes() {
             <ErrorMessage error={etat.error} onRetry={recharger} />
           </div>
         )}
-        {data && data.alertes.length === 0 && (
-          <p className="p-3 text-sm text-slate-600">Aucune alerte avec ces filtres.</p>
+        {data && rows.length === 0 && (
+          <p className="p-3 text-sm text-slate-600">
+            {archived
+              ? 'Aucune alerte archivée avec ces filtres.'
+              : 'Aucune alerte ouverte avec ces filtres.'}
+          </p>
         )}
-        {data && data.alertes.length > 0 && (
+        {data && rows.length > 0 && (
           <table className="w-full text-sm" aria-label="Alertes">
             <thead className="bg-slate-50 text-slate-600">
               <tr>
                 <th scope="col" className="px-3 py-2">
-                  <span className="sr-only">Sélection</span>
+                  <input
+                    type="checkbox"
+                    disabled={envoi}
+                    aria-label="Sélectionner toutes les alertes affichées"
+                    checked={rows.every((alert) => selection.includes(alert.cle))}
+                    onChange={(event) => {
+                      setSelection(event.target.checked ? rows.map((alert) => alert.cle) : [])
+                    }}
+                  />
                 </th>
-                {['Gravité', 'Alerte', 'Site', 'Départ', 'Échéance / date', 'Règle', ''].map(
-                  (h) => (
-                    <th key={h} scope="col" className="px-3 py-2 text-left font-medium">
-                      {h}
-                    </th>
-                  ),
-                )}
+                {[
+                  'Alerte',
+                  'Site',
+                  'Départ',
+                  'Échéance / date',
+                  ...(archived ? ['Archivée le'] : []),
+                  'Règle',
+                  '',
+                ].map((h) => (
+                  <th key={h} scope="col" className="px-3 py-2 text-left font-medium">
+                    {h}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
-              {data.alertes.map((a) => (
+              {rows.map((a) => (
                 <LigneAlerte
                   key={a.cle}
                   a={a}
+                  archived={archived}
                   selectionnee={selection.includes(a.cle)}
                   onSelection={(oui) => {
                     setSelection((s) => (oui ? [...s, a.cle] : s.filter((c) => c !== a.cle)))
@@ -397,6 +350,7 @@ function Alertes() {
 
 function LigneAlerte({
   a,
+  archived,
   selectionnee,
   onSelection,
   peutAcquitter,
@@ -405,6 +359,7 @@ function LigneAlerte({
   onAcquitter,
 }: {
   a: AlertePilotage
+  archived: boolean
   selectionnee: boolean
   onSelection: (oui: boolean) => void
   peutAcquitter: boolean
@@ -413,21 +368,19 @@ function LigneAlerte({
   onAcquitter: () => void
 }) {
   return (
-    <tr className={`border-t border-slate-100 align-top ${TEINTE[a.gravite]}`}>
+    <tr className="border-t border-slate-100 align-top">
       <td className="px-3 py-2">
-        {a.acquittee === null && (
+        {
           <input
             type="checkbox"
+            disabled={envoi}
             aria-label={`Sélectionner l’alerte ${a.titre}`}
             checked={selectionnee}
             onChange={(e) => {
               onSelection(e.target.checked)
             }}
           />
-        )}
-      </td>
-      <td className="px-3 py-2">
-        <Pastille ton={TON[a.gravite]}>{LIBELLE_GRAVITE[a.gravite]}</Pastille>
+        }
       </td>
       <td className="max-w-xl px-3 py-2">
         <strong>{a.titre}</strong>
@@ -437,28 +390,29 @@ function LigneAlerte({
       <td className="px-3 py-2">{a.site ?? '—'}</td>
       <td className="px-3 py-2">{a.depart ? semaine(a.depart) : '—'}</td>
       <td className="px-3 py-2">{a.date ? dateCourte(a.date) : '—'}</td>
+      {archived && (
+        <td className="px-3 py-2">
+          {a.acquittee
+            ? `${dateCourte(a.acquittee.le)}${a.acquittee.par ? ` · ${a.acquittee.par}` : ''}`
+            : '—'}
+        </td>
+      )}
       <td className="px-3 py-2">
         <Pastille ton="neutre">{a.regle}</Pastille>
       </td>
       <td className="whitespace-nowrap px-3 py-2">
-        <a className="underline" href={a.lien}>
+        <a className="inline-block rounded bg-slate-800 px-3 py-1 text-white" href={a.lien}>
           Ouvrir
         </a>
-        {a.acquittee ? (
-          <span className="ml-2 text-xs text-slate-500">
-            acquittée{a.acquittee.par ? ` par ${a.acquittee.par}` : ''}
-          </span>
-        ) : (
-          <button
-            type="button"
-            className="ml-2 text-xs underline disabled:opacity-40"
-            disabled={!peutAcquitter || envoi}
-            title={motif}
-            onClick={onAcquitter}
-          >
-            Acquitter
-          </button>
-        )}
+        <button
+          type="button"
+          className="rounded border px-3 py-1"
+          disabled={!peutAcquitter || envoi}
+          title={motif}
+          onClick={onAcquitter}
+        >
+          {a.acquittee ? 'Restaurer' : 'Archiver'}
+        </button>
       </td>
     </tr>
   )

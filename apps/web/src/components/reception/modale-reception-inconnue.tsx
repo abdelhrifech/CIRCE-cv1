@@ -1,8 +1,10 @@
 import {
+  type ConstatNc,
   InconnueCreeeSchema,
   ReferentielsReceptionSchema,
   SuggestionsIntitulesSchema,
 } from '@circe/shared'
+import { SaisieConstat } from '../nonconformite/constat.tsx'
 import { useState } from 'react'
 import { apiPost, apiRequest } from '../../lib/api-client.ts'
 import { useApi } from '../../lib/use-api.ts'
@@ -42,6 +44,7 @@ export function ModaleReceptionInconnue({ siteParDefaut, onFermer, onCreee }: Pr
   )
   const [photoBl, setPhotoBl] = useState<{ id: number; intitule: string | null } | null>(null)
   const [sansBl, setSansBl] = useState(false)
+  const [nc, setNc] = useState<ConstatNc | null>(null)
   const [numeroBl, setNumeroBl] = useState('')
   const [photo, setPhoto] = useState<'bl' | 'affiche' | null>(null)
   const [envoi, setEnvoi] = useState<
@@ -84,6 +87,7 @@ export function ModaleReceptionInconnue({ siteParDefaut, onFermer, onCreee }: Pr
           photoAfficheId: photoAffiche?.id ?? null,
           photoBlId: sansBl ? null : (photoBl?.id ?? null),
           sansBl,
+          nonConformite: nc ?? undefined,
           numeroBl: sansBl ? '' : numeroBl,
         },
       })
@@ -313,6 +317,17 @@ export function ModaleReceptionInconnue({ siteParDefaut, onFermer, onCreee }: Pr
           </div>
         </div>
       )}
+      <label className="mt-4 flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          checked={nc !== null}
+          onChange={(e) => {
+            setNc(e.target.checked ? { types: [], bloquante: null, commentaire: '' } : null)
+          }}
+        />
+        Non-conformité constatée
+      </label>
+      {nc && <SaisieConstat value={nc} onChange={setNc} />}
       {envoi.kind === 'erreur' && (
         <div className="mt-3">
           <ErrorMessage error={envoi.error} />

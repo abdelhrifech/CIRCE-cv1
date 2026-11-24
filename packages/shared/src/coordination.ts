@@ -88,6 +88,23 @@ export const ValidationDossierSchema = z.object({
 })
 
 export const DossierCoordinationSchema = z.object({
+  lignesPreparation: z
+    .array(
+      z.object({
+        id: n,
+        type: z.string().nullable(),
+        repartition: z.string().nullable(),
+        theme: z.string().nullable(),
+        repiquage: z.string().nullable(),
+        format: z.string().nullable(),
+        quantite: n.nullable(),
+        destinataire: z.string().nullable(),
+        depart: z.string().nullable(),
+        atelier: z.string().nullable(),
+        dateAffichage: z.string().nullable(),
+      }),
+    )
+    .optional(),
   id: n,
   version: n,
   dossier: n,
@@ -125,7 +142,7 @@ export const ListeDossiersQuerySchema = z.object({
   /** RG-COO-019 : filtre « Validation admin ». */
   va: z.enum(['A_CONFIRMER', 'VALIDEE', 'AUCUNE_AFFICHE_RECUE']).optional(),
   /** ECR-COO-05 « Voir les dossiers » : seuls les dossiers ayant une instruction d'un atelier déroulant. */
-  pour: z.enum(['DEROULANT']).optional(),
+  pour: z.enum(['DEROULANT', 'FIXE', 'PLIAGE']).optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(25),
 })
@@ -234,15 +251,21 @@ export const EtiquettesRackSchema = z.object({
 })
 
 /** RG-COO-010 / 012 / 013 : « Valider la sélection ». */
-export const ValiderSelectionSchema = z.object({
-  // RG-COO-010 / Q-203 : aucun plafond de taille de lot (ANO-026).
-  dossierIds: z.array(z.number().int().positive()).min(1),
-  /** RG-COO-012 : confirmation explicite des affiches à doute listées dans `doutes` (vues dans la modale). */
-  confirmerDoutes: z.boolean().default(false),
-  doutes: z.array(z.object({ id: n, version: n })).default([]),
-  /** ECR-COO-03 : « Confirmer les n sans doute seulement ». */
-  sansDouteSeulement: z.boolean().default(false),
-})
+export const ValiderSelectionSchema = z
+  .object({
+    // RG-COO-010 / Q-203 : aucun plafond de taille de lot (ANO-026).
+    dossierIds: z.array(z.number().int().positive()).default([]),
+    /** RG-NEW-REC-004 : validation limitée aux affiches sélectionnées. */
+    afficheIds: z.array(z.number().int().positive()).min(1).max(500).optional(),
+    /** RG-COO-012 : confirmation explicite des affiches à doute listées dans `doutes` (vues dans la modale). */
+    confirmerDoutes: z.boolean().default(false),
+    doutes: z.array(z.object({ id: n, version: n })).default([]),
+    /** ECR-COO-03 : « Confirmer les n sans doute seulement ». */
+    sansDouteSeulement: z.boolean().default(false),
+  })
+  .refine((v) => v.dossierIds.length > 0 || (v.afficheIds?.length ?? 0) > 0, {
+    message: 'Sélectionnez au moins une affiche ou un dossier.',
+  })
 export type ValiderSelection = z.infer<typeof ValiderSelectionSchema>
 export const ValiderSelectionResultatSchema = z.object({
   confirmees: z.array(z.object({ id: n, version: n })),

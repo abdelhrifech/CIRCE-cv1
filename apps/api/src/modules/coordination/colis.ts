@@ -34,6 +34,7 @@ import type { Tx } from '../../core/transaction.ts'
 import { bumpVersion, updateWithVersion } from '../../core/versioning.ts'
 import type { Prisma, StatutProduction } from '../../generated/prisma/client.ts'
 import { mettreEnFileMail } from '../mails/file.ts'
+import { lireTypes, typeDe } from './unitaire.ts'
 import { lireParametreTexte } from '../reception/parametres.ts'
 import { enregistrerMouvementAutomatique, stockAffiche } from '../reception/stock.ts'
 import { assertDroitCoordination, assertPerimetreAtelier, COO } from './permissions.ts'
@@ -270,6 +271,7 @@ async function colisDuPerimetre(client: Client, identity: Identity, q: ColisQuer
   const parColis = new Map<number, FaceColis[]>()
   for (const f of faces)
     if (f.colisId !== null) parColis.set(f.colisId, [...(parColis.get(f.colisId) ?? []), f])
+  const typesUnitaire = q.type ? await lireTypes(client) : null
   const filtre = q.destinataire?.toLowerCase()
   const expedies = await datesFinDeJournee(
     client,
@@ -282,6 +284,12 @@ async function colisDuPerimetre(client: Client, identity: Identity, q: ColisQuer
       expedieLe: expedies.get(c.id) ?? null,
     }))
     .filter(({ colis: c, faces: fs }) => {
+      if (
+        q.type &&
+        typesUnitaire &&
+        !c.unites.some((l) => typeDe(l.unite, typesUnitaire) === q.type)
+      )
+        return false
       if (filtre) {
         const nomDest = `${c.destinataire.nom ?? ''} ${c.destinataire.nomOrigine}`.toLowerCase()
         if (!nomDest.includes(filtre)) return false

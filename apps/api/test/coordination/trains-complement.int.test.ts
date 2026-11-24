@@ -3366,6 +3366,7 @@ describe('ECR-COO-05 « Voir les dossiers » : filtre pour=DEROULANT (réserve M
     const seulementDeroulant = await contNums('&pour=DEROULANT')
     expect(seulementDeroulant).toContain(deroulant.dossier.contNum)
     expect(seulementDeroulant).not.toContain(dossierFixe.dossier.contNum)
-    expect((await get(ctx, url('&pour=FIXE'), s.users.coord.headers)).statusCode).toBe(400)
+    expect(await contNums('&pour=FIXE')).toContain(dossierFixe.dossier.contNum)
+    expect(await contNums('&pour=FIXE')).not.toContain(deroulant.dossier.contNum)
   })
 })

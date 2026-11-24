@@ -17,6 +17,7 @@ import { ConflictError, ForbiddenError } from '../../core/errors.ts'
 import type { Identity } from '../../core/identity.ts'
 import type { BroadcastPort, MessageBroadcast } from '../../core/ports/broadcast.ts'
 import { ecrireJournal } from '../../core/tracabilite.ts'
+import { integrerLignesBus } from '../bus/service.ts'
 import type { Tx } from '../../core/transaction.ts'
 import { Prisma } from '../../generated/prisma/client.ts'
 import { lireParametreNombre, lireParametreTexte } from '../reception/parametres.ts'
@@ -179,18 +180,32 @@ async function fluxEtatReservations(
 ): Promise<ResultatFlux> {
   const lignes = lot.etatReservations ?? []
   const r: ResultatFlux = { ...compteursVides(), erreurs: 0, message: null, details: null }
-  r.lues = lignes.length
+  const lignesBus = lot.bus ?? []
+  r.lues = lignes.length + lignesBus.length
   // RG-COO-091 : lecture vide → rien n'est écrit.
-  if (lignes.length === 0) return r
+  if (lignes.length === 0 && lignesBus.length === 0) return r
   const parDossier = new Map<number, typeof lignes>()
   for (const l of lignes) parDossier.set(l.contNum, [...(parDossier.get(l.contNum) ?? []), l])
+  for (const l of lignesBus) if (!parDossier.has(l.contNum)) parDossier.set(l.contNum, [])
   const erreurs: { contNum: number; message: string }[] = []
   for (const [contNum, du] of parDossier) {
     try {
       // RG-COO-091 / 102 : transaction PAR DOSSIER ; une erreur annule ce dossier seulement.
-      const c = await unite(ctx.db, timeout, (tx) =>
-        integrerEtatReservationsDossier(tx, contNum, du, lot.lueLe),
-      )
+      const c = await unite(ctx.db, timeout, async (tx) => {
+        const normal = du.length
+          ? await integrerEtatReservationsDossier(tx, contNum, du, lot.lueLe)
+          : { creees: 0, misesAJour: 0, ignorees: 0 }
+        const bus = await integrerLignesBus(
+          tx,
+          lignesBus.filter((l) => l.contNum === contNum),
+          lot.lueLe,
+        )
+        return {
+          creees: normal.creees + bus.creees,
+          misesAJour: normal.misesAJour + bus.misesAJour,
+          ignorees: normal.ignorees + bus.ignorees,
+        }
+      })
       r.creees += c.creees
       r.misesAJour += c.misesAJour
       r.ignorees += c.ignorees
@@ -200,9 +215,17 @@ async function fluxEtatReservations(
   }
   // RG-COO-087 : dossiers absents d'une lecture COMPLÈTE de la fenêtre : lignes « plus vues ». Un lot partiel
   // (lectureComplete = false) ne marque ni ne ferme rien hors de ses dossiers (Q-188 (1)).
-  if (lot.lectureComplete) {
+  if (lot.lectureComplete && lot.etatReservations !== undefined) {
+    // Le flux Bus a son propre grain et sa propre fenêtre ; un EDR classique ne l’annule pas.
+    const dossiersBus = await ctx.db.busLigne.findMany({ select: { dossierId: true } })
+    const contratsBus = await ctx.db.dossier.findMany({
+      where: { id: { in: [...new Set(dossiersBus.map((l) => l.dossierId))] } },
+      select: { contNum: true },
+    })
     const nonLus = await unite(ctx.db, timeout, (tx) =>
-      traiterDossiersNonLus(tx, lot.lueLe, [...parDossier.keys()]),
+      traiterDossiersNonLus(tx, lot.lueLe, [
+        ...new Set([...parDossier.keys(), ...contratsBus.map((d) => d.contNum)]),
+      ]),
     )
     r.misesAJour += nonLus.nonVues + nonLus.fermees
   }
@@ -550,7 +573,7 @@ export async function lancerPassage(
       RETOUR_BROADCAST: () => fluxRetour(ctx, timeout, maintenant),
     }
     const presents: Record<FluxIntegration, boolean> = {
-      ETAT_RESERVATIONS: lot.etatReservations !== undefined,
+      ETAT_RESERVATIONS: lot.etatReservations !== undefined || lot.bus !== undefined,
       DESTINATAIRES: lot.destinataires !== undefined,
       PREPARATIONS: lot.preparations !== undefined,
       TRAINS: lot.trains !== undefined,

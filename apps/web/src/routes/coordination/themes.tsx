@@ -101,19 +101,7 @@ function VerificationDesThemes() {
     <main className="mx-auto max-w-7xl p-6">
       <p className="text-sm text-slate-500">Pilotage · Vérification des thèmes</p>
       <h1 className="text-2xl font-semibold">{VUES[vue]}</h1>
-      <nav className="mt-2 flex gap-3 text-sm" aria-label="Vérification des thèmes">
-        {(Object.keys(VUES) as (keyof typeof VUES)[]).map((v) => (
-          <Link
-            key={v}
-            to="/coordination/themes"
-            search={{ tab: v }}
-            className={v === vue ? 'font-semibold underline' : 'underline'}
-            aria-current={v === vue ? 'page' : undefined}
-          >
-            {VUES[v]}
-          </Link>
-        ))}
-      </nav>
+
       <div className="mt-3 flex flex-wrap items-end gap-3 text-sm">
         <label>
           N° de dossier
@@ -508,7 +496,7 @@ function VueProches({ search, peutAgir, onRetour, changer }: VueProps) {
                   'Intitulés trouvés',
                   'Dossiers',
                   'Départ',
-                  'Pré-production',
+                  'Pilotage',
                   '',
                 ].map((h) => (
                   <th key={h} scope="col" className="px-3 py-2 text-left font-medium">
@@ -719,19 +707,13 @@ function VueAnnonceurs({ search, peutAgir, onRetour, changer }: VueProps) {
           <table className="w-full text-sm" aria-label="Annonceurs proches">
             <thead className="bg-slate-50 text-slate-600">
               <tr>
-                {[
-                  'État',
-                  'Noms trouvés',
-                  'Dossiers',
-                  'Départ',
-                  'Origine',
-                  'Pré-production',
-                  '',
-                ].map((h) => (
-                  <th key={h} scope="col" className="px-3 py-2 text-left font-medium">
-                    {h}
-                  </th>
-                ))}
+                {['État', 'Noms trouvés', 'Dossiers', 'Départ', 'Origine', 'Pilotage', ''].map(
+                  (h) => (
+                    <th key={h} scope="col" className="px-3 py-2 text-left font-medium">
+                      {h}
+                    </th>
+                  ),
+                )}
               </tr>
             </thead>
             <tbody>
@@ -1057,7 +1039,7 @@ function ModaleDetail({
       <table className="w-full text-sm" aria-label="Dossiers du groupe">
         <thead className="text-slate-600">
           <tr>
-            {['Dossier', 'Annonceur', 'Intitulés', 'Départ', 'Pré-production', ''].map((h) => (
+            {['Dossier', 'Annonceur', 'Intitulés', 'Départ', 'Pilotage', ''].map((h) => (
               <th key={h} scope="col" className="px-2 py-1 text-left font-medium">
                 {h}
               </th>

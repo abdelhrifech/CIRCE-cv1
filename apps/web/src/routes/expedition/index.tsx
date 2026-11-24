@@ -10,10 +10,7 @@ import {
 import { useState, type SyntheticEvent } from 'react'
 import { z } from 'zod'
 import { Button } from '../../components/button.tsx'
-import {
-  ExpeditionNav,
-  IndicateurExpedition,
-} from '../../components/coordination/expedition-nav.tsx'
+import { IndicateurExpedition } from '../../components/coordination/expedition-nav.tsx'
 import { ErrorMessage } from '../../components/error-message.tsx'
 import { Pastille } from '../../components/ui/pastille.tsx'
 import { apiPost, apiRequest } from '../../lib/api-client.ts'
@@ -147,7 +144,6 @@ function ScanEtColisage() {
     <main className="mx-auto max-w-7xl p-6">
       <p className="text-sm text-slate-500">Expédition</p>
       <h1 className="text-2xl font-semibold">Expédition · Scan et colisage</h1>
-      <ExpeditionNav />
       <form
         className="mt-4 flex flex-wrap items-end gap-3 text-sm"
         onSubmit={appliquer}
@@ -220,10 +216,7 @@ function ScanEtColisage() {
         </Button>
       </form>
       {message && (
-        <p
-          role="status"
-          className="mt-2 rounded-md border border-slate-300 bg-slate-100 p-2 text-sm"
-        >
+        <p role="status" className="mt-2 rounded-md border border-sky-200 bg-sky-50 p-2 text-sm">
           {message}
         </p>
       )}

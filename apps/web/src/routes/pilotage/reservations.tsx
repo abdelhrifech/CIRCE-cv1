@@ -7,17 +7,30 @@ import {
   PHASES_RESERVATION,
   ReservationsSchema,
   type EtapeReservation,
+  type LigneReservation,
 } from '@circe/shared'
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
+import * as Popover from '@radix-ui/react-popover'
+import { exporterExcel } from '../../lib/excel.ts'
+import {
+  RESERVATION_COLUMNS,
+  defaultReservationColumns,
+  reservationValue,
+  loadReservationExport,
+  type ReservationColumn,
+} from '../../lib/reservation-presentation.ts'
 import { z } from 'zod'
 import { ErrorMessage } from '../../components/error-message.tsx'
 import { Pastille, type Ton } from '../../components/ui/pastille.tsx'
-import { apiRequest } from '../../lib/api-client.ts'
+import { apiRequest, ApiError } from '../../lib/api-client.ts'
 import { requirePermission } from '../../lib/session.ts'
 import { useApi } from '../../lib/use-api.ts'
 
 // ECR-PIL-03 — État des réservations vivant (RG-COO-107, 108, 101) : une base (lignes attendues de la semaine
-// en cours et suivantes), des vues (« Afficher par »). Filtres sur les lignes fines puis regroupement (serveur).
+// en cours et suivantes), des vues (« Afficher par »). Regroupements et totaux conservés côté serveur.
+// TODO(question-ouverte): reservations.js:54–66, 190–202 prévoit grains destinataire/afficheur/unité/
+// colis/départ et filtres reçue/repère/format/pôle/destinataire. Leur ajout exige de modifier le contrat
+// et le service Coordination gelés ; aucun filtre sur une seule page ne doit simuler ces calculs.
 
 const SearchSchema = z.object({
   par: z.enum(GRAINS_RESERVATIONS).optional(),
@@ -76,8 +89,6 @@ const RECUE: Record<string, { libelle: string; ton: Ton }> = {
   SANS_ATTENDU: { libelle: 'Sans attendu', ton: 'surveiller' },
 }
 
-const semaine = (s: string) => `S${s.slice(6)}`
-
 function query(s: Search) {
   const p = new URLSearchParams()
   p.set('grain', s.par ?? 'THEME')
@@ -103,13 +114,22 @@ function EtatDesReservations() {
   )
   const ateliers = refAteliers.kind === 'ready' ? refAteliers.data.ateliers : []
   const [saisieInvalide, setSaisieInvalide] = useState(false)
+  const [departInvalide, setDepartInvalide] = useState(false)
+  const [visibleByGrain, setVisibleByGrain] = useState<Record<string, ReservationColumn[]>>({})
+  const [showColumns, setShowColumns] = useState(false)
+  const [selection, setSelection] = useState<string[]>([])
+  const [exporting, setExporting] = useState(false)
+  const [exportError, setExportError] = useState<unknown>(null)
   const changer = (p: Partial<Search>) => {
+    setSelection([])
     void navigate({
       search: (prev) => ({ ...prev, ...p, page: p.page ?? undefined }),
       replace: true,
     })
   }
   const grain = search.par ?? 'THEME'
+  const columns = visibleByGrain[grain] ?? defaultReservationColumns(grain)
+  const chosenStages = (search.ou?.split(',') ?? []) as EtapeReservation[]
   const champ = 'ml-1 rounded-md border border-slate-300 px-2 py-1 text-sm'
   // Un clic sur une tuile filtre TOUTES les étapes de sa phase (maquette `voir(PHASES.x)`).
   const tuile = (
@@ -120,6 +140,7 @@ function EtatDesReservations() {
     <button
       type="button"
       className="rounded-lg border border-slate-200 bg-white p-3 text-left"
+      aria-pressed={etapes ? etapes.join(',') === search.ou : !search.ou}
       onClick={() => {
         changer({ ou: etapes?.join(',') })
       }}
@@ -148,7 +169,7 @@ function EtatDesReservations() {
           PHASES_RESERVATION.produitsOuExpedies,
         )}
       </div>
-      <p className="mt-2 rounded-md border border-slate-300 bg-slate-100 p-2 text-sm" role="note">
+      <p className="mt-2 rounded-md border border-sky-200 bg-sky-50 p-2 text-sm" role="note">
         Une base, des vues : chaque ligne vient des lignes attendues ; « Afficher par » regroupe. Le
         reçu et le reste sont comptés une fois par thème (un dossier sur deux semaines n’est pas
         compté deux fois).
@@ -174,6 +195,7 @@ function EtatDesReservations() {
           N° de dossier
           <input
             className={`${champ} w-28`}
+            key={`dossier-${search.dossier ?? ''}`}
             defaultValue={search.dossier ?? ''}
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
@@ -195,14 +217,22 @@ function EtatDesReservations() {
           <input
             className={`${champ} w-28`}
             placeholder="2026-W43"
+            key={`depart-${search.depart ?? ''}`}
             defaultValue={search.depart ?? ''}
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 const v = e.currentTarget.value.trim()
-                if (v === '' || /^\d{4}-W\d{2}$/.test(v)) changer({ depart: v || undefined })
+                const invalid = v !== '' && !/^\d{4}-W(?:0[1-9]|[1-4]\d|5[0-3])$/.test(v)
+                setDepartInvalide(invalid)
+                if (!invalid) changer({ depart: v || undefined })
               }
             }}
           />
+          {departInvalide && (
+            <span role="alert" className="ml-2 text-xs text-red-700">
+              Saisir une semaine au format AAAA-W01 à AAAA-W53.
+            </span>
+          )}
         </label>
         <label>
           Atelier
@@ -225,26 +255,70 @@ function EtatDesReservations() {
           Où en est-il
           <select
             className={champ}
-            value={search.ou ?? ''}
-            onChange={(e) => {
-              changer({ ou: e.target.value || undefined })
+            value={chosenStages.length === 1 ? chosenStages[0] : ''}
+            onChange={(event) => {
+              changer({ ou: event.target.value || undefined })
             }}
           >
-            <option value="">Tous</option>
-            {search.ou?.includes(',') && (
-              <option value={search.ou}>Plusieurs étapes (indicateur)</option>
-            )}
-            {ETAPES_RESERVATION.map((o) => (
-              <option key={o} value={o}>
-                {OU[o].libelle}
+            <option value="">
+              {chosenStages.length > 1 ? 'Plusieurs étapes sélectionnées' : 'Toutes les étapes'}
+            </option>
+            {ETAPES_RESERVATION.map((stage) => (
+              <option key={stage} value={stage}>
+                {OU[stage].libelle}
               </option>
             ))}
           </select>
         </label>
+        <Popover.Root>
+          <Popover.Trigger
+            className="rounded-full border border-slate-300 px-3 py-2"
+            aria-label="Filtrer Avancement (plusieurs)"
+          >
+            Avancement (plusieurs){chosenStages.length ? ` · ${chosenStages.length}` : ''}{' '}
+            <span aria-hidden>⌄</span>
+          </Popover.Trigger>
+          <Popover.Portal>
+            <Popover.Content
+              sideOffset={6}
+              className="z-50 max-h-96 w-96 overflow-auto rounded border bg-white p-4 shadow-lg"
+            >
+              <fieldset>
+                <legend className="mb-2 font-semibold">Où en est-il</legend>
+                {ETAPES_RESERVATION.map((stage) => (
+                  <label key={stage} className="mb-2 block text-sm">
+                    <input
+                      type="checkbox"
+                      checked={chosenStages.includes(stage)}
+                      onChange={(event) => {
+                        const next = event.target.checked
+                          ? [...chosenStages, stage]
+                          : chosenStages.filter((value) => value !== stage)
+                        changer({ ou: next.join(',') || undefined })
+                      }}
+                    />{' '}
+                    {OU[stage].libelle}
+                  </label>
+                ))}
+              </fieldset>
+              <button
+                type="button"
+                className="text-sm underline"
+                onClick={() => {
+                  changer({ ou: undefined })
+                }}
+              >
+                Toutes les étapes
+              </button>
+              <Popover.Close className="float-right text-sm underline">Fermer</Popover.Close>
+            </Popover.Content>
+          </Popover.Portal>
+        </Popover.Root>
         <label>
           Annonceur
           <input
             className={champ}
+            key={`annonceur-${search.q ?? ''}`}
             defaultValue={search.q ?? ''}
             onKeyDown={(e) => {
               if (e.key === 'Enter') changer({ q: e.currentTarget.value.trim() || undefined })
@@ -255,12 +329,21 @@ function EtatDesReservations() {
           type="button"
           className="underline"
           onClick={() => {
+            setSelection([])
+            setSaisieInvalide(false)
+            setDepartInvalide(false)
             void navigate({ search: {}, replace: true })
           }}
         >
           Effacer les filtres
         </button>
       </div>
+      {exportError !== null && <ErrorMessage error={exportError} />}
+      <p className="mt-3 text-xs text-slate-500">
+        N° d’affiche : ✓ validation admin confirmée par la Coordination ; • rattachement proposé à
+        confirmer. Les totaux portent sur toutes les lignes filtrées ; l’export de la page reprend
+        les lignes affichées.
+      </p>
       <section className="mt-4 rounded-lg border border-slate-200 bg-white">
         {etat.kind === 'loading' && <p className="p-3 text-sm text-slate-500">Chargement…</p>}
         {etat.kind === 'error' && (
@@ -271,78 +354,187 @@ function EtatDesReservations() {
         {etat.kind === 'ready' && etat.data.items.length === 0 && (
           <p className="p-3 text-sm text-slate-500">Aucune ligne avec ces filtres à ce grain.</p>
         )}
+        {etat.kind === 'ready' && (
+          <div className="flex flex-wrap items-center gap-4 border-b p-3 text-sm">
+            <details
+              className="relative"
+              onToggle={(event) => {
+                setShowColumns(event.currentTarget.open)
+              }}
+            >
+              <summary className="cursor-pointer">Colonnes</summary>
+              {showColumns && (
+                <fieldset className="absolute z-10 max-h-80 w-72 overflow-auto rounded border bg-white p-3 shadow">
+                  <legend className="sr-only">Colonnes visibles</legend>
+                  {(Object.keys(RESERVATION_COLUMNS) as ReservationColumn[]).map((column) => (
+                    <label key={column} className="mb-2 block">
+                      <input
+                        type="checkbox"
+                        checked={columns.includes(column)}
+                        disabled={columns.length === 1 && columns.includes(column)}
+                        onChange={(event) => {
+                          setVisibleByGrain({
+                            ...visibleByGrain,
+                            [grain]: event.target.checked
+                              ? [...columns, column]
+                              : columns.filter((value) => value !== column),
+                          })
+                        }}
+                      />{' '}
+                      {RESERVATION_COLUMNS[column]}
+                    </label>
+                  ))}
+                </fieldset>
+              )}
+            </details>
+            <button
+              type="button"
+              className="underline"
+              disabled={exporting || !etat.data.total}
+              onClick={() => {
+                setExporting(true)
+                setExportError(null)
+                const parameters = new URLSearchParams(q)
+                parameters.set('pageSize', '100')
+                void loadReservationExport(async (page) => {
+                  parameters.set('page', String(page))
+                  return apiRequest('GET', `/api/coordination/reservations?${parameters}`, {
+                    schema: ReservationsSchema,
+                  })
+                })
+                  .then((rows) => {
+                    exporterExcel(
+                      `etat-des-reservations-${grain.toLocaleLowerCase('fr')}`,
+                      columns.map((column) => RESERVATION_COLUMNS[column]),
+                      rows.map((row) => columns.map((column) => exportValue(row, column))),
+                    )
+                  })
+                  .catch((error: unknown) => {
+                    setExportError(
+                      error instanceof Error
+                        ? new ApiError(409, { code: 'EXPORT_INTERROMPU', message: error.message })
+                        : error,
+                    )
+                  })
+                  .finally(() => {
+                    setExporting(false)
+                  })
+              }}
+            >
+              {exporting ? 'Export en cours…' : 'Exporter toutes les lignes filtrées'}
+            </button>
+            <button
+              type="button"
+              className="underline"
+              disabled={!etat.data.items.length}
+              onClick={() => {
+                exporterExcel(
+                  `etat-des-reservations-${grain.toLocaleLowerCase('fr')}-page-${etat.data.page}`,
+                  columns.map((column) => RESERVATION_COLUMNS[column]),
+                  etat.data.items.map((row) => columns.map((column) => exportValue(row, column))),
+                )
+              }}
+            >
+              Exporter la page
+            </button>
+            {selection.length > 0 && (
+              <button
+                type="button"
+                className="underline"
+                onClick={() => {
+                  exporterExcel(
+                    'selection-etat-des-reservations',
+                    columns.map((column) => RESERVATION_COLUMNS[column]),
+                    etat.data.items
+                      .filter((row) => selection.includes(row.cle))
+                      .map((row) => columns.map((column) => exportValue(row, column))),
+                  )
+                }}
+              >
+                Exporter la sélection ({selection.length})
+              </button>
+            )}
+            <span className="ml-auto text-slate-500">
+              {etat.data.items.length} ligne(s) sur {etat.data.total}
+            </span>
+          </div>
+        )}
         {etat.kind === 'ready' && etat.data.items.length > 0 && (
-          <table className="w-full text-sm" aria-label="État des réservations">
-            <thead className="bg-slate-50 text-left text-xs text-slate-500">
-              <tr>
-                <th className="p-2">{grain === 'FORMAT' ? 'Dossiers' : 'Dossier'}</th>
-                <th className="p-2">{grain === 'FORMAT' ? 'Format' : 'Visuel'}</th>
-                <th className="p-2">Départ</th>
-                <th className="p-2">Où en est-il</th>
-                <th className="p-2 text-right">Attendu</th>
-                <th className="p-2 text-right">Reçu</th>
-                <th className="p-2 text-right">Reste à recevoir</th>
-                <th className="p-2">{grain === 'THEME' ? 'N° d’affiche' : 'Thèmes'}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {etat.data.items.map((l) => (
-                <tr
-                  key={l.cle}
-                  className={`border-t border-slate-100 ${l.lisere ? (LISERE[l.lisere] ?? '') : ''}`}
-                >
-                  <td className="p-2">{grain === 'FORMAT' ? l.dossiers : (l.dossier ?? '—')}</td>
-                  <td className="p-2">
-                    {grain === 'FORMAT' ? (
-                      (l.format ?? '—')
-                    ) : (
-                      <>
-                        {l.annonceur ? `${l.annonceur} · ` : ''}
-                        {l.visuel ?? (l.themes > 1 ? `${String(l.themes)} thèmes` : 'IP à saisir')}
-                      </>
-                    )}
-                    {l.reperes.includes('MULTI_SEMAINES') && (
-                      <span className="ml-1">
-                        <Pastille ton="surveiller">Multi-semaines</Pastille>
-                      </span>
-                    )}
-                  </td>
-                  <td className="p-2">{l.departs.map(semaine).join('+')}</td>
-                  <td className="p-2">
-                    <Pastille ton={OU[l.ou].ton}>{OU[l.ou].libelle}</Pastille>
-                  </td>
-                  <td className="p-2 text-right">{l.attendu}</td>
-                  <td className="p-2 text-right">
-                    {l.recu}
-                    {l.afficheRecue && (
-                      <span className="ml-1">
-                        <Pastille ton={RECUE[l.afficheRecue]?.ton ?? 'neutre'}>
-                          {RECUE[l.afficheRecue]?.libelle}
-                        </Pastille>
-                      </span>
-                    )}
-                  </td>
-                  <td className="p-2 text-right">{l.resteARecevoir}</td>
-                  <td className="p-2">
-                    {grain === 'THEME'
-                      ? l.numerosAffiche.map((n) => `${String(n.id)} ${n.marque}`).join(', ') || '—'
-                      : l.themes}
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm" aria-label="État des réservations">
+              <thead className="bg-slate-50 text-left text-xs text-slate-500">
+                <tr>
+                  {columns.map((column, index) => (
+                    <th className="p-2" key={column}>
+                      {index === 0 && (
+                        <input
+                          type="checkbox"
+                          className="mr-2"
+                          aria-label="Sélectionner toutes les lignes de la page"
+                          checked={etat.data.items.every((row) => selection.includes(row.cle))}
+                          onChange={(event) => {
+                            setSelection(
+                              event.target.checked ? etat.data.items.map((row) => row.cle) : [],
+                            )
+                          }}
+                        />
+                      )}
+                      {RESERVATION_COLUMNS[column]}
+                    </th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-            <tfoot className="border-t border-slate-200 font-medium">
-              <tr>
-                <td className="p-2" colSpan={4}>
-                  Total ({etat.data.total} ligne(s))
-                </td>
-                <td className="p-2 text-right">{etat.data.totaux.attendu}</td>
-                <td className="p-2 text-right">{etat.data.totaux.recu}</td>
-                <td className="p-2 text-right">{etat.data.totaux.resteARecevoir}</td>
-                <td />
-              </tr>
-            </tfoot>
-          </table>
+              </thead>
+              <tbody>
+                {etat.data.items.map((row) => (
+                  <tr
+                    key={row.cle}
+                    className={`border-t border-slate-100 ${row.lisere ? (LISERE[row.lisere] ?? '') : ''}`}
+                  >
+                    {columns.map((column, index) => (
+                      <td
+                        key={column}
+                        className={`p-2 ${['attendu', 'recu', 'reste', 'themes', 'dossiers'].includes(column) ? 'text-right' : ''}`}
+                      >
+                        {index === 0 && (
+                          <input
+                            type="checkbox"
+                            className="mr-2"
+                            aria-label={`Sélectionner ${row.dossier ?? row.format ?? row.cle}`}
+                            checked={selection.includes(row.cle)}
+                            onChange={(event) => {
+                              setSelection(
+                                event.target.checked
+                                  ? [...selection, row.cle]
+                                  : selection.filter((key) => key !== row.cle),
+                              )
+                            }}
+                          />
+                        )}
+                        {cell(row, column)}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot className="border-t border-slate-200 font-medium">
+                <tr>
+                  {columns.map((column, index) => (
+                    <td key={column} className="p-2 text-right">
+                      {column === 'attendu'
+                        ? etat.data.totaux.attendu
+                        : column === 'recu'
+                          ? etat.data.totaux.recu
+                          : column === 'reste'
+                            ? etat.data.totaux.resteARecevoir
+                            : index === 0
+                              ? `Total (${etat.data.total} ligne(s))`
+                              : ''}
+                    </td>
+                  ))}
+                </tr>
+              </tfoot>
+            </table>
+          </div>
         )}
         {etat.kind === 'ready' && etat.data.total > etat.data.pageSize && (
           <nav className="flex gap-2 p-2 text-sm" aria-label="Pagination">
@@ -370,4 +562,56 @@ function EtatDesReservations() {
       </section>
     </main>
   )
+}
+
+function exportValue(row: LigneReservation, column: ReservationColumn) {
+  if (column === 'ou') return OU[row.ou].libelle
+  if (column === 'reception')
+    return row.afficheRecue ? (RECUE[row.afficheRecue]?.libelle ?? '—') : '—'
+  return reservationValue(row, column)
+}
+function cell(row: LigneReservation, column: ReservationColumn): ReactNode {
+  if (column === 'ou') return <Pastille ton={OU[row.ou].ton}>{OU[row.ou].libelle}</Pastille>
+  if (column === 'reception') {
+    const received = row.afficheRecue ? RECUE[row.afficheRecue] : null
+    return received ? <Pastille ton={received.ton}>{received.libelle}</Pastille> : '—'
+  }
+  if (column === 'numeros')
+    return row.numerosAffiche.length
+      ? row.numerosAffiche.map((number) => (
+          <span
+            key={number.id}
+            className="mr-2 whitespace-nowrap"
+            title={
+              number.marque === '✓'
+                ? 'Validation admin confirmée par la Coordination'
+                : 'Rattachement proposé, à confirmer par la Coordination'
+            }
+          >
+            {number.id} {number.marque}
+          </span>
+        ))
+      : '—'
+  if (column === 'reperes')
+    return row.reperes.length
+      ? row.reperes.map((marker) => (
+          <Pastille key={marker} ton="surveiller">
+            {marker === 'MULTI_SEMAINES' ? 'Multi-semaines' : 'IP à saisir'}
+          </Pastille>
+        ))
+      : '—'
+  if (column === 'visuel')
+    return (
+      <>
+        {row.annonceur ? `${row.annonceur} · ` : ''}
+        {reservationValue(row, column)}
+        {row.reperes.includes('MULTI_SEMAINES') && (
+          <span className="ml-1">
+            <Pastille ton="surveiller">Multi-semaines</Pastille>
+          </span>
+        )}
+      </>
+    )
+  const value = reservationValue(row, column)
+  return value === '' ? '—' : value
 }

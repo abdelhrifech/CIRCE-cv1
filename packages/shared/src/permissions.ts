@@ -1,6 +1,14 @@
 // Codes de permission (CLAUDE.md §6). La correspondance rôle → permission vit dans l'API
 // (apps/api/src/core/permissions/catalogue.ts) ; le front ne s'en sert que pour le confort d'affichage.
 export const PERMISSION_CODES = [
+  'nonconformite.consulter',
+  'nonconformite.declarer',
+  'nonconformite.decider',
+  'nonconformite.traiter',
+  'j3.gerer',
+  'bus.consulter',
+  'bus.recevoir',
+  'bus.ajuster',
   // Réception (RECEPTION_REGLES_METIER.md §2)
   'reception.attendues.consulter',
   'reception.saisir',
@@ -17,9 +25,11 @@ export const PERMISSION_CODES = [
   'reception.inconnue.rattacher',
   'reception.inconnue.signaler',
   'validation_admin.valider',
+  'stock.consulter',
   'stock.rebut',
   'stock.mouvement_manuel',
   'stock.fin_campagne.consulter',
+  'stock.fin_campagne.agir',
   'alerte.consulter',
   'alerte.acquitter',
   'historique.consulter',

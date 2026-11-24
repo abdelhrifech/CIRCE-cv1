@@ -1973,7 +1973,13 @@ describe('RG-COO-297 référentiel des rouleurs : fin de validité, atelier, lim
         )
       ).json(),
     )
-    expect(liste.rouleurs.map((r) => r.nom)).toEqual(['Rouleur V2'])
+    const libres = await db.rouleur.findMany({
+      where: { atelierId: null, OR: [{ dateFin: null }, { dateFin: { gt: new Date() } }] },
+      select: { nom: true },
+    })
+    expect(liste.rouleurs.map((r) => r.nom).sort()).toEqual(
+      ['Rouleur V2', ...libres.map((r) => r.nom)].sort(),
+    )
     expect((await affecter(s, [t.trainId], passe.id)).statusCode).toBe(404)
     expect((await affecter(s, [t.trainId], futur.id)).statusCode).toBe(200)
     const react = await api(
@@ -2072,7 +2078,13 @@ describe('RG-COO-297 référentiel des rouleurs : fin de validité, atelier, lim
         )
       ).json(),
     )
-    expect(liste.rouleurs.map((r) => r.nom)).toEqual(['Autre atelier'])
+    const libres = await db.rouleur.findMany({
+      where: { atelierId: null, OR: [{ dateFin: null }, { dateFin: { gt: new Date() } }] },
+      select: { nom: true },
+    })
+    expect(liste.rouleurs.map((r) => r.nom).sort()).toEqual(
+      ['Autre atelier', ...libres.map((r) => r.nom)].sort(),
+    )
     const ref = RouleursReferentielSchema.parse(
       (await get(ctx, '/api/coordination/rouleurs', s.users.admin.headers)).json(),
     )
@@ -3068,7 +3080,10 @@ describe('RG-COO-291 / 296 / 297 / 298 / 237 limites de paramètres de SQLite : 
         )
       ).json(),
     )
-    expect(choix.rouleurs).toHaveLength(TAILLE)
+    const libres = await db.rouleur.count({
+      where: { atelierId: null, OR: [{ dateFin: null }, { dateFin: { gt: new Date() } }] },
+    })
+    expect(choix.rouleurs).toHaveLength(TAILLE + libres)
     const r = await envoyer(ctx, '/api/coordination/dispatch/proposer', s.users.cheq.headers, {
       atelierId: s.atelier.id,
       trains: await versions(ctx, s.users.coord.headers, trains),

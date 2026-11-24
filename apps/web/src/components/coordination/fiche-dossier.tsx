@@ -216,7 +216,7 @@ function Contenu({
       </div>
       {f.validationAdmin.etat === 'A_CONFIRMER' && (
         <p
-          className={`mt-2 rounded-md border p-2 ${f.validationAdmin.doutes ? 'border-amber-200 bg-amber-50' : 'border-slate-300 bg-slate-100'}`}
+          className={`mt-2 rounded-md border p-2 ${f.validationAdmin.doutes ? 'border-amber-200 bg-amber-50' : 'border-sky-200 bg-sky-50'}`}
           role="note"
         >
           Validation admin à confirmer : {f.validationAdmin.aConfirmer} affiche(s) reçue(s), avant
@@ -314,7 +314,7 @@ function Contenu({
         </div>
       )}
       {f.correctionDemandeeLe && (
-        <p className="mt-2 rounded-md border border-slate-300 bg-slate-100 p-2">
+        <p className="mt-2 rounded-md border border-sky-200 bg-sky-50 p-2">
           Correction demandée à Broadcast le{' '}
           {new Date(f.correctionDemandeeLe).toLocaleString('fr-FR', {
             dateStyle: 'short',

@@ -26,9 +26,7 @@ test('RG-REC-014 / RG-REC-016 affiche les lignes attendues du site, Attendue + P
 
 test('RG-REC-010 le menu Réception affiche le badge des palettes à contrôler', async ({ page }) => {
   await page.goto('/reception')
-  await expect(
-    page.getByRole('navigation', { name: 'Réception' }).getByLabel('1 palette(s) à contrôler'),
-  ).toBeVisible()
+  await expect(page.getByTestId('onglet-reception')).toContainText('1')
 })
 
 test('RG-REC-011 / RG-REC-012 recherche à la frappe : un dossier masqué par le filtre Statut est signalé, puis affiché', async ({

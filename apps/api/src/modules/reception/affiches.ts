@@ -1,3 +1,4 @@
+import { verifierPhotoJoignable } from './bon-livraison.ts'
 // REC-P08 — Liste des affiches (ECR-REC-03) et fiche de l'affiche (ECR-REC-05).
 import { formatSemaineIso, type FicheAffiche, type ListeAffichesQuery } from '@circe/shared'
 import { parPaquets } from '../../core/paquets.ts'
@@ -60,12 +61,21 @@ function receptionsDe(a: AfficheListee) {
 // feuille temporaire sur une affiche rattachée (« Feuille définitive à imprimer »).
 export function tagsDe(a: AfficheListee) {
   const receptions = receptionsDe(a)
-  const tags: ('A_CONTROLER' | 'RECEPTION_INCONNUE' | 'COMPLEMENT' | 'FEUILLE_A_REFAIRE')[] = []
+  const tags: (
+    'A_CONTROLER' | 'RECEPTION_INCONNUE' | 'COMPLEMENT' | 'FEUILLE_A_REFAIRE' | 'FEUILLE_A_IMPRIMER'
+  )[] = []
   if (receptions.some((r) => r.statut !== 'CONTROLEE')) tags.push('A_CONTROLER')
   if (a.reception?.estInconnue) tags.push('RECEPTION_INCONNUE')
   if (Math.max(receptions.length, a.livraisons.length) >= 2) tags.push('COMPLEMENT')
   if (a.feuilleARefaire || (a.typeFeuille === 'TEMPORAIRE' && a.rattachements.length > 0))
     tags.push('FEUILLE_A_REFAIRE')
+  // RG-NEW-REC-003 : contrôle enregistré sans impression.
+  if (
+    receptions.length > 0 &&
+    receptions.every((r) => r.statut === 'CONTROLEE') &&
+    a.typeFeuille === null
+  )
+    tags.push('FEUILLE_A_IMPRIMER')
   return tags
 }
 
@@ -84,6 +94,10 @@ async function ligneListe(client: Client, a: AfficheListee) {
   const receptions = receptionsDe(a)
   return {
     id: a.id,
+    version: a.version,
+    zonePicking: a.zonePicking,
+    fusionneeHeritee: a.estFusionne,
+    validation: (await etatValidationAffiche(client, a.id)).etat,
     recueLe: a.dateEntree.toISOString(),
     annonceur: a.contAnnonc,
     theme: a.theme,
@@ -123,6 +137,7 @@ export async function listerAffiches(db: Db, identity: Identity, q: ListeAffiche
   const plateformes = plateformesVisibles(identity)
   const where: Prisma.AfficheWhereInput = {
     ...(plateformes === 'toutes' ? {} : { plateformeId: { in: plateformes } }),
+    ...(q.picking ? { zonePicking: q.picking === 'oui' } : {}),
     ...(q.supportId ? { supportId: q.supportId } : {}),
     ...(q.imprimeurId ? { imprimeurId: q.imprimeurId } : {}),
     ...(q.dossier
@@ -135,7 +150,12 @@ export async function listerAffiches(db: Db, identity: Identity, q: ListeAffiche
     include: INCLUDE_LISTE,
     orderBy: [{ dateEntree: 'desc' }, { id: 'desc' }],
   })
+  // Le filtre utilise le même calcul que la confirmation, jamais une copie simplifiée.
+  const validations = new Map<number, string>()
+  if (q.validation)
+    for (const a of toutes) validations.set(a.id, (await etatValidationAffiche(db, a.id)).etat)
   const filtrees = toutes.filter((a) => {
+    if (q.validation && validations.get(a.id) !== q.validation) return false
     if (q.depart) {
       const semaines = a.rattachements.map((r) =>
         formatSemaineIso({ annee: r.ligneAttendue.semAnnee, semaine: r.ligneAttendue.semNum }),
@@ -215,6 +235,11 @@ export async function lireFicheAffiche(
   return {
     ...base,
     version: a.version,
+    supportId: a.supportId,
+    photoId: a.photoId,
+    repiquage: a.repiquage,
+    zonePicking: a.zonePicking,
+    dossierSaisi: a.contNum,
     commentaire: a.commentaire,
     allee: a.allee,
     rayon: a.rayon,
@@ -285,6 +310,10 @@ export async function modifierAffiche(
   id: number,
   input: {
     version: number
+    photoId?: number | null
+    repiquage?: string
+    conservation?: number
+    zonePicking?: boolean
     annonceur?: string
     theme?: string
     imprimeurId?: number | null
@@ -311,12 +340,18 @@ export async function modifierAffiche(
       })
     }
   }
+  if (input.photoId != null && input.photoId !== a.photoId)
+    await verifierPhotoJoignable(tx, identity, input.photoId, 'de l’affiche')
   const vide = (s: string | undefined, actuel: string | null) =>
     s === undefined ? actuel : s === '' ? null : s
   const allee =
     input.allee === undefined ? a.allee : input.allee === '' ? null : input.allee.toUpperCase()
   const rayon = vide(input.rayon, a.rayon)
   const data = {
+    photoId: input.photoId === undefined ? a.photoId : input.photoId,
+    repiquage: vide(input.repiquage, a.repiquage),
+    conservation: input.conservation ?? a.conservation,
+    zonePicking: input.zonePicking ?? a.zonePicking,
     contAnnonc: vide(input.annonceur, a.contAnnonc),
     theme: vide(input.theme, a.theme),
     imprimeurId: input.imprimeurId === undefined ? a.imprimeurId : input.imprimeurId,
@@ -363,6 +398,14 @@ export async function modifierAffiche(
       ancien: a.commentaire,
       nouveau: data.commentaire,
     })
+  for (const cle of ['photoId', 'repiquage', 'conservation', 'zonePicking'] as const) {
+    if (data[cle] !== a[cle])
+      changements.push({
+        action: 'MODIFICATION_PARAMETRE',
+        ancien: JSON.stringify({ [cle]: a[cle] }),
+        nouveau: JSON.stringify({ [cle]: data[cle] }),
+      })
+  }
   for (const c of changements) {
     await ecrireJournal(tx, {
       typeEntite: 'AFFICHE',

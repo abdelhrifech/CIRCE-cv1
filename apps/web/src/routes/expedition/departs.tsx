@@ -1,12 +1,9 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { DepartsCamionsSchema, type GraviteDepart } from '@circe/shared'
+import { TransportDepartsSchema, type GraviteDepart } from '@circe/shared'
 import { useState, type SyntheticEvent } from 'react'
 import { z } from 'zod'
 import { Button } from '../../components/button.tsx'
-import {
-  ExpeditionNav,
-  IndicateurExpedition,
-} from '../../components/coordination/expedition-nav.tsx'
+import { IndicateurExpedition } from '../../components/coordination/expedition-nav.tsx'
 import { ErrorMessage } from '../../components/error-message.tsx'
 import { apiRequest } from '../../lib/api-client.ts'
 import { requirePermission } from '../../lib/session.ts'
@@ -45,8 +42,8 @@ function DepartsCamions() {
   for (const [k, v] of Object.entries(search) as [string, string | number | undefined][])
     if (v !== undefined && v !== '') qs.set(k, String(v))
   const { etat, recharger } = useApi(`departs-${qs.toString()}`, (signal) =>
-    apiRequest('GET', `/api/coordination/colis/departs?${qs.toString()}`, {
-      schema: DepartsCamionsSchema,
+    apiRequest('GET', `/api/transport/departs?${qs.toString()}`, {
+      schema: TransportDepartsSchema,
       signal,
     }),
   )
@@ -74,10 +71,10 @@ function DepartsCamions() {
     <main className="mx-auto max-w-7xl p-6">
       <p className="text-sm text-slate-500">Expédition</p>
       <h1 className="text-2xl font-semibold">Expédition · Départs camions</h1>
-      <ExpeditionNav />
       <p className="mt-2 rounded-md border border-slate-200 bg-slate-50 p-2 text-sm">
-        Avancement du colisage par départ. Le jour et l’heure de départ et la boucle de transport ne
-        sont pas encore paramétrés : un départ est une semaine, une ligne est un destinataire.
+        Avancement du colisage par départ. Les boucles sont affichées uniquement lorsqu’une
+        configuration unique correspond au site et au destinataire. Les horaires configurés restent
+        distincts des dates de départ connues.
         {d?.depuis ? ` Départs depuis la semaine ${d.depuis} (sans filtre de départ).` : ''}
       </p>
       <form
@@ -142,6 +139,7 @@ function DepartsCamions() {
             <thead>
               <tr className="border-b text-left text-slate-500">
                 <th>Départ</th>
+                <th>Boucle / canal / horaire configuré</th>
                 <th>Destinations</th>
                 <th>Unités</th>
                 <th>Colisées / parties</th>
@@ -163,6 +161,11 @@ function DepartsCamions() {
                         ({new Date(l.departLe).toLocaleDateString('fr-FR')})
                       </span>
                     ) : null}
+                  </td>
+                  <td>
+                    {l.boucle
+                      ? `${l.boucle.nom} · ${l.boucle.canal === 'MILK_RUN' ? 'Milk run' : 'Messagerie'} · ${['Lundi S−1', 'Mardi S−1', 'Mercredi S−1', 'Jeudi S−1', 'Vendredi S−1', 'Samedi S−1', 'Dimanche S−1', 'Lundi S'][l.boucle.jour]} ${l.boucle.heure}`
+                      : 'Non configurée ou ambiguë'}
                   </td>
                   <td>{l.destinataire.nom}</td>
                   <td>{l.unites}</td>

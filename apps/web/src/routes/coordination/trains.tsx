@@ -1,3 +1,5 @@
+import { BoutonExportTableau } from '../../components/ui/export-tableau.tsx'
+import { useSelectionGlissee } from '../../lib/selection-glissee.ts'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import {
   CreerTrainResultatSchema,
@@ -58,7 +60,7 @@ const SearchSchema = z.object({
   afficheur: z.string().optional(),
   trainsDe: z.coerce.number().int().min(1).max(9).optional(),
   /** Vue : Liste des trains (défaut), Suivi par thème (besoin), Préparation ou Suivi 8 m² (ECR-COO-05 / 06 / 07 / 08). */
-  tab: z.enum(['trains', 'besoin', 'prepa', 'd8']).optional(),
+  tab: z.enum(['trains', 'besoin', 'prepa', 'd8', 'positions', 'export']).optional(),
 })
 type Recherche = z.infer<typeof SearchSchema>
 
@@ -139,7 +141,7 @@ function ListeDesTrains() {
   const peut = (code: Parameters<typeof can>[1]) => moi.kind === 'ready' && can(moi.data, code)
   const qs = qsDe(search)
   const tab = search.tab ?? 'trains'
-  const prepa = tab === 'prepa'
+  const prepa = tab === 'prepa' || tab === 'export'
   const { etat, recharger } = useApi(`trains-${qs}`, (signal) =>
     apiRequest('GET', `/api/coordination/trains?${qs}`, { schema: ListeTrainsSchema, signal }),
   )
@@ -169,8 +171,16 @@ function ListeDesTrains() {
   })
   const [filtres, setFiltres] = useState<Recherche>(search)
 
-  const lignes = etat.kind === 'ready' ? etat.data.lignes : []
-  const choisis = lignes.filter((l) => selection.includes(l.cle))
+  const lignes =
+    etat.kind === 'ready' ? (prepa ? etat.data.lignes : (etat.data.faces ?? etat.data.lignes)) : []
+  const glissement = useSelectionGlissee(
+    [...new Set(lignes.map((l) => l.cle))],
+    selection,
+    setSelection,
+  )
+  const choisis = [
+    ...new Map(lignes.filter((l) => selection.includes(l.cle)).map((l) => [l.cle, l])).values(),
+  ]
   const trainsChoisis = choisis.flatMap((l) => l.trains)
 
   function appliquer(e: SyntheticEvent) {
@@ -252,7 +262,19 @@ function ListeDesTrains() {
       <p className="text-sm text-slate-500">Déroulant</p>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold">Déroulant · Liste des trains</h1>
+          <h1 className="text-2xl font-semibold">
+            {tab === 'positions'
+              ? 'Position Train'
+              : tab === 'export'
+                ? 'Export préparation'
+                : tab === 'prepa'
+                  ? 'Préparation des trains'
+                  : tab === 'besoin'
+                    ? 'Suivi par thème'
+                    : tab === 'd8'
+                      ? 'Suivi 8 m²'
+                      : 'Déroulant · Liste des trains'}
+          </h1>
           <p className="text-sm text-slate-600">
             Un train attend ses affiches tant qu’un visuel manque ; il devient « Prêt à produire »
             quand tous ses visuels sont reçus ou fractionnés. En production, il ne se modifie plus.
@@ -292,29 +314,6 @@ function ListeDesTrains() {
           )}
         </div>
       </div>
-      <nav aria-label="Vues" className="mt-3 flex gap-2 text-sm">
-        {(
-          [
-            ['trains', 'Liste des trains'],
-            ['besoin', 'Suivi par thème'],
-            ['prepa', 'Préparation'],
-            ['d8', 'Suivi 8 m²'],
-          ] as const
-        ).map(([id, libelle]) => (
-          <button
-            key={id}
-            type="button"
-            aria-current={tab === id ? 'page' : undefined}
-            className={`rounded-md border px-3 py-1 ${tab === id ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-300'}`}
-            onClick={() => {
-              setSelection([])
-              void navigate({ search: (s) => ({ ...s, tab: id === 'trains' ? undefined : id }) })
-            }}
-          >
-            {libelle}
-          </button>
-        ))}
-      </nav>
 
       <form
         className="mt-4 flex flex-wrap items-end gap-3"
@@ -521,7 +520,7 @@ function ListeDesTrains() {
               {message && (
                 <p
                   role="status"
-                  className="mt-2 rounded-md border border-slate-300 bg-slate-100 p-2 text-sm"
+                  className="mt-2 rounded-md border border-sky-200 bg-sky-50 p-2 text-sm"
                 >
                   {message}
                 </p>
@@ -557,7 +556,10 @@ function ListeDesTrains() {
                 <Button
                   type="button"
                   onClick={() => {
-                    const r = selectionnerPremiers(lignes, Math.max(1, Number(n) || 0))
+                    const r = selectionnerPremiers(
+                      [...new Map(lignes.map((l) => [l.cle, l])).values()],
+                      Math.max(1, Number(n) || 0),
+                    )
                     setSelection(r.cles)
                     setMessage(r.message)
                   }}
@@ -767,7 +769,7 @@ function ListeDesTrains() {
               {message && (
                 <p
                   role="status"
-                  className="mt-2 rounded-md border border-slate-300 bg-slate-100 p-2 text-sm"
+                  className="mt-2 rounded-md border border-sky-200 bg-sky-50 p-2 text-sm"
                 >
                   {message}
                 </p>
@@ -776,115 +778,196 @@ function ListeDesTrains() {
               {lignes.length === 0 ? (
                 <p className="mt-4 text-sm text-slate-600">Aucun train pour ces critères.</p>
               ) : (
-                <table className="mt-3 w-full text-sm" aria-label="Trains">
-                  <thead>
-                    <tr className="border-b text-left text-slate-500">
-                      <th className="w-8" />
-                      <th>Train</th>
-                      {(!prepa || colonnes.atelier) && <th>Atelier</th>}
-                      {(!prepa || colonnes.atelier) && <th>Machine</th>}
-                      <th>Destinataire</th>
-                      {prepa && <th>Statut</th>}
-                      <th>Positions</th>
-                      <th className="text-right">Nb trains</th>
-                      {prepa && <th>Pré-assemblage</th>}
-                      {prepa && <th>Rouleur</th>}
-                      <th>Départ camion</th>
-                      {!prepa && <th>Statut</th>}
-                      {colonnes.afficheur && <th>Afficheur</th>}
-                      {colonnes.fichier && <th>Fichier</th>}
-                      {colonnes.bague && <th>Bague</th>}
-                      {colonnes.modifications && <th>Modifications</th>}
-                      {colonnes.panneau && peut('suivi_8m2.saisir') && <th>N° panneau BC</th>}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {lignes.map((l) => (
-                      <tr
-                        key={l.cle}
-                        className={`cursor-pointer border-b ${l.statut === 'EN_ATTENTE' ? 'bg-orange-50' : l.statut === 'PRET' && (!prepa || l.rouleur === null) ? 'bg-sky-50' : ''}`}
-                        onClick={() => {
-                          setFiche(l.cle)
-                        }}
-                      >
-                        <td
-                          onClick={(e) => {
-                            e.stopPropagation()
+                <>
+                  <BoutonExportTableau nom="coordination-trains" tableau="Trains" />
+                  <table {...glissement} className="mt-3 w-full text-sm" aria-label="Trains">
+                    <thead>
+                      <tr className="border-b text-left text-slate-500">
+                        <th className="w-8" />
+                        <th>Train</th>
+                        {!prepa && (
+                          <>
+                            <th>Face</th>
+                            <th>Annonceur</th>
+                            <th>Dossier</th>
+                            <th>Visuel</th>
+                            <th>Repiquage</th>
+                            <th>Adresse</th>
+                            {tab === 'positions' && <th>Côte à côte</th>}
+                          </>
+                        )}
+                        {(!prepa || colonnes.atelier) && <th>Atelier</th>}
+                        {(!prepa || colonnes.atelier) && <th>Machine</th>}
+                        <th>Destinataire</th>
+                        {prepa && <th>Statut</th>}
+                        <th>Positions</th>
+                        {prepa &&
+                          Array.from({ length: 6 }, (_, i) => (
+                            <th key={i}>
+                              Position {i + 1} · Annonceur / Dossier / Visuel / Repiquage
+                            </th>
+                          ))}
+                        <th className="text-right">Nb trains</th>
+                        {prepa && <th>Pré-assemblage</th>}
+                        {prepa && <th>Rouleur</th>}
+                        <th>Départ camion</th>
+                        {!prepa && <th>Statut</th>}
+                        {colonnes.afficheur && <th>Afficheur</th>}
+                        {colonnes.fichier && <th>Fichier</th>}
+                        {colonnes.bague && <th>Bague</th>}
+                        {colonnes.modifications && <th>Modifications</th>}
+                        {colonnes.panneau && peut('suivi_8m2.saisir') && <th>N° panneau BC</th>}
+                        {prepa && <th>Actions</th>}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {lignes.map((l) => (
+                        <tr
+                          data-selection-id={l.cle}
+                          key={`${l.cle}-${l.faceId ?? 'train'}`}
+                          className={`cursor-pointer border-b ${l.statut === 'EN_ATTENTE' ? 'bg-orange-50' : l.statut === 'PRET' && (!prepa || l.rouleur === null) ? 'bg-sky-50' : ''}`}
+                          onClick={() => {
+                            setFiche(l.cle)
                           }}
                         >
-                          <input
-                            type="checkbox"
-                            aria-label={`Sélectionner ${l.cle}`}
-                            checked={selection.includes(l.cle)}
-                            onChange={(e) => {
-                              setSelection(
-                                e.target.checked
-                                  ? [...selection, l.cle]
-                                  : selection.filter((x) => x !== l.cle),
-                              )
+                          <td
+                            onClick={(e) => {
+                              e.stopPropagation()
                             }}
-                          />
-                        </td>
-                        <td className="py-1">
-                          {l.cle}{' '}
-                          {l.origine === 'PRE_TEST' && <Pastille ton="info">pré-test</Pastille>}
-                          {(l.origine === 'ENTRETIEN' || l.origine === 'ENTRETIEN_AJOUTE') && (
-                            <Pastille ton="neutre">entretien</Pastille>
+                          >
+                            <input
+                              type="checkbox"
+                              aria-label={`Sélectionner ${l.cle}`}
+                              checked={selection.includes(l.cle)}
+                              onChange={(e) => {
+                                setSelection(
+                                  e.target.checked
+                                    ? [...new Set([...selection, l.cle])]
+                                    : selection.filter((x) => x !== l.cle),
+                                )
+                              }}
+                            />
+                          </td>
+                          <td className="py-1">
+                            {l.cle}{' '}
+                            {l.origine === 'PRE_TEST' && <Pastille ton="info">pré-test</Pastille>}
+                            {(l.origine === 'ENTRETIEN' || l.origine === 'ENTRETIEN_AJOUTE') && (
+                              <Pastille ton="neutre">entretien</Pastille>
+                            )}
+                            {l.fractionne && <Pastille ton="neutre">Fractionné</Pastille>}
+                          </td>
+                          {!prepa && (
+                            <>
+                              <td>{l.panneauxBc?.join(', ') || l.faceId || '—'}</td>
+                              <td>{l.positions.map((p) => p.annonceur).join(', ')}</td>
+                              <td>{l.positions.map((p) => p.contNum).join(', ')}</td>
+                              <td>{l.positions.map((p) => p.theme).join(', ')}</td>
+                              <td>{l.positions.map((p) => p.repiquage).join(', ')}</td>
+                              <td>{l.adresse ?? '—'}</td>
+                              {tab === 'positions' && <td>{l.coteCote ?? '—'}</td>}
+                            </>
                           )}
-                          {l.fractionne && <Pastille ton="neutre">Fractionné</Pastille>}
-                        </td>
-                        {(!prepa || colonnes.atelier) && (
+                          {(!prepa || colonnes.atelier) && (
+                            <td>
+                              {l.atelier ? `${l.atelier.libelle} · ${l.atelier.plateforme}` : '—'}
+                            </td>
+                          )}
+                          {(!prepa || colonnes.atelier) && <td>{l.machine ?? '—'}</td>}
+                          <td>{l.destinataire ?? '—'}</td>
+                          {prepa && (
+                            <td>
+                              <Pastille production={l.statut} ton={STATUT_UNITE[l.statut].ton}>
+                                {STATUT_UNITE[l.statut].libelle}
+                              </Pastille>
+                            </td>
+                          )}
                           <td>
-                            {l.atelier ? `${l.atelier.libelle} · ${l.atelier.plateforme}` : '—'}
+                            <Positions
+                              ligne={l}
+                              onClic={(faceId) => {
+                                // Maquette « clic = Visuel » : la V2 n'a pas d'image de visuel (ECARTS) ; le clic ouvre la
+                                // fiche du train avec la position cliquée mise en évidence.
+                                setPosition(faceId)
+                              }}
+                            />
                           </td>
-                        )}
-                        {(!prepa || colonnes.atelier) && <td>{l.machine ?? '—'}</td>}
-                        <td>{l.destinataire ?? '—'}</td>
-                        {prepa && (
-                          <td>
-                            <Pastille ton={STATUT_UNITE[l.statut].ton}>
-                              {STATUT_UNITE[l.statut].libelle}
-                            </Pastille>
-                          </td>
-                        )}
-                        <td>
-                          <Positions
-                            ligne={l}
-                            onClic={(faceId) => {
-                              // Maquette « clic = Visuel » : la V2 n'a pas d'image de visuel (ECARTS) ; le clic ouvre la
-                              // fiche du train avec la position cliquée mise en évidence.
-                              setPosition(faceId)
-                            }}
-                          />
-                        </td>
-                        <td className="text-right">{l.nb}</td>
-                        {prepa && <td>{l.preAssemble ? 'Fait' : '—'}</td>}
-                        {prepa && <td>{l.rouleur ?? '—'}</td>}
-                        <td>{formatDepart(l.depart)}</td>
-                        {!prepa && (
-                          <td>
-                            <Pastille ton={STATUT_UNITE[l.statut].ton}>
-                              {STATUT_UNITE[l.statut].libelle}
-                            </Pastille>
-                          </td>
-                        )}
-                        {colonnes.afficheur && <td>{l.afficheur ?? '—'}</td>}
-                        {colonnes.fichier && <td>{l.fichier ?? '—'}</td>}
-                        {colonnes.bague && (
-                          <td>
-                            {l.bagues.length > 0
-                              ? `Imprimée (n° ${l.bagues.join(', ')})${l.reimpressions > 0 ? ` · réimprimée ${String(l.reimpressions)} fois` : ''}`
-                              : '—'}
-                          </td>
-                        )}
-                        {colonnes.modifications && <td>{l.modifications}</td>}
-                        {colonnes.panneau && peut('suivi_8m2.saisir') && (
-                          <td>{l.panneauxBc?.join(', ') ?? '—'}</td>
-                        )}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                          {prepa &&
+                            Array.from({ length: 6 }, (_, i) => {
+                              const p = l.positions[i]
+                              return (
+                                <td key={i}>
+                                  {p ? (
+                                    <>
+                                      <p>
+                                        {p.annonceur ?? '—'} · {p.contNum ?? '—'}
+                                      </p>
+                                      <p>
+                                        {p.theme ?? '—'} · {p.repiquage ?? '—'}
+                                      </p>
+                                    </>
+                                  ) : (
+                                    '—'
+                                  )}
+                                </td>
+                              )
+                            })}
+                          <td className="text-right">{l.nb}</td>
+                          {prepa && <td>{l.preAssemble ? 'Fait' : '—'}</td>}
+                          {prepa && <td>{l.rouleur ?? '—'}</td>}
+                          <td>{formatDepart(l.depart)}</td>
+                          {!prepa && (
+                            <td>
+                              <Pastille production={l.statut} ton={STATUT_UNITE[l.statut].ton}>
+                                {STATUT_UNITE[l.statut].libelle}
+                              </Pastille>
+                            </td>
+                          )}
+                          {colonnes.afficheur && <td>{l.afficheur ?? '—'}</td>}
+                          {colonnes.fichier && <td>{l.fichier ?? '—'}</td>}
+                          {colonnes.bague && (
+                            <td>
+                              {l.bagues.length > 0
+                                ? `Imprimée (n° ${l.bagues.join(', ')})${l.reimpressions > 0 ? ` · réimprimée ${String(l.reimpressions)} fois` : ''}`
+                                : '—'}
+                            </td>
+                          )}
+                          {colonnes.modifications && <td>{l.modifications}</td>}
+                          {colonnes.panneau && peut('suivi_8m2.saisir') && (
+                            <td>{l.panneauxBc?.join(', ') ?? '—'}</td>
+                          )}
+                          {prepa && (
+                            <td>
+                              <button
+                                type="button"
+                                className="underline mr-2"
+                                onClick={() => {
+                                  setFiche(l.cle)
+                                }}
+                              >
+                                Modifier
+                              </button>
+                              <button
+                                type="button"
+                                className="underline"
+                                disabled={!peut('roulage.preparer') || !l.atelier}
+                                onClick={() => {
+                                  if (l.atelier)
+                                    setRouleurPour({
+                                      trains: l.trains,
+                                      atelierId: l.atelier.id,
+                                      action: 'affecter',
+                                    })
+                                }}
+                              >
+                                Rouleur…
+                              </button>
+                            </td>
+                          )}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </>
               )}
             </>
           )}
@@ -1078,7 +1161,7 @@ function ModaleFicheTrain({
           return (
             <div className="text-sm">
               <p className="flex flex-wrap gap-2">
-                <Pastille ton={STATUT_UNITE[t.statut].ton}>
+                <Pastille production={t.statut} ton={STATUT_UNITE[t.statut].ton}>
                   {STATUT_UNITE[t.statut].libelle}
                 </Pastille>
                 {t.atelier && (

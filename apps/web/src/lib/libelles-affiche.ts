@@ -2,6 +2,7 @@ import type { Ton } from '../components/ui/pastille.tsx'
 
 // Libellés de la maquette (ECR-REC-03 / 04 / 05) pour les codes de l'API.
 export const LIBELLE_TAG: Record<string, { libelle: string; ton: Ton }> = {
+  FEUILLE_A_IMPRIMER: { libelle: 'Feuille à imprimer', ton: 'surveiller' },
   A_CONTROLER: { libelle: 'À contrôler', ton: 'surveiller' },
   RECEPTION_INCONNUE: { libelle: 'Réception inconnue', ton: 'info' },
   COMPLEMENT: { libelle: 'Complément', ton: 'surveiller' },

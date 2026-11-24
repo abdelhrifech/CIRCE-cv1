@@ -1,3 +1,5 @@
+import { BoutonExportTableau } from '../../components/ui/export-tableau.tsx'
+import { useSelectionGlissee } from '../../lib/selection-glissee.ts'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import * as Popover from '@radix-ui/react-popover'
 import {
@@ -12,7 +14,6 @@ import {
 import { useEffect, useState, type ReactNode } from 'react'
 import { z } from 'zod'
 import { BonLivraison } from '../../components/reception/bon-livraison.tsx'
-import { MenuReception } from '../../components/reception/menu-reception.tsx'
 import { ModaleReceptionInconnue } from '../../components/reception/modale-reception-inconnue.tsx'
 import { SasEtControle } from '../../components/reception/sas-controle.tsx'
 import { ApercuFeuilles } from '../../components/reception/apercu-feuilles.tsx'
@@ -265,33 +266,7 @@ function ReceptionDesAffiches() {
     <main className="mx-auto max-w-7xl p-6">
       <p className="text-sm text-slate-500">Réception</p>
       <h1 className="text-2xl font-semibold">Réception des affiches</h1>
-      <div className="mt-3">
-        <MenuReception />
-      </div>
-      <h2 className="mt-4 text-lg font-medium">
-        1 · Arrivée de la palette — trouver les dossiers du BL, valider
-      </h2>
 
-      <BandeauRecherche
-        valeur={search.q ?? ''}
-        onRecherche={(q) => {
-          changer({ q: q || undefined })
-        }}
-        onPhotoBl={
-          peutSaisir
-            ? () => {
-                setModalePhoto(true)
-              }
-            : null
-        }
-        onInconnue={
-          peutCreerInconnue
-            ? () => {
-                setModaleInconnue(true)
-              }
-            : null
-        }
-      />
       {messageReception && (
         <p
           role="status"
@@ -318,6 +293,28 @@ function ReceptionDesAffiches() {
           <h3 id="titre-attendues" className="mr-2 font-medium">
             Réceptions attendues
           </h3>
+        </div>
+        <BandeauRecherche
+          valeur={search.q ?? ''}
+          onRecherche={(q) => {
+            changer({ q: q || undefined })
+          }}
+          onPhotoBl={
+            peutSaisir
+              ? () => {
+                  setModalePhoto(true)
+                }
+              : null
+          }
+          onInconnue={
+            peutCreerInconnue
+              ? () => {
+                  setModaleInconnue(true)
+                }
+              : null
+          }
+        />
+        <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 p-3">
           <Filtres
             search={search}
             data={etat.kind === 'ready' ? etat.data : null}
@@ -468,52 +465,17 @@ function BandeauRecherche({
       clearTimeout(t)
     }
   }, [saisie, valeur, onRecherche])
-
   const puces = jetons(valeur)
   function retirer(jeton: string) {
     const reste = puces.filter((p) => p !== jeton).join(' ')
     setSaisie(reste)
     onRecherche(reste)
   }
-
   return (
-    <section
-      className="mt-3 rounded-lg border border-slate-200 bg-white p-3"
-      aria-labelledby="titre-trouver"
-    >
-      <h3 id="titre-trouver" className="font-medium">
-        Trouver les dossiers du BL — trois façons, au choix
-      </h3>
-      <div className="mt-2 grid gap-3 md:grid-cols-3">
-        <div className="rounded-md border border-dashed border-slate-300 p-3">
-          <p className="text-sm font-medium">Photo du BL</p>
-          <button
-            type="button"
-            disabled={onPhotoBl === null}
-            className="mt-2 rounded-md border border-slate-300 px-3 py-1 text-sm hover:bg-slate-50 disabled:text-slate-400"
-            onClick={() => onPhotoBl?.()}
-          >
-            Photographier le BL
-          </button>
-          <p className="mt-1 text-xs text-slate-500">
-            Jointe au bon de livraison (pas de lecture automatique).
-          </p>
-        </div>
-        <div className="rounded-md border border-dashed border-slate-300 p-3">
-          <p className="text-sm font-medium">Photo d’une affiche</p>
-          <button
-            type="button"
-            disabled
-            className="mt-2 rounded-md border px-3 py-1 text-sm text-slate-400"
-            title="Bientôt disponible"
-          >
-            Photographier une affiche
-          </button>
-        </div>
-        <div className="rounded-md border border-slate-300 p-3">
-          <label htmlFor="recherche-dossier" className="text-sm font-medium">
-            Par n° de dossier
-          </label>
+    <div className="p-3" role="search" aria-label="Trouver les dossiers du BL">
+      <div className="flex flex-wrap items-center gap-3">
+        <label className="min-w-60 flex-1">
+          <span className="sr-only">Par n° de dossier</span>
           <input
             id="recherche-dossier"
             type="search"
@@ -522,48 +484,61 @@ function BandeauRecherche({
               setSaisie(e.target.value)
             }}
             placeholder="N° de dossier, de DA, annonceur…"
-            className="mt-2 w-full rounded-md border border-slate-300 px-2 py-1 text-sm"
+            className="h-10 w-full rounded border border-slate-300 px-3 text-sm"
           />
-          {puces.length > 0 && (
-            <ul className="mt-2 flex flex-wrap gap-1" aria-label="Valeurs recherchées">
-              {puces.map((p) => (
-                <li
-                  key={p}
-                  className="flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs"
-                >
-                  {p}
-                  <button
-                    type="button"
-                    aria-label={`Retirer ${p}`}
-                    className="text-slate-500 hover:text-slate-900"
-                    onClick={() => {
-                      retirer(p)
-                    }}
-                  >
-                    ×
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </div>
-      <p className="mt-2 text-sm text-slate-600">
-        Rien ne correspond ?{' '}
+        </label>
+        <span className="text-sm text-slate-500">ou</span>
         <button
           type="button"
-          disabled={onInconnue === null}
-          className="rounded-md border border-slate-300 px-2 py-0.5 hover:bg-slate-50 disabled:text-slate-400"
+          disabled={!onPhotoBl}
+          className="h-10 rounded border px-3 text-sm disabled:opacity-40"
+          onClick={() => onPhotoBl?.()}
+          title="Joindre la photo du bon de livraison"
+        >
+          Photo du BL
+        </button>
+        <button
+          type="button"
+          disabled
+          className="h-10 rounded border px-3 text-sm opacity-40"
+          title="La reconnaissance visuelle nécessite le fournisseur prévu en Q-112"
+        >
+          Photo d’une affiche
+        </button>
+        <button
+          type="button"
+          disabled={!onInconnue}
+          className="h-10 border-l px-3 text-sm disabled:opacity-40"
           onClick={() => onInconnue?.()}
         >
-          Réception inconnue…
+          Réception inconnue
         </button>
+      </div>
+      <p className="mt-2 text-xs text-slate-500">
+        Tapez ou scannez un n° de dossier, de DA ou un annonceur, puis « Au panier ».
       </p>
-    </section>
+      {puces.length > 0 && (
+        <ul className="mt-2 flex gap-2" aria-label="Valeurs recherchées">
+          {puces.map((p) => (
+            <li key={p} className="rounded bg-slate-100 px-2 text-xs">
+              {p}{' '}
+              <button
+                type="button"
+                aria-label={`Retirer ${p}`}
+                onClick={() => {
+                  retirer(p)
+                }}
+              >
+                ×
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   )
 }
 
-/** RG-REC-012 : « Absents de cette page » et « Masqués par <filtre> — Afficher ». */
 function RetourRecherche({
   data,
   onAfficher,
@@ -814,6 +789,13 @@ function Tableau({
   onFeuille: ((afficheIds: number[]) => void) | null
 }) {
   const annee = semaineIsoDe(new Date()).annee
+  const glissement = useSelectionGlissee(
+    data.items.filter((l) => actions && !actions.auPanier.has(l.id)).map((l) => l.id),
+    actions?.selection ?? [],
+    (ids) => {
+      actions?.onSelection(ids)
+    },
+  )
   if (data.aucuneLigneSurLeSite) {
     return (
       <p className="p-4 text-sm text-slate-600">
@@ -836,121 +818,125 @@ function Tableau({
   return (
     <>
       <div className="max-h-[480px] overflow-auto">
-        <table className="w-full text-sm" aria-label="Réceptions attendues">
-          <thead className="sticky top-0 bg-slate-50 text-slate-600">
-            <tr>
-              {actions && (
-                <th scope="col" className="px-3 py-2">
-                  <span className="sr-only">Sélection</span>
-                </th>
-              )}
-              {affichees.map((c) => (
-                <th
-                  key={c.id}
-                  scope="col"
-                  className="px-3 py-2 text-left font-medium"
-                  aria-sort={
-                    c.tri && tri === c.tri
-                      ? ordre === 'asc'
-                        ? 'ascending'
-                        : 'descending'
-                      : undefined
-                  }
-                >
-                  {c.tri ? (
-                    <button
-                      type="button"
-                      className="hover:underline"
-                      onClick={() => {
-                        onChange({
-                          sort: c.tri,
-                          ordre: tri === c.tri && ordre === 'asc' ? 'desc' : 'asc',
-                        })
-                      }}
-                    >
-                      {c.libelle}
-                      {tri === c.tri ? (ordre === 'asc' ? ' ▲' : ' ▼') : ''}
-                    </button>
-                  ) : (
-                    c.libelle
-                  )}
-                </th>
-              ))}
-              <th scope="col" className="px-3 py-2 text-left font-medium">
-                <span className="sr-only">Actions</span>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.items.map((l) => (
-              <tr
-                key={l.id}
-                className={`border-t border-slate-100 ${l.statut === 'SURPLUS' ? 'bg-amber-50' : l.statut === 'PARTIELLE' ? 'bg-orange-50' : ''}`}
-              >
+        <>
+          <BoutonExportTableau nom="reception-index" tableau="Réceptions attendues" />
+          <table {...glissement} className="w-full text-sm" aria-label="Réceptions attendues">
+            <thead className="sticky top-0 bg-slate-50 text-slate-600">
+              <tr>
                 {actions && (
-                  <td className="px-3 py-2">
-                    <input
-                      type="checkbox"
-                      aria-label={`Sélectionner le dossier ${String(l.dossier ?? l.id)}`}
-                      disabled={actions.auPanier.has(l.id)}
-                      checked={actions.selection.includes(l.id)}
-                      onChange={(e) => {
-                        actions.onSelection(
-                          e.target.checked
-                            ? [...actions.selection, l.id]
-                            : actions.selection.filter((id) => id !== l.id),
-                        )
-                      }}
-                    />
-                  </td>
+                  <th scope="col" className="px-3 py-2">
+                    <span className="sr-only">Sélection</span>
+                  </th>
                 )}
                 {affichees.map((c) => (
-                  <td key={c.id} className="px-3 py-2">
-                    {c.cellule(l, annee)}
-                  </td>
-                ))}
-                <td className="whitespace-nowrap px-3 py-2 text-right">
-                  <button
-                    type="button"
-                    className="mr-2 text-sky-700 underline"
-                    aria-label={`Voir le visuel du dossier ${String(l.dossier ?? l.id)}`}
-                    onClick={() => {
-                      onVisuel(l.id)
-                    }}
+                  <th
+                    key={c.id}
+                    scope="col"
+                    className="px-3 py-2 text-left font-medium"
+                    aria-sort={
+                      c.tri && tri === c.tri
+                        ? ordre === 'asc'
+                          ? 'ascending'
+                          : 'descending'
+                        : undefined
+                    }
                   >
-                    voir le visuel
-                  </button>
-                  {onFeuille && l.controle === 'CONTROLEE' && l.affiches.length > 0 && (
+                    {c.tri ? (
+                      <button
+                        type="button"
+                        className="hover:underline"
+                        onClick={() => {
+                          onChange({
+                            sort: c.tri,
+                            ordre: tri === c.tri && ordre === 'asc' ? 'desc' : 'asc',
+                          })
+                        }}
+                      >
+                        {c.libelle}
+                        {tri === c.tri ? (ordre === 'asc' ? ' ▲' : ' ▼') : ''}
+                      </button>
+                    ) : (
+                      c.libelle
+                    )}
+                  </th>
+                ))}
+                <th scope="col" className="px-3 py-2 text-left font-medium">
+                  <span className="sr-only">Actions</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.items.map((l) => (
+                <tr
+                  data-selection-id={l.id}
+                  key={l.id}
+                  className={`border-t border-slate-100 ${l.statut === 'SURPLUS' ? 'bg-amber-50' : l.statut === 'PARTIELLE' ? 'bg-orange-50' : ''}`}
+                >
+                  {actions && (
+                    <td className="px-3 py-2">
+                      <input
+                        type="checkbox"
+                        aria-label={`Sélectionner le dossier ${String(l.dossier ?? l.id)}`}
+                        disabled={actions.auPanier.has(l.id)}
+                        checked={actions.selection.includes(l.id)}
+                        onChange={(e) => {
+                          actions.onSelection(
+                            e.target.checked
+                              ? [...actions.selection, l.id]
+                              : actions.selection.filter((id) => id !== l.id),
+                          )
+                        }}
+                      />
+                    </td>
+                  )}
+                  {affichees.map((c) => (
+                    <td key={c.id} className="px-3 py-2">
+                      {c.cellule(l, annee)}
+                    </td>
+                  ))}
+                  <td className="whitespace-nowrap px-3 py-2 text-right">
                     <button
                       type="button"
                       className="mr-2 text-sky-700 underline"
-                      aria-label={`Feuille de stock du dossier ${String(l.dossier ?? l.id)}`}
+                      aria-label={`Voir le visuel du dossier ${String(l.dossier ?? l.id)}`}
                       onClick={() => {
-                        onFeuille(l.affiches)
+                        onVisuel(l.id)
                       }}
                     >
-                      Feuille de stock
+                      voir le visuel
                     </button>
-                  )}
-                  {actions &&
-                    (actions.auPanier.has(l.id) ? (
-                      <span className="text-sm text-emerald-700">✓ au panier</span>
-                    ) : (
+                    {onFeuille && l.controle === 'CONTROLEE' && l.affiches.length > 0 && (
                       <button
                         type="button"
-                        className="rounded-md border border-slate-300 px-2 py-0.5 text-sm hover:bg-slate-50"
+                        className="mr-2 text-sky-700 underline"
+                        aria-label={`Feuille de stock du dossier ${String(l.dossier ?? l.id)}`}
                         onClick={() => {
-                          actions.onAjouter(l)
+                          onFeuille(l.affiches)
                         }}
                       >
-                        Au panier
+                        Feuille de stock
                       </button>
-                    ))}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                    )}
+                    {actions &&
+                      (actions.auPanier.has(l.id) ? (
+                        <span className="text-sm text-emerald-700">✓ au panier</span>
+                      ) : (
+                        <button
+                          type="button"
+                          className="rounded-md border border-slate-300 px-2 py-0.5 text-sm hover:bg-slate-50"
+                          onClick={() => {
+                            actions.onAjouter(l)
+                          }}
+                        >
+                          Au panier
+                        </button>
+                      ))}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
       </div>
       <div className="flex items-center justify-between border-t border-slate-200 p-3 text-sm">
         <span>{data.total} ligne(s)</span>

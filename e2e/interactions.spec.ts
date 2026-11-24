@@ -49,8 +49,8 @@ test('RG-X-001 / RG-X-005 / RG-X-028 la Réception reçoit le BL : la Coordinati
     .getByRole('button', { name: 'Au panier' })
     .click()
   await page
-    .getByRole('region', { name: /Trouver les dossiers du BL/ })
-    .getByRole('button', { name: 'Photographier le BL' })
+    .getByRole('search', { name: /Trouver les dossiers du BL/ })
+    .getByRole('button', { name: 'Photo du BL' })
     .click()
   await page
     .getByLabel('Fichier du BL (photo ou PDF)')
@@ -60,13 +60,17 @@ test('RG-X-001 / RG-X-005 / RG-X-028 la Réception reçoit le BL : la Coordinati
   await page.getByLabel('N° de BL *').fill(`BL-IX-${Date.now()}`)
   await page.getByLabel('Transporteur *').selectOption({ label: 'Transporteur E2E' })
   await page.getByLabel('Imprimeur *').selectOption({ label: 'Imprimeur E2E' })
+  await page
+    .getByRole('region', { name: 'Lignes du BL (panier)' })
+    .getByRole('checkbox', { name: /Ligne .* pour ce BL/ })
+    .check()
   await page.getByRole('button', { name: 'Valider la réception (1 ligne)' }).click()
   await expect(page.getByTestId('message-reception')).toContainText(
     '« affiche reçue » = oui dès l’arrivée. La palette passe à l’étape 2 (contrôle).',
   )
 
   // Coordination : le dossier est « À confirmer (1) », l’affiche est une proposition (RG-X-001, RG-X-063).
-  const coord = await coordination(page, '/coordination')
+  const coord = await coordination(page, '/coordination?pour=fixe')
   const fiche = await ficheCoordination(coord)
   const affiches = fiche.getByRole('table', { name: 'Affiches reçues et validation admin' })
   await expect(affiches).toContainText('À confirmer')
@@ -98,7 +102,7 @@ test('RG-X-015 / RG-X-063 la Réception ne valide pas : la fiche affiche l’ind
 test('RG-X-050 / RG-X-053 la Coordination valide puis annule : la Réception le voit sur la fiche affiche, le stock ne bouge pas', async ({
   page,
 }) => {
-  const coord = await coordination(page, '/coordination')
+  const coord = await coordination(page, '/coordination?pour=fixe')
   const fiche = await ficheCoordination(coord)
   const affiches = fiche.getByRole('table', { name: 'Affiches reçues et validation admin' })
   await affiches.getByRole('button', { name: /^Valider l’affiche \d+$/ }).click()
@@ -145,7 +149,7 @@ test('RG-X-013 / RG-X-058 la Réception retire le dernier dossier : l’affiche 
   await expect(inconnues.getByRole('row', { name: ANNONCEUR })).toContainText('À identifier')
 
   // Coordination : plus aucune affiche à confirmer sur ce dossier, il sort du filtre par défaut (« À faire »).
-  const coord = await coordination(page, '/coordination')
+  const coord = await coordination(page, '/coordination?pour=fixe')
   const table = coord.getByRole('table', { name: 'Dossiers' })
   await expect(table).toBeVisible()
   await expect(table.getByRole('row', { name: ANNONCEUR })).toHaveCount(0)

@@ -23,3 +23,16 @@ export * from './coordination-destinataires.ts'
 export * from './admin.ts'
 export * from './admin-lot3.ts'
 export * from './admin-lot4.ts'
+export { CENTRES_DEMO, ROLES_DEMO, PROFILS_DEMO } from './profils-demo.ts'
+export * from './nonconformite.ts'
+export * from './pilotage-nouveau.ts'
+export * from './bus.ts'
+export * from './evolutions16.ts'
+
+export * from './stocks.ts'
+
+export * from './admin-maquette.ts'
+export * from './catalogue-maquette-reference.ts'
+
+export * from './pilotage-dashboard.ts'
+export * from './transport.ts'

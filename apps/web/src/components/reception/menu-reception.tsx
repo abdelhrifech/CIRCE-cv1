@@ -4,7 +4,7 @@ import { apiRequest } from '../../lib/api-client.ts'
 import { useApi } from '../../lib/use-api.ts'
 
 /**
- * RG-REC-010 : menu Réception (trois entrées + Alertes ; Liste des affiches en 3e position, maquette du 16/11/2026) et badges (palettes à contrôler ; affiches orphelines en
+ * RG-REC-010 : menu Réception (trois entrées + Alertes) et badges (palettes à contrôler ; affiches orphelines en
  * rouge). « Zone picking » et « Fusion des affiches » ne sont pas repris (Q-100, Q-101).
  */
 export function MenuReception() {
@@ -34,6 +34,13 @@ export function MenuReception() {
         )}
       </Link>
       <Link
+        to="/reception/affiches"
+        className="rounded-md px-3 py-1.5 font-medium"
+        activeProps={{ className: 'bg-slate-900 text-white', 'aria-current': 'page' }}
+      >
+        Liste des affiches
+      </Link>
+      <Link
         to="/reception/inconnues"
         className="rounded-md px-3 py-1.5 font-medium"
         activeProps={{ className: 'bg-slate-900 text-white', 'aria-current': 'page' }}
@@ -47,13 +54,6 @@ export function MenuReception() {
             {compteurs.affichesOrphelines}
           </span>
         )}
-      </Link>
-      <Link
-        to="/reception/affiches"
-        className="rounded-md px-3 py-1.5 font-medium"
-        activeProps={{ className: 'bg-slate-900 text-white', 'aria-current': 'page' }}
-      >
-        Liste des affiches
       </Link>
       <Link
         to="/reception/alertes"

@@ -17,7 +17,8 @@ export default function setup(): void {
   }
   const result = spawnSync('pnpm', ['exec', 'prisma', 'migrate', 'deploy'], {
     cwd: apiDir,
-    env: process.env,
+    // The Rust engine uses its own log levels; keep its diagnostics independent of Pino's silent test mode.
+    env: { ...process.env, RUST_LOG: 'info' },
     encoding: 'utf8',
   })
   if (result.status !== 0) {

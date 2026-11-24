@@ -11,7 +11,7 @@ const table = (page: Page) => page.getByRole('table', { name: 'Dossiers' })
 const ligne = (page: Page, annonceur: RegExp) => table(page).getByRole('row', { name: annonceur })
 
 async function ouvrir(page: Page) {
-  await page.goto('/coordination')
+  await page.goto('/coordination?pour=fixe')
   await expect(table(page)).toBeVisible()
 }
 
@@ -33,11 +33,13 @@ test('RG-COO-013 « Valider la sélection » sans affiche à confirmer : refus �
   await ligne(page, /Annonceur Cas sûr E2E/)
     .getByRole('checkbox')
     .uncheck()
+  await page.goto('/coordination?pour=deroulant')
   await ligne(page, /Annonceur Répartition E2E/)
     .getByRole('checkbox')
     .check()
   await page.getByRole('button', { name: 'Valider la sélection' }).click()
   await expect(page.getByTestId('error-message')).toContainText('Rien à valider')
+  await ouvrir(page)
   await expect(ligne(page, /Annonceur Cas sûr E2E/)).toContainText('À confirmer (1)')
 })
 

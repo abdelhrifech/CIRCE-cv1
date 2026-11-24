@@ -5,7 +5,6 @@ import {
   type ReferentielLigne,
 } from '@circe/shared'
 import { useState, type SyntheticEvent } from 'react'
-import { AdminNav } from '../../components/admin/admin-nav.tsx'
 import { Button } from '../../components/button.tsx'
 import { ErrorMessage } from '../../components/error-message.tsx'
 import { Pastille } from '../../components/ui/pastille.tsx'
@@ -30,7 +29,6 @@ function Referentiels() {
     <main className="mx-auto max-w-6xl p-6">
       <p className="text-sm text-slate-500">Administration › Paramétrage › Référentiels</p>
       <h1 className="text-2xl font-semibold">Référentiels de réception</h1>
-      <AdminNav />
       <p className="mt-3 text-sm text-slate-600">
         Listes proposées à la saisie d’une réception. Une valeur désactivée n’est plus proposée mais
         reste visible sur les réceptions existantes ; rien n’est jamais supprimé.
@@ -179,7 +177,7 @@ function CarteReferentiel({
         </Button>
       </form>
       {message && (
-        <p role="status" className="mt-2 rounded-md border border-slate-300 bg-slate-100 p-2">
+        <p role="status" className="mt-2 rounded-md border border-sky-200 bg-sky-50 p-2">
           {message}
         </p>
       )}

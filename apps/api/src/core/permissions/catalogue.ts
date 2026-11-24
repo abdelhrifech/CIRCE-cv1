@@ -13,6 +13,46 @@ export interface PermissionDefinition {
 }
 
 export const CATALOGUE_PERMISSIONS: Record<PermissionCode, PermissionDefinition> = {
+  'nonconformite.consulter': {
+    libelle: 'Consulter les non-conformités',
+    roles: ['coord', 'recep', 'cheq'],
+    source: 'Maquette nonconformite.js, rôles',
+  },
+  'nonconformite.declarer': {
+    libelle: 'Déclarer une non-conformité',
+    roles: ['coord', 'recep', 'cheq'],
+    source: 'Maquette nonconformite.js, rôles et formulaires',
+  },
+  'nonconformite.decider': {
+    libelle: 'Décider du traitement des non-conformités',
+    roles: ['coord'],
+    source: 'Maquette nonconformite.js, decider : la Pré-Prod décide',
+  },
+  'nonconformite.traiter': {
+    libelle: 'Confirmer le traitement par la plateforme',
+    roles: ['recep', 'cheq'],
+    source: 'Maquette nonconformite.js, Traité par la plateforme',
+  },
+  'j3.gerer': {
+    libelle: 'Gérer le suivi J-3',
+    roles: ['coord', 'recep', 'cheq'],
+    source: 'Maquette j3.js, rôles',
+  },
+  'bus.consulter': {
+    libelle: 'Consulter la production Bus',
+    roles: ['coord', 'recep', 'cheq', 'com'],
+    source: 'BUS-01, BUS-13, maquette bus.js',
+  },
+  'bus.recevoir': {
+    libelle: 'Réceptionner les affiches Bus',
+    roles: ['recep', 'coord'],
+    source: 'BUS-09 : magasinier, coordination',
+  },
+  'bus.ajuster': {
+    libelle: 'Ajuster les quantités Bus',
+    roles: ['cheq'],
+    source: 'BUS-20, maquette bus.js HABILITES',
+  },
   // ── Réception : RECEPTION_REGLES_METIER.md §2 ──
   'reception.attendues.consulter': {
     libelle: 'Consulter les réceptions attendues et le panier',
@@ -92,6 +132,11 @@ export const CATALOGUE_PERMISSIONS: Record<PermissionCode, PermissionDefinition>
     roles: ['coord', 'admin'],
     source: 'RG-REC-003 ; RG-COO-009, 014 ; Q-201',
   },
+  'stock.consulter': {
+    libelle: 'Consulter les vues Stocks et Mouvements',
+    roles: ['coord', 'cheq', 'recep', 'expe', 'com'],
+    source: 'REC §2 ; ECR-STK-01/02 ; stock.js (accès Expédition au rebut)',
+  },
   'stock.rebut': {
     libelle: 'Mettre au rebut',
     roles: ['cheq', 'recep', 'expe'],
@@ -101,6 +146,12 @@ export const CATALOGUE_PERMISSIONS: Record<PermissionCode, PermissionDefinition>
     libelle: 'Ajout / sortie manuels de stock',
     roles: [],
     source: 'REC §2 : « ? » pour tous (Q-117) → refusé',
+  },
+  'stock.fin_campagne.agir': {
+    libelle: 'Décider et exécuter la fin de campagne',
+    roles: ['recep', 'cheq'],
+    source:
+      'RG-STK-NEW-002 ; décision utilisateur du 19/11/2026 : Réception, chefs d’équipe, admin ; Coordination consulte',
   },
   'stock.fin_campagne.consulter': {
     libelle: 'Consulter Stocks › Fin de campagne',

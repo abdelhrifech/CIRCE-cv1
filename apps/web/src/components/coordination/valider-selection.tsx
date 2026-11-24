@@ -19,7 +19,11 @@ type Doutes = z.infer<typeof DoutesAConfirmerSchema>
 export function useValiderSelection(onSucces: (message: string) => void) {
   const [envoi, setEnvoi] = useState(false)
   const [erreur, setErreur] = useState<unknown>(null)
-  const [modale, setModale] = useState<{ dossierIds: number[]; doutes: Doutes } | null>(null)
+  const [modale, setModale] = useState<{
+    dossierIds: number[]
+    afficheIds?: number[]
+    doutes: Doutes
+  } | null>(null)
 
   async function envoyer(body: Partial<ValiderSelection> & { dossierIds: number[] }) {
     setErreur(null)
@@ -36,7 +40,8 @@ export function useValiderSelection(onSucces: (message: string) => void) {
         e instanceof ApiError && e.body.code === 'COO_DOUTES_A_CONFIRMER'
           ? DoutesAConfirmerSchema.safeParse(e.body.details)
           : null
-      if (doutes?.success) setModale({ dossierIds: body.dossierIds, doutes: doutes.data })
+      if (doutes?.success)
+        setModale({ dossierIds: body.dossierIds, afficheIds: body.afficheIds, doutes: doutes.data })
       else setErreur(e)
     } finally {
       setEnvoi(false)
@@ -86,7 +91,11 @@ export function useValiderSelection(onSucces: (message: string) => void) {
             className="rounded-md border border-slate-300 px-3 py-1.5 text-sm"
             disabled={envoi}
             onClick={() =>
-              void envoyer({ dossierIds: modale.dossierIds, sansDouteSeulement: true })
+              void envoyer({
+                dossierIds: modale.dossierIds,
+                afficheIds: modale.afficheIds,
+                sansDouteSeulement: true,
+              })
             }
           >
             Confirmer les {modale.doutes.sansDoute} sans doute seulement
@@ -98,6 +107,7 @@ export function useValiderSelection(onSucces: (message: string) => void) {
           onClick={() =>
             void envoyer({
               dossierIds: modale.dossierIds,
+              afficheIds: modale.afficheIds,
               confirmerDoutes: true,
               doutes: modale.doutes.doutes.map((a) => ({ id: a.id, version: a.version })),
             })
@@ -111,6 +121,7 @@ export function useValiderSelection(onSucces: (message: string) => void) {
 
   return {
     valider: (dossierIds: number[]) => envoyer({ dossierIds }),
+    validerAffiches: (afficheIds: number[]) => envoyer({ dossierIds: [], afficheIds }),
     envoi,
     erreur: modale ? null : erreur,
     modale: element,

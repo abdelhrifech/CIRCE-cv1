@@ -1,3 +1,4 @@
+import { useSelectionGlissee } from '../../lib/selection-glissee.ts'
 import { IntituleSuggereSchema } from '@circe/shared'
 import { useEffect, useRef } from 'react'
 import { apiRequest } from '../../lib/api-client.ts'
@@ -19,6 +20,13 @@ interface PanierProps {
 
 /** RG-REC-021 à 023 : « Lignes du BL (panier) ». */
 export function Panier({ panier, onChange }: PanierProps) {
+  const glissement = useSelectionGlissee(
+    panier.map((p) => p.ligneAttendueId),
+    panier.filter((p) => p.cochee).map((p) => p.ligneAttendueId),
+    (ids) => {
+      onChange(panier.map((p) => ({ ...p, cochee: ids.includes(p.ligneAttendueId) })))
+    },
+  )
   const tout = useRef<HTMLInputElement>(null)
   const etat = etatTout(panier)
   useEffect(() => {
@@ -55,11 +63,11 @@ export function Panier({ panier, onChange }: PanierProps) {
       {panier.length === 0 ? (
         <p className="p-3 text-sm text-slate-600">
           Aucune ligne. Trouvez les dossiers du BL en haut (photo du BL, photo d’une affiche, ou n°
-          de dossier puis « Au panier ») : chaque ligne arrive avec sa case, cochée pour ce BL ;
-          décochez celles d’un autre BL. Rien ne correspond : « Réception inconnue ».
+          de dossier puis « Au panier ») : les lignes arrivent non cochées. Cochez celles de cette
+          livraison. Rien ne correspond : « Réception inconnue ».
         </p>
       ) : (
-        <table className="w-full text-sm">
+        <table {...glissement} className="w-full text-sm">
           <thead className="bg-slate-50 text-slate-600">
             <tr>
               <th scope="col" className="px-3 py-2 text-left">
@@ -93,7 +101,11 @@ export function Panier({ panier, onChange }: PanierProps) {
           </thead>
           <tbody>
             {panier.map((p) => (
-              <tr key={p.ligneAttendueId} className="border-t border-slate-100">
+              <tr
+                data-selection-id={p.ligneAttendueId}
+                key={p.ligneAttendueId}
+                className="border-t border-slate-100"
+              >
                 <td className="px-3 py-2">
                   <input
                     type="checkbox"

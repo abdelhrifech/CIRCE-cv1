@@ -1,12 +1,18 @@
+import { ApercuNc } from '../../components/nonconformite/feuille.tsx'
+import { BoutonExportTableau } from '../../components/ui/export-tableau.tsx'
+import { useSelectionGlissee } from '../../lib/selection-glissee.ts'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import {
   FicheAfficheSchema,
   ImpressionResultatSchema,
   ListeAffichesSchema,
+  ListeNcSchema,
+  type Nc,
   ReferentielsReceptionSchema,
   TAGS_AFFICHE,
 } from '@circe/shared'
 import { useState } from 'react'
+import { useValiderSelection } from '../../components/coordination/valider-selection.tsx'
 import { z } from 'zod'
 import { Button } from '../../components/button.tsx'
 import { ErrorMessage } from '../../components/error-message.tsx'
@@ -14,7 +20,6 @@ import { ApercuFeuilles } from '../../components/reception/apercu-feuilles.tsx'
 import { EtiquettesRack } from '../../components/coordination/etiquettes-rack.tsx'
 import { FicheAfficheModale } from '../../components/reception/fiche-affiche.tsx'
 import { FicheReception } from '../../components/reception/fiche-reception.tsx'
-import { MenuReception } from '../../components/reception/menu-reception.tsx'
 import { Modale } from '../../components/ui/modale.tsx'
 import { Pastille } from '../../components/ui/pastille.tsx'
 import { apiPost, apiRequest } from '../../lib/api-client.ts'
@@ -25,7 +30,17 @@ import { useApi } from '../../lib/use-api.ts'
 
 // ECR-REC-03 — Liste des affiches (RG-REC-121 à 129). Filtres dans l'URL, filtrés et paginés par l'API.
 
+const VALIDATIONS = {
+  RECEPTION_INCONNUE: 'Réception inconnue',
+  VALIDEE: 'Validée',
+  A_CONFIRMER_PROPOSE: 'À confirmer : rattachement proposé',
+  A_CONFIRMER_DOUTE: 'À confirmer : doute',
+}
+
 const SearchSchema = z.object({
+  validation: z
+    .enum(['RECEPTION_INCONNUE', 'VALIDEE', 'A_CONFIRMER_PROPOSE', 'A_CONFIRMER_DOUTE'])
+    .optional(),
   dossier: z.coerce.number().int().optional(),
   depart: z
     .string()
@@ -50,12 +65,21 @@ const LIBELLE_FILTRE_TAG: Record<NonNullable<Search['tag']>, string> = {
   ORPHELINE: 'Orpheline',
   COMPLEMENT: 'Complément',
   FEUILLE_A_REFAIRE: 'Feuille à refaire',
+  FEUILLE_A_IMPRIMER: 'Feuille à imprimer',
   RECEPTION_INCONNUE: 'Réception inconnue',
 }
 
 function versQuery(s: Search): string {
   const p = new URLSearchParams()
-  for (const k of ['dossier', 'depart', 'tag', 'supportId', 'imprimeurId', 'page'] as const) {
+  for (const k of [
+    'dossier',
+    'depart',
+    'tag',
+    'supportId',
+    'imprimeurId',
+    'page',
+    'validation',
+  ] as const) {
     const v = s[k]
     if (v !== undefined) p.set(k, String(v))
   }
@@ -65,6 +89,12 @@ function versQuery(s: Search): string {
 function ListeDesAffiches() {
   const search = Route.useSearch()
   const navigate = useNavigate({ from: Route.fullPath })
+  const [feuilleNc, setFeuilleNc] = useState<Nc[] | null>(null)
+  const { etat: ncs, recharger: rechargerNc } = useApi('nc-affiches', (signal) =>
+    apiRequest('GET', '/api/non-conformites', { schema: ListeNcSchema, signal }),
+  )
+  const ncDe = (id: number) =>
+    ncs.kind === 'ready' ? ncs.data.items.filter((n) => n.afficheIds.includes(id)) : []
   const query = versQuery(search)
   const { etat, recharger } = useApi(`affiches?${query}`, (signal) =>
     apiRequest('GET', `/api/affiches${query ? `?${query}` : ''}`, {
@@ -79,12 +109,27 @@ function ListeDesAffiches() {
       signal,
     }),
   )
-  const [selection, setSelection] = useState<number[]>([])
+  const [choix, setChoix] = useState<{ query: string; ids: number[] } | null>(null)
+  const peutValider = moi.kind === 'ready' && can(moi.data, 'validation_admin.valider')
+  const selection =
+    choix?.query === query
+      ? choix.ids
+      : etat.kind === 'ready' && peutValider
+        ? etat.data.items.filter((a) => a.validation === 'A_CONFIRMER_PROPOSE').map((a) => a.id)
+        : []
+  const setSelection = (ids: number[]) => {
+    setChoix({ query, ids })
+  }
   const [apercu, setApercu] = useState<number[] | null>(null)
   const [etiquettes, setEtiquettes] = useState<number[] | null>(null)
   const [ranger, setRanger] = useState<number[] | null>(null)
   const [reception, setReception] = useState<number | null>(null)
   const [message, setMessage] = useState<string | null>(null)
+  const validation = useValiderSelection((msg) => {
+    setMessage(msg)
+    setSelection([])
+    recharger()
+  })
   const changer = (partiel: Partial<Search>) => {
     void navigate({
       search: (prev) => ({ ...prev, ...partiel, page: partiel.page ?? undefined }),
@@ -92,6 +137,11 @@ function ListeDesAffiches() {
     })
   }
   const items = etat.kind === 'ready' ? etat.data.items : []
+  const glissement = useSelectionGlissee(
+    items.map((a) => a.id),
+    selection,
+    setSelection,
+  )
   const choisies = items.filter((a) => selection.includes(a.id))
   const aRefaire = choisies.filter((a) => a.tags.includes('FEUILLE_A_REFAIRE'))
 
@@ -101,17 +151,46 @@ function ListeDesAffiches() {
     <main className="mx-auto max-w-7xl p-6">
       <p className="text-sm text-slate-500">Réception</p>
       <h1 className="text-2xl font-semibold">Liste des affiches</h1>
-      <p className="text-sm text-slate-600">
-        Ce qu’on a reçu : chaque affiche, avec sa réception, son emplacement, son stock et ses tags.
-        Feuilles de stock et étiquettes rack en lot.
-      </p>
-      <div className="mt-3">
-        <MenuReception />
-      </div>
+
+      {validation.modale}
+      {validation.erreur !== null && <ErrorMessage error={validation.erreur} />}
+
       {/* RG-COO-023 : étiquettes rack demandées par la validation admin, à imprimer par la plateforme. */}
       {peutImprimer && <EtiquettesRack cle={0} />}
       <section className="mt-4 rounded-lg border border-slate-200 bg-white" aria-label="Affiches">
         <div className="flex flex-wrap items-end gap-2 border-b border-slate-200 p-3 text-sm">
+          <label>
+            Validation admin{' '}
+            <select
+              className={champ}
+              value={search.validation ?? ''}
+              onChange={(e) => {
+                changer({
+                  validation: e.target.value ? (e.target.value as Search['validation']) : undefined,
+                })
+              }}
+            >
+              <option value="">Toutes</option>
+              {Object.entries(VALIDATIONS).map(([v, label]) => (
+                <option key={v} value={v}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </label>
+          {peutValider && (
+            <button
+              type="button"
+              className="underline"
+              onClick={() => {
+                setSelection(
+                  items.filter((a) => a.validation === 'A_CONFIRMER_PROPOSE').map((a) => a.id),
+                )
+              }}
+            >
+              Cocher les cas sûrs
+            </button>
+          )}
           <label>
             N° de dossier
             <input
@@ -203,6 +282,20 @@ function ListeDesAffiches() {
         </div>
         {selection.length > 0 && (
           <div className="flex flex-wrap gap-2 border-b border-slate-200 p-3">
+            {peutValider && choisies.some((a) => a.validation.startsWith('A_CONFIRMER')) && (
+              <Button
+                type="button"
+                disabled={validation.envoi}
+                onClick={() =>
+                  void validation.validerAffiches(
+                    choisies.filter((a) => a.validation.startsWith('A_CONFIRMER')).map((a) => a.id),
+                  )
+                }
+              >
+                Valider la sélection (
+                {choisies.filter((a) => a.validation.startsWith('A_CONFIRMER')).length})
+              </Button>
+            )}
             {aRefaire.length > 0 && (
               <Button
                 type="button"
@@ -257,107 +350,143 @@ function ListeDesAffiches() {
           <p className="p-3 text-sm text-slate-600">Aucune ligne pour ces filtres.</p>
         )}
         {etat.kind === 'ready' && items.length > 0 && (
-          <table className="w-full text-sm" aria-label="Liste des affiches">
-            <thead className="bg-slate-50 text-slate-600">
-              <tr>
-                <th scope="col" className="px-3 py-2" />
-                {[
-                  'N° affiche',
-                  'Reçue le',
-                  'Annonceur · thème',
-                  'Dossier(s)',
-                  'Départ',
-                  'En stock',
-                  'Emplacement',
-                  'Statut · tags',
-                  'Réception',
-                  'Imprimeur',
-                ].map((h) => (
-                  <th key={h} scope="col" className="px-3 py-2 text-left font-medium">
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((a) => (
-                <tr
-                  key={a.id}
-                  className={`cursor-pointer border-t border-slate-100 ${a.rebut > 0 ? 'bg-orange-50' : a.statut === 'ORPHELINE' ? 'bg-amber-50' : ''}`}
-                  onClick={() => {
-                    changer({ affiche: a.id, page: search.page })
-                  }}
-                >
-                  <td
-                    className="px-3 py-2"
-                    onClick={(e) => {
-                      e.stopPropagation()
+          <>
+            <BoutonExportTableau nom="reception-affiches" tableau="Liste des affiches" />
+            <table {...glissement} className="w-full text-sm" aria-label="Liste des affiches">
+              <thead className="bg-slate-50 text-slate-600">
+                <tr>
+                  <th scope="col" className="px-3 py-2" />
+                  {[
+                    'N° affiche',
+                    'Reçue le',
+                    'Annonceur · thème',
+                    'Dossier(s)',
+                    'Départ',
+                    'En stock',
+                    'Emplacement',
+                    'Statut · tags',
+                    'Réception',
+                    'Imprimeur',
+                  ].map((h) => (
+                    <th key={h} scope="col" className="px-3 py-2 text-left font-medium">
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((a) => (
+                  <tr
+                    data-selection-id={a.id}
+                    key={a.id}
+                    className={`cursor-pointer border-t border-slate-100 ${a.rebut > 0 ? 'bg-orange-50' : a.statut === 'ORPHELINE' ? 'bg-amber-50' : ''}`}
+                    onClick={() => {
+                      changer({ affiche: a.id, page: search.page })
                     }}
                   >
-                    <input
-                      type="checkbox"
-                      aria-label={`Sélectionner l’affiche ${String(a.id)}`}
-                      checked={selection.includes(a.id)}
-                      onChange={(e) => {
-                        setSelection(
-                          e.target.checked
-                            ? [...selection, a.id]
-                            : selection.filter((x) => x !== a.id),
-                        )
+                    <td
+                      className="px-3 py-2"
+                      onClick={(e) => {
+                        e.stopPropagation()
                       }}
-                    />
-                  </td>
-                  <td className="px-3 py-2 font-mono">{a.id}</td>
-                  <td className="px-3 py-2">{dateCourte(a.recueLe)}</td>
-                  <td className="px-3 py-2">
-                    {a.annonceur ?? '—'} · {a.theme ?? '—'}
-                  </td>
-                  <td className="px-3 py-2">
-                    {a.dossiers.join(', ') || '—'}{' '}
-                    {a.dossiers.length > 1 && (
-                      <Pastille ton="info">{a.dossiers.length} dossiers</Pastille>
-                    )}
-                  </td>
-                  <td className="px-3 py-2">
-                    {departs(a.departs)}{' '}
-                    {a.multiSemaines && <Pastille ton="info">multi-semaines</Pastille>}
-                  </td>
-                  <td className="px-3 py-2">
-                    {a.enStock}{' '}
-                    {a.rebut > 0 && <Pastille ton="important">{a.rebut} rebut</Pastille>}
-                  </td>
-                  <td className="px-3 py-2">{a.emplacement}</td>
-                  <td className="px-3 py-2">
-                    <Pastille ton={a.statut === 'ORPHELINE' ? 'surveiller' : 'ok'}>
-                      {a.statut === 'ORPHELINE' ? 'Orpheline' : 'Identifiée'}
-                    </Pastille>{' '}
-                    {a.tags.map((t) => (
-                      <Pastille key={t} ton={LIBELLE_TAG[t]?.ton ?? 'neutre'}>
-                        {t === 'FEUILLE_A_REFAIRE' && a.feuille === 'TEMPORAIRE'
-                          ? 'Feuille définitive à imprimer'
-                          : (LIBELLE_TAG[t]?.libelle ?? t)}
-                      </Pastille>
-                    ))}
-                  </td>
-                  <td className="px-3 py-2">
-                    {a.receptionId !== null && (
-                      <button
-                        type="button"
-                        className="underline"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setReception(a.receptionId)
+                    >
+                      <input
+                        type="checkbox"
+                        aria-label={`Sélectionner l’affiche ${String(a.id)}`}
+                        checked={selection.includes(a.id)}
+                        onChange={(e) => {
+                          setSelection(
+                            e.target.checked
+                              ? [...selection, a.id]
+                              : selection.filter((x) => x !== a.id),
+                          )
                         }}
-                      >
-                        R{a.receptionId}
-                      </button>
-                    )}
-                  </td>
-                  <td className="px-3 py-2">{a.imprimeur ?? '—'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                      />
+                    </td>
+                    <td className="px-3 py-2 font-mono">{a.id}</td>
+                    <td className="px-3 py-2">{dateCourte(a.recueLe)}</td>
+                    <td className="px-3 py-2">
+                      {a.annonceur ?? '—'} · {a.theme ?? '—'}
+                    </td>
+                    <td className="px-3 py-2">
+                      {a.dossiers.join(', ') || '—'}{' '}
+                      {a.dossiers.length > 1 && (
+                        <Pastille ton="info">{a.dossiers.length} dossiers</Pastille>
+                      )}
+                    </td>
+                    <td className="px-3 py-2">
+                      {departs(a.departs)}{' '}
+                      {a.multiSemaines && <Pastille ton="info">multi-semaines</Pastille>}
+                    </td>
+                    <td className="px-3 py-2">
+                      {a.enStock}{' '}
+                      {a.rebut > 0 && <Pastille ton="important">{a.rebut} rebut</Pastille>}
+                    </td>
+                    <td className="px-3 py-2">{a.emplacement}</td>
+                    <td className="px-3 py-2">
+                      <Pastille ton={a.statut === 'ORPHELINE' ? 'surveiller' : 'ok'}>
+                        {a.statut === 'ORPHELINE' ? 'Orpheline' : 'Identifiée'}
+                      </Pastille>{' '}
+                      <Pastille ton={a.validation === 'VALIDEE' ? 'ok' : 'surveiller'}>
+                        {VALIDATIONS[a.validation]}
+                      </Pastille>
+                      {!a.tags.includes('A_CONTROLER') &&
+                        ncDe(a.id).some((n) => !n.feuilleImprimeeLe) && (
+                          <Pastille ton="surveiller">Feuille NC à imprimer</Pastille>
+                        )}
+                      {a.tags.map((t) => (
+                        <Pastille key={t} ton={LIBELLE_TAG[t]?.ton ?? 'neutre'}>
+                          {t === 'FEUILLE_A_REFAIRE' && a.feuille === 'TEMPORAIRE'
+                            ? 'Feuille définitive à imprimer'
+                            : (LIBELLE_TAG[t]?.libelle ?? t)}
+                        </Pastille>
+                      ))}
+                    </td>
+                    <td className="px-3 py-2">
+                      {ncDe(a.id).length > 0 && (
+                        <button
+                          type="button"
+                          className="mr-2 underline"
+                          onClick={() => {
+                            setFeuilleNc(ncDe(a.id))
+                          }}
+                        >
+                          Feuille NC
+                        </button>
+                      )}
+                      {peutImprimer &&
+                        (a.tags.includes('FEUILLE_A_IMPRIMER') ||
+                          a.tags.includes('FEUILLE_A_REFAIRE')) && (
+                          <button
+                            type="button"
+                            className="underline mr-2"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setApercu([a.id])
+                            }}
+                          >
+                            Feuille de stock
+                          </button>
+                        )}
+                      {a.receptionId !== null && (
+                        <button
+                          type="button"
+                          className="underline"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setReception(a.receptionId)
+                          }}
+                        >
+                          R{a.receptionId}
+                        </button>
+                      )}
+                    </td>
+                    <td className="px-3 py-2">{a.imprimeur ?? '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </>
         )}
         {etat.kind === 'ready' && etat.data.total > etat.data.pageSize && (
           <div className="flex items-center justify-between p-3 text-sm">
@@ -405,6 +534,15 @@ function ListeDesAffiches() {
           onAffiche={(id) => {
             setReception(null)
             changer({ affiche: id, page: search.page })
+          }}
+        />
+      )}
+      {feuilleNc && (
+        <ApercuNc
+          items={feuilleNc}
+          onFermer={() => {
+            setFeuilleNc(null)
+            rechargerNc()
           }}
         />
       )}

@@ -8,6 +8,7 @@
     "node": ">=24"
   },
   "scripts": {
+    "start": "node scripts/start.mjs",
     "dev": "pnpm --parallel --filter @circe/api --filter @circe/web dev",
     "start:all": "node scripts/start.mjs",
     "build": "pnpm -r build",
@@ -21,9 +22,14 @@
     "db:test:up": "pnpm --filter @circe/api db:test:up",
     "seed:ref": "pnpm --filter @circe/api seed:ref",
     "seed:demo": "pnpm --filter @circe/api seed:demo",
+    "seed:centres": "pnpm --filter @circe/api seed:centres",
     "jdd": "pnpm --filter @circe/api jdd",
     "jdd:demo": "pnpm --filter @circe/api jdd:demo",
-    "dev:user": "pnpm --filter @circe/api dev:user"
+    "dev:user": "pnpm --filter @circe/api dev:user",
+    "seed:news": "pnpm --filter @circe/api seed:news",
+    "seed:scenarios": "pnpm --filter @circe/api seed:scenarios",
+    "api:contract": "pnpm --filter @circe/api openapi:generate",
+    "api:contract:check": "pnpm --filter @circe/api openapi:check"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

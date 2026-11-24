@@ -21,6 +21,7 @@ export const COLIS_QUERY_MAX = 100
 
 /** Filtres communs des vues d'expédition : N° de dossier, Départ (semaine ISO), Destinataire, Statut, Atelier. */
 export const ColisQuerySchema = z.object({
+  type: z.enum(['fixe', 'pliage']).optional(),
   dossier: z.coerce.number().int().positive().optional(),
   depart: SemaineIsoSchema.optional(),
   destinataire: z.string().trim().min(1).max(100).optional(),

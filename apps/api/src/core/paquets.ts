@@ -10,7 +10,11 @@ export async function parPaquets<T, R>(
   taille = TAILLE_PAQUET,
 ): Promise<R[]> {
   const res: R[] = []
-  for (let i = 0; i < valeurs.length; i += taille)
-    res.push(...(await lire(valeurs.slice(i, i + taille))))
+  for (let i = 0; i < valeurs.length; i += taille) {
+    const lignes = await lire(valeurs.slice(i, i + taille))
+    // Un petit paquet d'identifiants peut retourner des centaines de milliers de lignes.
+    // Ne pas les déployer en arguments : cela dépasse la limite d'appel de JavaScript.
+    for (const ligne of lignes) res.push(ligne)
+  }
   return res
 }

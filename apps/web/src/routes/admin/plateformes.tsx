@@ -6,7 +6,6 @@ import {
   type PlateformeAdmin,
 } from '@circe/shared'
 import { useState, type SyntheticEvent } from 'react'
-import { AdminNav } from '../../components/admin/admin-nav.tsx'
 import { Button } from '../../components/button.tsx'
 import { ErrorMessage } from '../../components/error-message.tsx'
 import { Modale } from '../../components/ui/modale.tsx'
@@ -42,7 +41,6 @@ function Plateformes() {
     <main className="mx-auto max-w-6xl p-6">
       <p className="text-sm text-slate-500">Administration › Paramétrage › Plateformes</p>
       <h1 className="text-2xl font-semibold">Plateformes</h1>
-      <AdminNav />
       <p className="mt-3 text-sm text-slate-600">
         Coordonnées, mail de déblocage, adresses du mail de réception d’affiches et imprimantes
         cibles de l’étiquette rack. Les deux listes de mails sont distinctes (déblocage de
@@ -69,10 +67,7 @@ function Plateformes() {
         <Button type="submit">Filtrer</Button>
       </form>
       {message && (
-        <p
-          role="status"
-          className="mt-3 rounded-md border border-slate-300 bg-slate-100 p-2 text-sm"
-        >
+        <p role="status" className="mt-3 rounded-md border border-sky-200 bg-sky-50 p-2 text-sm">
           {message}
         </p>
       )}
@@ -395,10 +390,7 @@ function ModalePlateforme({
         </div>
       </section>
       {info && (
-        <p
-          role="status"
-          className="mt-3 rounded-md border border-slate-300 bg-slate-100 p-2 text-sm"
-        >
+        <p role="status" className="mt-3 rounded-md border border-sky-200 bg-sky-50 p-2 text-sm">
           {info}
         </p>
       )}

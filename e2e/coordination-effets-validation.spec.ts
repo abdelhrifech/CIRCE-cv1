@@ -8,7 +8,7 @@ import { expect, test } from '@playwright/test'
 test('RG-COO-008 / RG-COO-014 valider puis annuler la validation d’une affiche depuis la fiche dossier', async ({
   page,
 }) => {
-  await page.goto('/coordination')
+  await page.goto('/coordination?pour=fixe')
   const table = page.getByRole('table', { name: 'Dossiers' })
   await table
     .getByRole('row', { name: /Annonceur Unitaire E2E/ })
@@ -47,23 +47,19 @@ test('RG-X-051 / RG-COO-017 / RG-X-015 la Coordination rattache une réception i
   const ligne = tableau.getByRole('row', { name: /Inconnue Coord E2E/ })
   await expect(ligne).toContainText('À identifier')
   await ligne.getByRole('cell').nth(1).click()
+  await page.getByRole('tab', { name: /Préparations/ }).click()
+  await page.getByRole('button', { name: /Rattacher à un autre dossier/ }).click()
   await page.getByLabel('N° de dossier, DA, annonceur ou thème').fill('Annonceur Inconnue')
-  await page
-    .getByRole('checkbox', { name: /^Choisir le dossier \d+$/ })
-    .first()
-    .check()
   await page.getByRole('button', { name: 'Rattacher' }).click()
-  // ECR-REC-04 : toast de la maquette ; la palette entre dans le sas.
-  await expect(page.getByTestId('message-inconnues')).toContainText(
-    'passe dans le sas de Réception des affiches : la réception valide le contrôle et imprime la feuille définitive.',
-  )
-  await expect(tableau.getByRole('row', { name: /Annonceur Inconnue E2E/ })).toContainText(
+  await expect(page.getByRole('dialog').getByRole('status')).toContainText('rattachée')
+  await page.keyboard.press('Escape')
+  await expect(tableau.getByRole('row', { name: /Inconnue Coord E2E/ })).toContainText(
     'Rattachée, à contrôler',
   )
 
   // ECR-REC-05 : rattachée par la Coordination = validée ; « Annuler la validation » puis « Valider ».
   await tableau
-    .getByRole('row', { name: /Annonceur Inconnue E2E/ })
+    .getByRole('row', { name: /Inconnue Coord E2E/ })
     .getByRole('button', { name: 'Fiche' })
     .click()
   const fiche = page.getByRole('dialog', { name: /^Affiche n° \d+$/ })
