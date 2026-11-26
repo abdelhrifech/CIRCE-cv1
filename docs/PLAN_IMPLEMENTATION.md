@@ -12,7 +12,7 @@
 | 7 | Interactions | TERMINÉE AVEC ÉCARTS (2026-11-05) : 93 tests (R / C / B / K / A) ; RG-X (54) : 33 FAIT, 20 PARTIEL, 1 À FAIRE (RG-X-061, Q-399) ; 5 `it.todo` | |
 | 8 | Dépendances | EXÉCUTÉE PARTIELLEMENT (2026-11-05 à 2026-11-06, lots 1 à 5) : voir §4, colonne Avancement ; aucune dépendance n'est validée par l'équipe ; D-07, D-11, D-17, D-22, D-23 non faites | |
 | 9 | Tests massifs | TERMINÉE (2026-11-06), audit à passer : 13 familles de générateurs, 3 seeds jusqu'à 300 000 enregistrements, 29 invariants, mesures de temps, ANO-061 / 062 corrigées, ANO-063 / 064 ouvertes | |
-| 10 | Audit final | RÉDIGÉ (2026-11-06) : `docs/AUDIT_FINAL_CIRCE.md` ; verdict : NON CONFORME pour la mise en production, voir le document ; 4 audits indépendants NON CONFORMES (traçabilité) corrigés, script de contrôle `docs/_travail/controle-tracabilite.mjs` | |
+| 10 | Audit final | RÉDIGÉ (2026-11-06) : `docs/AUDIT_FINAL_CIRCE.md` ; verdict : NON CONFORME pour la mise en production, voir le document ; 4 audits indépendants NON CONFORMES (traçabilité) corrigés, script de contrôle `ressources/travail/controle-tracabilite.mjs` | |
 
 ## 2. Sous-parcours Réception (rempli à l'étape 1b)
 Chaque ligne = une session /etape-05-reception <ID>. Ordre = ordre de dépendance. Avant toute session : lire les questions BLOQUANTES citées (CLAUDE.md §9.2). Prérequis communs : étapes 2 à 4 terminées.
@@ -669,5 +669,5 @@ Correction technique de `core/paquets.ts` : concaténation sans déploiement de 
 - **Recette sur données réelles** : 98 routes GET × 6 profils × sites et semaines, 268 pages par profil (Playwright). 10 bugs de volume corrigés (parcours quadratiques, N+1, statistiques SQLite) ; test `test/massif/volume-reel.int.test.ts` ; ANO-065 à ANO-080 dans `RAPPORT_TESTS.md`, dont ANO-075, 076, 077, 079, 080 ouverts (arbitrages).
 - **Livraison (Q-446)** : base de dev versionnée (`apps/api/prisma/donnees/dev.sqlite.gz`, restaurée par `start.mjs` si `dev.db` est absent) ; `npm install` (postinstall `scripts/installer.mjs` → `npx pnpm@12.14.0 install`) puis `npm start`, sans pnpm global (`scripts/pnpm-process.mjs` : pnpm natif ou npx). Branche `sync-gv1` fusionnée dans `main` et poussée.
 - **Vérifications** : typecheck, lint, 386 tests unitaires, 3 778 tests d'intégration ; clone vierge testé sous macOS (`npm install`, `npm start`). Recette native Windows non faite (pas de poste Windows).
-- **Reste** : Q-444 ; ANO-075, 076, 077, 079, 080 ; recette sur un poste Windows ; `spec-auditor`.
+- **Reste** : Q-444 ; Q-447 (semaine par défaut des suivis, ANO-075), Q-448 (colis déroulant, ANO-077), Q-449 (droits cheq / com, ANO-079) ; ECART-128 (ANO-076, ANO-080, appels sans filtre lents, photos sans contenu, recette Windows) ; `spec-auditor` sur le périmètre repris.
 - **Prochaine commande** : sur un poste Windows, `git clone … && npm install && npm start`.

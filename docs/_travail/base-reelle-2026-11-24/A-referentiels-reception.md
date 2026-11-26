@@ -15,7 +15,7 @@ Ce document est une analyse en lecture seule. Aucun code, aucun schéma ni aucun
 
 **Modèle V2.** `apps/api/prisma/schema.prisma` et `apps/api/prisma/migrations/*/migration.sql`, en particulier `20261104160802_cree_modele_initial` et `20261105140000_ajoute_lignes_attendues_vie`.
 
-**Documents.** `docs/ANALYSE_MODELE_DONNEES.md` (§3.3, §5), `docs/RECEPTION_REGLES_METIER.md`, `docs/QUESTIONS_OUVERTES.md` (Q-004, Q-300 à Q-349) et `docs/ECARTS_EXISTANT_VS_CIBLE.md`. Le code historique `circe-develop` a été lu pour établir le sens des colonnes ; les références sont données au format fichier:ligne.
+**Documents.** `docs/ANALYSE_MODELE_DONNEES.md` (§3.3, §5), `docs/specifications/RECEPTION_REGLES_METIER.md`, `docs/QUESTIONS_OUVERTES.md` (Q-004, Q-300 à Q-349) et `docs/ECARTS_EXISTANT_VS_CIBLE.md`. Le code historique `circe-develop` a été lu pour établir le sens des colonnes ; les références sont données au format fichier:ligne.
 
 **Données personnelles.** Ce rapport n'en contient aucune : pas de nom, d'adresse, de téléphone, de mail, de login Windows, d'annonceur ni de thème réel. Seuls figurent des volumes, des distributions et des codes de référentiels.
 

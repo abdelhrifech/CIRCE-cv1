@@ -397,9 +397,9 @@ Ne t'arrête pas après avoir créé le socle technique ou les écrans : l'objec
 ## 11. LIVRABLES ATTENDUS (dans `docs/` du nouveau projet)
 
 - `docs/ANALYSE_ARCHITECTURE_EXISTANTE.md`
-- `docs/ANALYSE_FONCTIONNELLE_COMPLETE.md`
-- `docs/RECEPTION_REGLES_METIER.md`
-- `docs/COORDINATION_REGLES_METIER.md`
+- `docs/specifications/ANALYSE_FONCTIONNELLE_COMPLETE.md`
+- `docs/specifications/RECEPTION_REGLES_METIER.md`
+- `docs/specifications/COORDINATION_REGLES_METIER.md`
 - `docs/ANALYSE_MODELE_DONNEES.md`
 - `docs/MATRICE_TRACABILITE_SPECIFICATIONS.md`
 - `docs/ECARTS_EXISTANT_VS_CIBLE.md`

@@ -1,5 +1,5 @@
 // COO-P07 — tests COMPLÉMENTAIRES des alertes Pré-Prod et de la vérification des thèmes (alertes-preprod.int.test.ts
-// n'est pas dupliqué). Source de l'attendu (les règles, pas le code) : docs/COORDINATION_REGLES_METIER.md
+// n'est pas dupliqué). Source de l'attendu (les règles, pas le code) : docs/specifications/COORDINATION_REGLES_METIER.md
 // RG-COO-030 à 033, 066 à 076, 084, 086, 116, 122, RG-X-050, RG-X-057, §2 ; hypothèses Q-190, Q-220.
 // Les alertes « requalifiées » sont testées par leurs VRAIS déclencheurs (passage d'intégration, réception,
 // validation, annulation) puis lues dans Pilotage › Alertes (GET /api/alertes).

@@ -1,0 +1,27 @@
+flowchart TB
+  DEV["Équipe de développement<br/>(maître d'œuvre)"]
+  subgraph GH["GitHub Enterprise Cloud — organisation Cityz Media"]
+    APP["Dépôt applicatif circe<br/>main protégée · PR + revue · CODEOWNERS<br/>VERSION · docs/ (architecture, specs, recette)"]
+    JOBS["Jobs du maître d'œuvre<br/>tests unitaires + intégration ·<br/>ESLint/Prettier · Conventional Commits"]
+    WF["Workflow imposé (release.yml)<br/>build image · SAST · secrets ·<br/>scan vulnérabilités · SBOM"]
+    GITOPS["Dépôt GitOps circe-flux-fleet<br/>description commune (Cityz Media)<br/>overlays stg / prd (maître d'œuvre)"]
+  end
+  ACRS[("Container Registry Staging")]
+  ACRP[("Container Registry Production")]
+  AUTO["Automatisation des images<br/>(Renovate / Flux image automation)"]
+  subgraph STG["AKS Staging"]
+    FLS["FluxCD"] --> RS["Job migrations → API + SPA"]
+  end
+  subgraph PRD["AKS Production"]
+    FLP["FluxCD"] --> RP["Job migrations → API + SPA"]
+  end
+  RECETTE["Recette technique (Cityz Media)<br/>+ UAT Responsable Métier → jalon J2"]
+  DEV -- "PR" --> APP
+  APP --> JOBS -- "succès requis" --> WF
+  WF -- "tag MAJEUR.MINEUR.0-AAMMJJHHmm.g&lt;sha&gt;" --> ACRS & ACRP
+  ACRS --> AUTO -- "PR overlay Staging (merge auto)" --> GITOPS
+  GITOPS -- "deploy.yaml → Bucket" --> FLS
+  RS --> RECETTE
+  RECETTE -- "PR overlay Production (merge manuel, cite J2)" --> GITOPS
+  GITOPS -- "deploy.yaml → Bucket" --> FLP
+  ACRP -.-> RP

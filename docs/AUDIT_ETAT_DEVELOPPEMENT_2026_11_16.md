@@ -21,7 +21,7 @@ Statuts : **développé** = réalisation présente avec preuves identifiées ; *
 | Domaine | Réalisation actuelle | Preuves dans le dépôt | Limite à conserver visible |
 |---|---|---|---|
 | Réception | Réceptions attendues, affiches, inconnues, rattachements, contrôle, stock lié aux affiches, historique et validation administrative | `apps/api/src/modules/reception/`, `apps/web/src/routes/reception/`, tests réception | Reconnaissance automatique et impression industrielle non abouties ; écran Stocks dédié absent |
-| Évolutions Réception | Sans BL explicite, sélection manuelle du panier, glissement, validation distincte de l’impression, validation administrative en lot, enrichissement des fiches | `docs/REGLES_METIER_NOUVELLES_SPECS_2026_11_12.md`, routes et composants réception | Ne pas assimiler ces évolutions à une refonte exhaustive de tous les champs hérités |
+| Évolutions Réception | Sans BL explicite, sélection manuelle du panier, glissement, validation distincte de l’impression, validation administrative en lot, enrichissement des fiches | `docs/specifications/REGLES_METIER_NOUVELLES_SPECS_2026_11_12.md`, routes et composants réception | Ne pas assimiler ces évolutions à une refonte exhaustive de tous les champs hérités |
 | Coordination | Instructions, validation, déblocage, trains, préparation unitaire, roulage, dispatch, bagues et génération de lots | `apps/api/src/modules/coordination/`, `apps/web/src/routes/coordination/` | Contrats machines réels, certains cas de production et arbitrages UM restent ouverts |
 | Expédition | Colis, rattachements d’unités, transitions, départs et impressions navigateur | `coordination/colis.ts`, `coordination/departs-camions.ts`, routes web `expedition/` | Transporteur, preuve de livraison et représentation détaillée des départs restent partiels |
 | Non-conformités | Déclarations réception/agence, décisions, suivi, justificatifs persistés et référentiel des déclarants | `apps/api/src/modules/nonconformite/`, `apps/web/src/routes/non-conformite.tsx` | Recette métier exhaustive et échanges externes non démontrés ; l’ancien constat « module absent » est périmé |
@@ -111,8 +111,8 @@ Une clôture doit fournir, pour chaque exigence : source, réalisation, tests no
 
 ## 7. Documents de référence
 
-- [Évolutions des nouvelles spécifications](EVOLUTIONS_NOUVELLES_SPECS_2026_11_12.md)
-- [Règles des nouvelles spécifications et décisions conservées](REGLES_METIER_NOUVELLES_SPECS_2026_11_12.md)
+- [Évolutions des nouvelles spécifications](specifications/EVOLUTIONS_NOUVELLES_SPECS_2026_11_12.md)
+- [Règles des nouvelles spécifications et décisions conservées](specifications/REGLES_METIER_NOUVELLES_SPECS_2026_11_12.md)
 - [API et observabilité : réalisation et tests](EVOLUTION_API_OBSERVABILITE_2026_11_12.md)
 - [Contrats API](api/README.md) et [exploitation de l’observabilité](operations/observabilite.md)
 - [Matrice historique](MATRICE_TRACABILITE_SPECIFICATIONS.md), [écarts](ECARTS_EXISTANT_VS_CIBLE.md) et [questions ouvertes](QUESTIONS_OUVERTES.md)

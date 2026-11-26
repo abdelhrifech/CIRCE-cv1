@@ -6,6 +6,7 @@ import Fastify, { type FastifyInstance, type FastifyPluginCallback } from 'fasti
 import { registerOpenApi } from './core/openapi.ts'
 import { logContext, severity } from './core/observability/telemetry.ts'
 import { registerHttpMetrics } from './core/observability/http-metrics.ts'
+import { registerSecuriteEtIndicateurs } from './core/observability/securite-metier.ts'
 import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod'
 import type { Config } from './core/config.ts'
 import type { Db } from './core/db.ts'
@@ -93,6 +94,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
   })
 
   registerHttpMetrics(app)
+  registerSecuriteEtIndicateurs(app, db)
   app.setValidatorCompiler(validatorCompiler)
   app.setSerializerCompiler(serializerCompiler)
   registerErrorHandler(app)

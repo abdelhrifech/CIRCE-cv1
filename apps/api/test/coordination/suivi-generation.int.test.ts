@@ -1,6 +1,6 @@
 // COO-P10 — tests d'INTÉGRATION du suivi par thème (RG-COO-230 à 233, ECR-COO-06), de la vue Préparation
 // (RG-COO-235, ECR-COO-07) et du générateur de fichiers (ECR-GEN-01 choix des trains, GEN-03 envoi à la machine).
-// Source de l'attendu : docs/COORDINATION_REGLES_METIER.md (règles citées) ; hypothèses Q-193, Q-254, Q-262, Q-263,
+// Source de l'attendu : docs/specifications/COORDINATION_REGLES_METIER.md (règles citées) ; hypothèses Q-193, Q-254, Q-262, Q-263,
 // Q-280 ; ECR-GEN-01 : « n / 20 tiroirs, bloquant au-delà ». Le fichier de production réel (.ini, D-15) est simulé.
 // RG-X : les trains ne sont « prêts » (générateur) que si la Réception a reçu leurs visuels (RG-COO-208) ; le
 // pré-assemblage et l'export ne modifient jamais la réception.

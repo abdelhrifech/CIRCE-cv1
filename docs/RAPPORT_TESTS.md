@@ -296,7 +296,7 @@ Concurrence testée sur SQLite (écritures sérialisées, Q-343) : la protection
 
 ## 8. Contrôle de traçabilité de la matrice (étape 10, 2026-11-06)
 
-Script conservé : `node docs/_travail/controle-tracabilite.mjs [--json]` (aucune dépendance ; code de sortie 1 s'il reste une anomalie). Il vérifie : (1) cohérence EX ↔ RG (aucun EX FAIT si une RG couverte ne l'est pas, statut dérivé identique, mention « reste » à jour) ; (2) chaque fichier cité en Implémentation / Tests existe et chaque fonction citée est présente dans l'un des fichiers cités ; (3) tout FAIT / PARTIEL d'une RG voit son identifiant dans au moins un test (`*.test.ts`, `e2e/`) ; (4) le tableau « Synthèse » de la matrice.
+Script conservé : `node ressources/travail/controle-tracabilite.mjs [--json]` (aucune dépendance ; code de sortie 1 s'il reste une anomalie). Il vérifie : (1) cohérence EX ↔ RG (aucun EX FAIT si une RG couverte ne l'est pas, statut dérivé identique, mention « reste » à jour) ; (2) chaque fichier cité en Implémentation / Tests existe et chaque fonction citée est présente dans l'un des fichiers cités ; (3) tout FAIT / PARTIEL d'une RG voit son identifiant dans au moins un test (`*.test.ts`, `e2e/`) ; (4) le tableau « Synthèse » de la matrice.
 
 Résultat sur la matrice corrigée : 858 lignes lues, **0 anomalie**. Avant correction le même script relevait 148 anomalies (35 EX au statut périmé, 69 mentions « reste » périmées, 20 fonctions et 2 fichiers cités inexistants, 22 FAIT / PARTIEL sans test portant l'identifiant). Comptes réels après correction (avant → après) :
 

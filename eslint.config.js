@@ -16,6 +16,8 @@ export default tseslint.config(
       'circe-develop/**',
       'docs-sources/**',
       'docs/**',
+      // Fichiers de travail sortis de docs/ (DOC-004), conservés à l'identique (empreintes du gel, catalogues JDD).
+      'ressources/**',
       'playwright-report/**',
       'test-results/**',
     ],

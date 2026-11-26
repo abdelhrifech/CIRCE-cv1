@@ -9,7 +9,7 @@ Travail en lecture seule. Aucune donnée personnelle reproduite ici : uniquement
 |---|---|
 | Export UAT (scratchpad `mssql/`) : `tables.txt`, `colonnes.txt`, `fk.txt`, `controle.txt`, `referentiels-complets.txt`, `profils/*.prof` | volumes, types, nullabilité, PK, FK déclarées, contrôles de l'export, contenu des référentiels de 100 lignes au plus, profils par colonne (nb de NULL, nb de valeurs distinctes, min, max, 5 lignes d'exemple) |
 | `apps/api/prisma/schema.prisma` (+ 22 migrations) | modèles V2, `@@map` / `@map` |
-| `docs/COORDINATION_REGLES_METIER.md` §3 (statuts et transitions), `docs/ANALYSE_MODELE_DONNEES.md` §1, `docs/QUESTIONS_OUVERTES.md` (Q-004, Q-250, Q-301 à Q-347), `docs/ECARTS_EXISTANT_VS_CIBLE.md` | règles, décisions et écarts déjà tracés |
+| `docs/specifications/COORDINATION_REGLES_METIER.md` §3 (statuts et transitions), `docs/ANALYSE_MODELE_DONNEES.md` §1, `docs/QUESTIONS_OUVERTES.md` (Q-004, Q-250, Q-301 à Q-347), `docs/ECARTS_EXISTANT_VS_CIBLE.md` | règles, décisions et écarts déjà tracés |
 | Code V2 (lecture) : `apps/api/src/modules/coordination/{integration-flux,statuts-trains,statuts-colis,export-trains,colis,instruction-ok}.ts` | usages réels des colonnes |
 | Code legacy (lecture) : `circe-develop/BDD/DATABASE/DATABASE/dbo/Stored Procedures/p_integ_train_affiches.sql`, `p_integ_destinataire.sql` | sens de `rdep_datdep`, `dep_sembas`, `instr_code`, clé PEX des destinataires |
 

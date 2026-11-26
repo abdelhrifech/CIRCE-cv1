@@ -1,0 +1,19 @@
+{
+  "name": "CIRCE V2",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:24",
+  "postCreateCommand": "npm install",
+  "forwardPorts": [3000, 3001, 9180],
+  "portsAttributes": {
+    "3000": { "label": "Web" },
+    "3001": { "label": "API" },
+    "9180": { "label": "Sondes" }
+  },
+  "remoteEnv": {
+    "NODE_ENV": "development"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": ["dbaeumer.vscode-eslint", "esbenp.prettier-vscode", "Prisma.prisma"]
+    }
+  }
+}

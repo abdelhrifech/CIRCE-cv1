@@ -1,5 +1,5 @@
 // COO-P05 — tests COMPLÉMENTAIRES des lignes attendues (lignes-attendues.int.test.ts n'est pas dupliqué).
-// Source de l'attendu (les règles, pas le code) : docs/COORDINATION_REGLES_METIER.md RG-COO-026, 080 à 090,
+// Source de l'attendu (les règles, pas le code) : docs/specifications/COORDINATION_REGLES_METIER.md RG-COO-026, 080 à 090,
 // 094 à 101, 105 à 108, §2 (profils × actions) ; maquette ECR-PIL-03 ; hypothèses Q-187 (1) à (13).
 // Les écarts constatés sont marqués `it.fails` avec leur n° ANO (non reportés dans RAPPORT_TESTS.md).
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'

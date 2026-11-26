@@ -1,5 +1,5 @@
 // COO-P11 — tests d'INTÉGRATION COMPLÉMENTAIRES du roulage (suivi 8 m², dispatch, bagues, rouleurs) et de la fin de
-// COO-P10 (B4 : train déjà envoyé à la machine). Source de l'attendu : docs/COORDINATION_REGLES_METIER.md
+// COO-P10 (B4 : train déjà envoyé à la machine). Source de l'attendu : docs/specifications/COORDINATION_REGLES_METIER.md
 // (RG-COO-167, 209, 217, 234, 236, 237, 291 à 303, 308) et les décisions de docs/QUESTIONS_OUVERTES.md : Q-195 (14
 // points), Q-194 (B4), Q-193, Q-276 (seuils 36 h / 115 %, règle de répartition SIMULÉE), Q-277 (réimpression : chef
 // d'équipe seul), Q-278 (RG-COO-303 hors périmètre), Q-262 (pré-assemblage par thème), Q-002 (aperçu navigateur),

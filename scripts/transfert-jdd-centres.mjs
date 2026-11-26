@@ -195,9 +195,9 @@ try {
     throw erreur
   }
   if (appliquer) {
-    mkdirSync(resolve(racine, 'docs/_travail'), { recursive: true })
+    mkdirSync(resolve(racine, 'ressources/travail'), { recursive: true })
     writeFileSync(
-      resolve(racine, 'docs/_travail/transfert-jdd-centres-2026-11-12.json'),
+      resolve(racine, 'ressources/travail/transfert-jdd-centres-2026-11-12.json'),
       JSON.stringify(rapport, null, 2) + '\n',
     )
   }

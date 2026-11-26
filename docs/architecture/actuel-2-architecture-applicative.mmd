@@ -1,0 +1,31 @@
+flowchart TB
+  subgraph FRONT["apps/web — interface (TanStack Router)"]
+    NAVC["Bandeau de navigation<br/>10 onglets · 70 entrées<br/>(nav-config.ts, droit par entrée)"]
+    ECR["Écrans par module<br/>Réception · Coordination · Expédition ·<br/>Pilotage · Stocks · Bus · NC · Administration"]
+    UI["Composants UI partagés<br/>table-métier, filtres, semaines, PDF navigateur"]
+  end
+  subgraph APIM["apps/api — modules (routes → service → repository)"]
+    REC["reception"]
+    COO["coordination"]
+    PIL["pilotage · pilotage-dashboard"]
+    STK["stocks"]
+    TRA["transport"]
+    BUS["bus"]
+    NC["nonconformite"]
+    ADM["admin · mails · taches · alertes · me · health"]
+  end
+  subgraph CORE["apps/api/src/core — socle transverse"]
+    ERR["Erreurs {code, message, regle}<br/>400 · 401 · 403 · 404 · 409 · 422"]
+    SM["Machines d'états<br/>(transition non listée = 409)"]
+    VER["Verrouillage optimiste (version)"]
+    IDEM["Idempotency-Key"]
+    PERM["Permissions + périmètre plateforme<br/>(catalogue.ts, admin super-utilisateur)"]
+    TX["Transactions Prisma"]
+    OBS["Observabilité : OTel, pino, sondes 9180"]
+    IDT["Identité (fournisseur de dev, Q-001)"]
+  end
+  DATA[("Modèle Prisma<br/>84 entités · 14 énumérations")]
+  NAVC --> ECR --> UI
+  ECR -- "fetch /api/*" --> APIM
+  REC & COO & PIL & STK & TRA & BUS & NC & ADM --> CORE
+  CORE --> DATA

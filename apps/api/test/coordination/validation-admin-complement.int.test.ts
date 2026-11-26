@@ -1,6 +1,6 @@
 // COO-P03 — tests COMPLÉMENTAIRES de la validation admin (validation-admin.int.test.ts n'est pas dupliqué).
-// Source de l'attendu : docs/COORDINATION_REGLES_METIER.md RG-COO-001 à 020, §3.1.a / §3.1.b, RG-X-053 ;
-// docs/RECEPTION_REGLES_METIER.md RG-X-001 / RG-X-002 ; décisions : Q-184 (TRANCHÉE : panier = mode BL),
+// Source de l'attendu : docs/specifications/COORDINATION_REGLES_METIER.md RG-COO-001 à 020, §3.1.a / §3.1.b, RG-X-053 ;
+// docs/specifications/RECEPTION_REGLES_METIER.md RG-X-001 / RG-X-002 ; décisions : Q-184 (TRANCHÉE : panier = mode BL),
 // Q-185 (hypothèses (1) à (6)), Q-203 (pas de plafond ; périmées / déjà validées ignorées ET listées).
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import {

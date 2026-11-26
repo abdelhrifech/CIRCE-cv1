@@ -5,7 +5,7 @@ import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const fichiers = JSON.parse(
-  readFileSync(resolve(root, 'docs/GEL_RECEPTION_COORDINATION_2026_11_19.json'), 'utf8'),
+  readFileSync(resolve(root, 'ressources/gel/GEL_RECEPTION_COORDINATION_2026_11_19.json'), 'utf8'),
 )
 const modifies = Object.entries(fichiers)
   .filter(

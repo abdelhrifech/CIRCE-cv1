@@ -1,5 +1,5 @@
 // COO-P11 — tests d'INTÉGRATION du dispatch du roulage (RG-COO-291 à 296, ECR-COO-10).
-// Source de l'attendu : docs/COORDINATION_REGLES_METIER.md ; hypothèses Q-195 (cette session), Q-276 (algorithme de
+// Source de l'attendu : docs/specifications/COORDINATION_REGLES_METIER.md ; hypothèses Q-195 (cette session), Q-276 (algorithme de
 // répartition simulé, seuils 36 h / 115 % paramétrables), Q-286 (profils : chef d'équipe seul), Q-251 (PRET).
 // RG-X : « Prêt » dépend de la couverture des visuels par la Réception (RG-COO-208) : un visuel qui n'est plus reçu
 // sort le train du dispatch et l'affectation est refusée (409), dans la même transaction.

@@ -1,5 +1,5 @@
 // COO-P11 — tests d'INTÉGRATION du suivi 8 m² (RG-COO-237, ECR-COO-08), du pré-assemblage 8 m² (RG-COO-234) et du
-// référentiel des rouleurs (RG-COO-297, ECR-ADM-07). Source de l'attendu : docs/COORDINATION_REGLES_METIER.md ;
+// référentiel des rouleurs (RG-COO-297, ECR-ADM-07). Source de l'attendu : docs/specifications/COORDINATION_REGLES_METIER.md ;
 // hypothèses Q-195 (cette session), Q-262 (pré-assemblage par thème), Q-264 (saisie libre ≥ 0), Q-286 (profils).
 // RG-X : le besoin et le reçu du suivi 8 m² viennent de la Réception (couverture, RG-COO-208) ; aucune saisie du suivi
 // ne modifie la réception (stock, liens, affiches).

@@ -1,0 +1,39 @@
+flowchart TB
+  subgraph POSTE["Poste utilisateur"]
+    NAV["Navigateur<br/>(Edge, Chrome, Firefox)"]
+  end
+  subgraph LOCAL["Machine locale — npm start (scripts/start.mjs)"]
+    subgraph WEB["apps/web — serveur Node (Nitro, preset node-server)"]
+      SSR["TanStack Start + React<br/>rendu serveur + SPA<br/>Tailwind, Radix UI · port 3000"]
+      RELAIS["Relais /api/* → API<br/>(routes/api/$.ts)<br/>injecte l'identité de dev signée (Q-001)"]
+    end
+    subgraph API["apps/api — Fastify (Node.js, TypeScript) · port 3001"]
+      ROUTES["Routes /v1/* et /api/*<br/>(validation Zod, contrat OpenAPI)"]
+      SERVICES["Services métier<br/>RG-REC · RG-COO · RG-X<br/>machines d'états, verrou optimiste,<br/>idempotence, permissions (catalogue)"]
+      ORDO["Ordonnanceur interne<br/>(ORDONNANCEUR_ACTIF)"]
+      PORTS["Ports : Mail · Broadcast ·<br/>Machine · Site agent · LLM"]
+      ADMIN["Écoute d'administration · port 9180<br/>/healthz/live · /healthz/ready"]
+    end
+    SHARED["packages/shared<br/>schémas Zod, codes de droits, rôles"]
+    PRISMA["Prisma ORM<br/>adaptateur better-sqlite3"]
+    DB[("SQLite<br/>apps/api/prisma/dev.db<br/>(restaurée depuis donnees/dev.sqlite.gz)")]
+  end
+  subgraph EXT["Hors application"]
+    OTEL["Collecteur OTLP<br/>(si OTEL_EXPORTER_OTLP_ENDPOINT)"]
+    STDOUT["Journaux JSON (pino) sur stdout"]
+    SMTP["SMTP (MAIL_MODE=smtp)<br/>sinon boîte simulée"]
+    CIRCE[("Copie de la base Circé<br/>SQL Server (Docker circe-sql)<br/>lecture seule")]
+  end
+  NAV -- "HTTP :3000" --> SSR
+  SSR --> RELAIS
+  RELAIS -- "HTTP /api/* + x-dev-identity" --> ROUTES
+  ROUTES --> SERVICES
+  SERVICES --> PRISMA --> DB
+  ORDO --> SERVICES
+  SERVICES --> PORTS
+  PORTS -.-> SMTP
+  SHARED -. "types et schémas" .- SSR
+  SHARED -. "types et schémas" .- ROUTES
+  API -. "traces OTLP" .-> OTEL
+  API -. "logs" .-> STDOUT
+  CIRCE -. "export-circe.ts (SELECT) → CSV → import-circe.ts" .-> DB

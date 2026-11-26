@@ -16,6 +16,7 @@
     "typecheck": "pnpm -r typecheck && tsc -p tsconfig.json",
     "lint": "eslint . && prettier --check .",
     "format": "prettier --write .",
+    "commits:check": "node scripts/verifier-commits.mjs",
     "test": "pnpm -r --if-present test",
     "test:int": "pnpm --filter @circe/api test:int",
     "test:e2e": "playwright test",

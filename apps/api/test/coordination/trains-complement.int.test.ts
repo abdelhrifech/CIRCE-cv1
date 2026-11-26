@@ -1,5 +1,5 @@
 // COO-P09 — tests COMPLÉMENTAIRES des trains (trains.int.test.ts n'est pas dupliqué), uniquement d'intégration.
-// Source de l'attendu (les règles, pas le code) : docs/COORDINATION_REGLES_METIER.md RG-COO-200 à 209, 218 à 229,
+// Source de l'attendu (les règles, pas le code) : docs/specifications/COORDINATION_REGLES_METIER.md RG-COO-200 à 209, 218 à 229,
 // 307, 308, §2 (profils × actions), §3.2 (machine d'états de la face de train) ; hypothèses Q-192, Q-250, Q-256,
 // Q-280, Q-286 ; CLAUDE.md §6 (400 validation, 403 permission, 409 transition / version, atomicité, idempotence).
 // RG-COO-204 (campagne contrôlée) est BLOQUÉE (Q-257) : aucun test. RG-COO-210 à 217 relèvent de COO-P10.

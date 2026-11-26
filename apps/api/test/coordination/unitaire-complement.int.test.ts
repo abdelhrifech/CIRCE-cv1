@@ -2,7 +2,7 @@
 // unitaire.int.test.ts n'est pas dupliqué. Aucun test unitaire : API réelle sur la base de test (test.db), données par
 // les factories ; les données créées ici sont purgées dans l'afterAll.
 //
-// Source de l'attendu (les RÈGLES, pas le code) : docs/COORDINATION_REGLES_METIER.md RG-COO-124, 151, 167, 238 à 251,
+// Source de l'attendu (les RÈGLES, pas le code) : docs/specifications/COORDINATION_REGLES_METIER.md RG-COO-124, 151, 167, 238 à 251,
 // 290, 304 à 306, RG-X-081, RG-X-082 ; CLAUDE.md §6 (400 / 401 / 403 / 404 / 409 / 422, version, Idempotency-Key,
 // transactions) ; hypothèses Q-196, Q-265 (option (c) : liberation-colisage.int.test.ts), Q-271, Q-279, Q-286, Q-375,
 // Q-002, Q-287. Les écarts constatés sont marqués `it.fails` avec leur n° ANO (non reportés dans RAPPORT_TESTS.md).

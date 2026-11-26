@@ -1,11 +1,13 @@
 import type { FastifyError, FastifyInstance } from 'fastify'
 import { hasZodFastifySchemaValidationErrors } from 'fastify-type-provider-zod'
 import { AppError, ValidationError } from './errors.ts'
+import { journaliserRefus } from './observability/securite-metier.ts'
 
 /** Mappe toute erreur vers le format unique { code, message, details?, regle? }. */
 export function registerErrorHandler(app: FastifyInstance): void {
   app.setErrorHandler((error: FastifyError | Error, request, reply) => {
     if (error instanceof AppError) {
+      journaliserRefus(request, error.httpStatus, error) // SEC-050
       return reply.status(error.httpStatus).send(error.toResponse())
     }
     if (hasZodFastifySchemaValidationErrors(error)) {

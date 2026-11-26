@@ -1,5 +1,5 @@
 // COO-P11 — tests d'INTÉGRATION des bagues et étiquettes (RG-COO-298 à 303, ECR-COO-11).
-// Source de l'attendu : docs/COORDINATION_REGLES_METIER.md ; hypothèses Q-195 (cette session), Q-002 / Q-287 (aperçu
+// Source de l'attendu : docs/specifications/COORDINATION_REGLES_METIER.md ; hypothèses Q-195 (cette session), Q-002 / Q-287 (aperçu
 // navigateur, aucune impression physique pilotée), Q-250 (l'unité de production du déroulant est le train), Q-277
 // (réimpression : chef d'équipe seul), Q-278 (tableau de roulage hors périmètre), Q-286 (profils).
 // RG-X : « Prêt à produire » dépend de la couverture des visuels par la Réception (RG-COO-208), relue dans la même

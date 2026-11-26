@@ -1,7 +1,7 @@
 // RG-COO-309 / RG-COO-167 — tests d'INTÉGRATION : « À traiter » (2 m² fixe) liste un dossier dès qu'il a une répartition
 // à traiter, non retirée, d'un atelier FIXE du périmètre, même sans instruction ni ligne attendue ; la fiche de ce
 // dossier s'ouvre (la liste propose « Ouvrir le dossier »), et reste refusée hors périmètre ou sans répartition à traiter.
-// Source : docs/COORDINATION_REGLES_METIER.md RG-COO-309, RG-COO-167. API réelle sur la base de test, données isolées.
+// Source : docs/specifications/COORDINATION_REGLES_METIER.md RG-COO-309, RG-COO-167. API réelle sur la base de test, données isolées.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { FicheDossierSchema, ListeDossiersSchema } from '@circe/shared'
 import * as f from '../factories/index.ts'

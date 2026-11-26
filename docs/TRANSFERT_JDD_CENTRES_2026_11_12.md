@@ -37,7 +37,7 @@ Les anciennes plateformes apparaissent encore dans le sélecteur administrateur 
 
 Simulation : `node scripts/transfert-jdd-centres.mjs`. Application avec sauvegarde : `node scripts/transfert-jdd-centres.mjs --apply`. Le script refuse la production et utilise exclusivement `apps/api/prisma/dev.db`. Il refuse les anciens sites contenant des données des nouveaux modules nécessitant une reprise spécifique ; aucun effacement ni fusion implicite n’est effectué.
 
-Rapport : `docs/_travail/transfert-jdd-centres-2026-11-12.json`.
+Rapport : `ressources/travail/transfert-jdd-centres-2026-11-12.json`.
 
 Sauvegarde locale : `/Users/hrifech/Documents/ChatGPT/CIRCE-CLAUDE-GV1/circe-v1/apps/api/prisma/dev-avant-transfert-jdd-2026-11-12T13-57-51-543Z.db`.
 

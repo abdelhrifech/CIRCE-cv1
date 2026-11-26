@@ -2,7 +2,7 @@
 // export des trains du jeudi (RG-COO-210 à 213), ordonnancement Paris (RG-COO-214, Q-255 OUVERTE), export
 // préparation (RG-COO-215, 216), « Au roulage » (RG-COO-217), suivi par thème (RG-COO-230 à 233), vue Préparation
 // (RG-COO-235), choix du rouleur (RG-COO-236) et générateur de fichiers (ECR-GEN-01 / GEN-03).
-// Source de l'attendu : docs/COORDINATION_REGLES_METIER.md (règles citées, tableau des entités, matrice des
+// Source de l'attendu : docs/specifications/COORDINATION_REGLES_METIER.md (règles citées, tableau des entités, matrice des
 // droits), hypothèses Q-193 (12 points), Q-255, Q-263, Q-175, CLAUDE.md §6 (400 / 401 / 403 / 409 / 422, atomicité,
 // idempotence, concurrence). Le fichier est SIMULÉ (D-15). Les cas déjà couverts par export-trains.int.test.ts et
 // suivi-generation.int.test.ts ne sont pas répétés : ces tests ajoutent les limites, les transitions interdites
@@ -376,7 +376,7 @@ describe('RG-COO-213 plafond de 6 contrats, tf_train_export, fichier, simulation
     await db.faceTrain.updateMany({ where: { trainId: sept.trainId }, data: { statut: 'ANNULE' } })
   })
 
-  // Tableau des entités (docs/COORDINATION_REGLES_METIER.md, « Export de train (tf_train_export) ») : chaque contrat
+  // Tableau des entités (docs/specifications/COORDINATION_REGLES_METIER.md, « Export de train (tf_train_export) ») : chaque contrat
   // porte contrat, réseau, annonceur, thème, repiquage, rouleur, lettre.
   // ANO-044 (corrigée) : la ligne tf_train_export stocke la lettre de la position (A à F) et le rouleur. Ancien suspect : apps/api/src/modules/coordination/export-trains.ts:270
   // (`contrats: JSON.stringify(t.contrats)`), apps/api/src/modules/coordination/export-csv.ts:10-15 (ContratExport).

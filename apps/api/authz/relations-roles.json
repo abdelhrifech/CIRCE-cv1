@@ -1,0 +1,962 @@
+[
+  {
+    "user": "role:coord#membre",
+    "relation": "nonconformite__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:cheq#membre",
+    "relation": "nonconformite__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:recep#membre",
+    "relation": "nonconformite__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "nonconformite__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:coord#membre",
+    "relation": "nonconformite__declarer",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:cheq#membre",
+    "relation": "nonconformite__declarer",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:recep#membre",
+    "relation": "nonconformite__declarer",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "nonconformite__declarer",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:coord#membre",
+    "relation": "nonconformite__decider",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "nonconformite__decider",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:cheq#membre",
+    "relation": "nonconformite__traiter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:recep#membre",
+    "relation": "nonconformite__traiter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "nonconformite__traiter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:coord#membre",
+    "relation": "j3__gerer",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:cheq#membre",
+    "relation": "j3__gerer",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:recep#membre",
+    "relation": "j3__gerer",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "j3__gerer",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:coord#membre",
+    "relation": "bus__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:cheq#membre",
+    "relation": "bus__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:recep#membre",
+    "relation": "bus__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "bus__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:com#membre",
+    "relation": "bus__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:coord#membre",
+    "relation": "bus__recevoir",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:recep#membre",
+    "relation": "bus__recevoir",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "bus__recevoir",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:cheq#membre",
+    "relation": "bus__ajuster",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "bus__ajuster",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:coord#membre",
+    "relation": "reception__attendues__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:cheq#membre",
+    "relation": "reception__attendues__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:recep#membre",
+    "relation": "reception__attendues__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "reception__attendues__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:com#membre",
+    "relation": "reception__attendues__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:coord#membre",
+    "relation": "reception__saisir",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:recep#membre",
+    "relation": "reception__saisir",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "reception__saisir",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:coord#membre",
+    "relation": "reception__valider",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:recep#membre",
+    "relation": "reception__valider",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "reception__valider",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:coord#membre",
+    "relation": "reception__inconnue__creer",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:recep#membre",
+    "relation": "reception__inconnue__creer",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "reception__inconnue__creer",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:coord#membre",
+    "relation": "reception__sas__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:cheq#membre",
+    "relation": "reception__sas__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:recep#membre",
+    "relation": "reception__sas__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "reception__sas__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:com#membre",
+    "relation": "reception__sas__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:recep#membre",
+    "relation": "reception__controler",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "reception__controler",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:coord#membre",
+    "relation": "reception__imprimer",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:cheq#membre",
+    "relation": "reception__imprimer",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:recep#membre",
+    "relation": "reception__imprimer",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "reception__imprimer",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:coord#membre",
+    "relation": "affiche__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:cheq#membre",
+    "relation": "affiche__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:recep#membre",
+    "relation": "affiche__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "affiche__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:com#membre",
+    "relation": "affiche__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:coord#membre",
+    "relation": "affiche__modifier",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:cheq#membre",
+    "relation": "affiche__modifier",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:recep#membre",
+    "relation": "affiche__modifier",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "affiche__modifier",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:coord#membre",
+    "relation": "affiche__conserver",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:cheq#membre",
+    "relation": "affiche__conserver",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:recep#membre",
+    "relation": "affiche__conserver",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "affiche__conserver",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:coord#membre",
+    "relation": "affiche__rattachement__modifier",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:recep#membre",
+    "relation": "affiche__rattachement__modifier",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "affiche__rattachement__modifier",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:coord#membre",
+    "relation": "reception__inconnue__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:recep#membre",
+    "relation": "reception__inconnue__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "reception__inconnue__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:coord#membre",
+    "relation": "reception__inconnue__rattacher",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:recep#membre",
+    "relation": "reception__inconnue__rattacher",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "reception__inconnue__rattacher",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:coord#membre",
+    "relation": "reception__inconnue__signaler",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:recep#membre",
+    "relation": "reception__inconnue__signaler",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "reception__inconnue__signaler",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:coord#membre",
+    "relation": "validation_admin__valider",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "validation_admin__valider",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:coord#membre",
+    "relation": "stock__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:cheq#membre",
+    "relation": "stock__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:recep#membre",
+    "relation": "stock__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:expe#membre",
+    "relation": "stock__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "stock__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:com#membre",
+    "relation": "stock__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:cheq#membre",
+    "relation": "stock__rebut",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:recep#membre",
+    "relation": "stock__rebut",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:expe#membre",
+    "relation": "stock__rebut",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "stock__rebut",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "stock__mouvement_manuel",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:coord#membre",
+    "relation": "stock__fin_campagne__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:cheq#membre",
+    "relation": "stock__fin_campagne__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:recep#membre",
+    "relation": "stock__fin_campagne__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "stock__fin_campagne__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:cheq#membre",
+    "relation": "stock__fin_campagne__agir",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:recep#membre",
+    "relation": "stock__fin_campagne__agir",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "stock__fin_campagne__agir",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:coord#membre",
+    "relation": "alerte__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:cheq#membre",
+    "relation": "alerte__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:recep#membre",
+    "relation": "alerte__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "alerte__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:com#membre",
+    "relation": "alerte__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "alerte__acquitter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:coord#membre",
+    "relation": "historique__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:cheq#membre",
+    "relation": "historique__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:recep#membre",
+    "relation": "historique__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "historique__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:com#membre",
+    "relation": "historique__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:coord#membre",
+    "relation": "export__tableau",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:cheq#membre",
+    "relation": "export__tableau",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:recep#membre",
+    "relation": "export__tableau",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "export__tableau",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:com#membre",
+    "relation": "export__tableau",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "parametrage__gerer",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "referentiel__gerer",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "utilisateur__gerer",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:coord#membre",
+    "relation": "instruction__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:cheq#membre",
+    "relation": "instruction__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:recep#membre",
+    "relation": "instruction__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "instruction__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:com#membre",
+    "relation": "instruction__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:coord#membre",
+    "relation": "instruction__instruction_ok",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "instruction__instruction_ok",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:coord#membre",
+    "relation": "instruction__modifier",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "instruction__modifier",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:coord#membre",
+    "relation": "instruction__annuler",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "instruction__annuler",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:coord#membre",
+    "relation": "broadcast__version__appliquer",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "broadcast__version__appliquer",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:coord#membre",
+    "relation": "broadcast__correction__demander",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "broadcast__correction__demander",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:coord#membre",
+    "relation": "verification_themes__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "verification_themes__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:coord#membre",
+    "relation": "reservations__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:cheq#membre",
+    "relation": "reservations__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:recep#membre",
+    "relation": "reservations__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "reservations__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:com#membre",
+    "relation": "reservations__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:coord#membre",
+    "relation": "suivi_production__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:cheq#membre",
+    "relation": "suivi_production__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "suivi_production__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:com#membre",
+    "relation": "suivi_production__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:coord#membre",
+    "relation": "alimentation__manuelle",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "alimentation__manuelle",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "integration__passage_manuel",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:coord#membre",
+    "relation": "deblocage__executer",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "deblocage__executer",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:coord#membre",
+    "relation": "deblocage__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "deblocage__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:coord#membre",
+    "relation": "train__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:cheq#membre",
+    "relation": "train__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "train__consulter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:coord#membre",
+    "relation": "train__exporter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "train__exporter",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:coord#membre",
+    "relation": "train__creer_supprimer",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "train__creer_supprimer",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:coord#membre",
+    "relation": "train__fractionner",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:cheq#membre",
+    "relation": "train__fractionner",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "train__fractionner",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:coord#membre",
+    "relation": "train__changer_statut",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "train__changer_statut",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "train__dupliquer",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:coord#membre",
+    "relation": "roulage__preparer",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:cheq#membre",
+    "relation": "roulage__preparer",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "roulage__preparer",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:coord#membre",
+    "relation": "preassemblage__gerer",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:cheq#membre",
+    "relation": "preassemblage__gerer",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "preassemblage__gerer",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:coord#membre",
+    "relation": "suivi_8m2__saisir",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:cheq#membre",
+    "relation": "suivi_8m2__saisir",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "suivi_8m2__saisir",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:coord#membre",
+    "relation": "semaine__liberer",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "semaine__liberer",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:coord#membre",
+    "relation": "preprod__rendre_main",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "preprod__rendre_main",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:coord#membre",
+    "relation": "intitule__corriger",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:cheq#membre",
+    "relation": "intitule__corriger",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "intitule__corriger",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:coord#membre",
+    "relation": "unite__gerer",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:cheq#membre",
+    "relation": "unite__gerer",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "unite__gerer",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:cheq#membre",
+    "relation": "dispatch__gerer",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "dispatch__gerer",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:cheq#membre",
+    "relation": "bague__imprimer",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "bague__imprimer",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:cheq#membre",
+    "relation": "bague__reimprimer",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "bague__reimprimer",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:cheq#membre",
+    "relation": "colis__gerer",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:expe#membre",
+    "relation": "colis__gerer",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "colis__gerer",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:coord#membre",
+    "relation": "repartition__debloquer",
+    "object": "application:circe"
+  },
+  {
+    "user": "role:admin#membre",
+    "relation": "repartition__debloquer",
+    "object": "application:circe"
+  }
+]

@@ -1,0 +1,35 @@
+flowchart TB
+  CGW["Cilium Gateway (plateforme)"]
+  subgraph NS["Namespace du tenant circe (Staging, puis Production)"]
+    subgraph FRONT["Composant front"]
+      HRF["HTTPRoute front<br/>hôte attribué · port 8080"]
+      SVF["Service circe-ui :8080"]
+      DPF["Deployment circe-ui · 2 réplicas<br/>Caddy · distroless static nonroot<br/>readOnlyRootFilesystem · /tmp emptyDir<br/>sondes /healthz :9180"]
+      CMF["ConfigMap → /srv/config.json<br/>variable CSP"]
+    end
+    subgraph AUTH["Middleware d'authentification"]
+      O2P["oauth2-proxy + Valkey<br/>(déployé par Cityz Media)"]
+    end
+    subgraph BACK["Composant API"]
+      HRA["HTTPRoute API<br/>(derrière API Management)"]
+      SVA["Service circe-api :8080"]
+      DPA["Deployment circe-api · 2 réplicas + PDB<br/>Node.js LTS · distroless nonroot<br/>requests / limits · SIGTERM 30 s<br/>/healthz/live, /healthz/ready :9180"]
+      JOB["Job circe-migrations<br/>prisma migrate deploy<br/>(avant les réplicas)"]
+      ES["ExternalSecret → Secret<br/>DATABASE_URL · SAS Blob ·<br/>accès OpenFGA · SMTP"]
+    end
+  end
+  KV["Key Vault du tenant"]
+  PG[("PostgreSQL — base circe")]
+  BLOB[("Blob Storage — conteneur circe")]
+  FGA["OpenFGA — store circe"]
+  OTC["OpenTelemetry Collector"]
+  CGW --> HRF --> SVF --> DPF
+  CGW -- "contrôle de session" --> O2P
+  CGW --> HRA --> SVA --> DPA
+  CMF --> DPF
+  KV --> ES --> DPA
+  ES --> JOB
+  JOB --> PG
+  DPA --> PG & BLOB & FGA
+  DPA -. "OTLP" .-> OTC
+  DPF -. "stdout, /metrics" .-> OTC

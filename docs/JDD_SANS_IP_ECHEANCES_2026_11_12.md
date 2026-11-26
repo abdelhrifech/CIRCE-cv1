@@ -9,7 +9,7 @@ Demande du 12 novembre 2026 : ajouter des données aux deux indicateurs du table
 - 24 dossiers pour la prochaine échéance, 8 par centre : attendus non reçus ou reçus partiellement, départ 2026-W49, préparation à traiter.
 - 12 dossiers à échéance dépassée, 4 par centre, départ 2026-W48.
 
-72 dossiers ajoutés à la série existante ; le catalogue `docs/_travail/jdd-plus-2026-W46.json` répertorie maintenant 222 scénarios. Rechercher **Sans IP · visuel saisi**, **J−3 · prochaine échéance** ou **J−3 · échéance dépassée**.
+72 dossiers ajoutés à la série existante ; le catalogue `ressources/travail/jdd-plus-2026-W46.json` répertorie maintenant 222 scénarios. Rechercher **Sans IP · visuel saisi**, **J−3 · prochaine échéance** ou **J−3 · échéance dépassée**.
 
 ## Pourquoi l’indicateur J−3 reste à zéro aujourd’hui
 

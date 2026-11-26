@@ -20,7 +20,7 @@ Les inconnues ayant une feuille définitive peuvent nécessiter d’élargir le 
 
 ## Catalogue commun aux trois centres
 
-Chaque scénario ci-dessous existe dans chacun des trois centres. Le catalogue JSON contient les numéros de dossiers, affiches et NC : `docs/_travail/jdd-plus-2026-W46.json`.
+Chaque scénario ci-dessous existe dans chacun des trois centres. Le catalogue JSON contient les numéros de dossiers, affiches et NC : `ressources/travail/jdd-plus-2026-W46.json`.
 
 | Scénario | Exemple de dossier à Wissous |
 |---|---|

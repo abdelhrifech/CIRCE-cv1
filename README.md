@@ -81,3 +81,19 @@ pnpm lint
 ```
 
 La correction Windows utilise le CLI JavaScript de pnpm sans shell, y compris pour les migrations ; l’arrêt termine l’arbre de processus sous Windows. La recette native sur une machine Windows reste à effectuer, l’environnement de développement courant étant macOS.
+
+## Documentation
+
+Documentation en Markdown dans `docs/`, organisée selon le référentiel Cityz Media 0.2.0-pre :
+
+- [docs/architecture/](docs/architecture/README.md) : dossier d’architecture (état actuel et cible).
+- [docs/specifications/](docs/specifications/README.md) : spécifications fonctionnelles et règles métier.
+- [docs/acceptance/](docs/acceptance/README.md) : cas de test de recette, traçabilité, comptes rendus de campagne.
+- [docs/operations/](docs/operations/README.md) : exploitation, runbooks, anomalies connues.
+- [docs/api/](docs/api/README.md) : contrats OpenAPI.
+- [docs/adr/](docs/adr/README.md) : décisions d’architecture.
+- [docs/exceptions/](docs/exceptions/README.md) : dérogations demandées.
+- [docs/milestones/](docs/milestones/README.md) : comptes rendus de jalons.
+- [docs/knowledge-transfer/](docs/knowledge-transfer/README.md) : transfert de compétences.
+
+Contribuer : [CONTRIBUTING.md](CONTRIBUTING.md). Fichiers de travail hors formats documentaires (empreintes du gel, catalogues JDD) : `ressources/`.

@@ -1,5 +1,5 @@
 // COO-P01 — tests COMPLÉMENTAIRES du socle Coordination (socle.int.test.ts n'est pas dupliqué).
-// Source de l'attendu : docs/COORDINATION_REGLES_METIER.md §2 (bloc 1), §3.2.b, §3.2.c, RG-COO-001, 040,
+// Source de l'attendu : docs/specifications/COORDINATION_REGLES_METIER.md §2 (bloc 1), §3.2.b, §3.2.c, RG-COO-001, 040,
 // 041, 045, 046, 053, 061, 062, 063, 087, 160, 165 à 169, RG-X-065 ; hypothèses Q-003, Q-182.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { ListeDossiersSchema, StatutInstructionChangeSchema, type Role } from '@circe/shared'

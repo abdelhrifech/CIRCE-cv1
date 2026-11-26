@@ -1,6 +1,6 @@
 // COO-P10 — tests d'INTÉGRATION de l'export des trains du jeudi (RG-COO-210 à 213), de l'export préparation
 // (RG-COO-215, 216), de « Au roulage » et de la suppression d'un thème de l'export (RG-COO-217), du rouleur
-// (RG-COO-236). Source de l'attendu : docs/COORDINATION_REGLES_METIER.md (règles citées), hypothèses Q-193,
+// (RG-COO-236). Source de l'attendu : docs/specifications/COORDINATION_REGLES_METIER.md (règles citées), hypothèses Q-193,
 // Q-251 à Q-254 ; CLAUDE.md §6 (400 validation, 403 permission, 409 transition / version, 422 règle, atomicité,
 // idempotence). Le fichier est SIMULÉ (D-15, Q-193). RG-COO-214 (ordonnancement Paris) : Q-255 OUVERTE, non reprise.
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'

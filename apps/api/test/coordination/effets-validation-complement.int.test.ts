@@ -1,7 +1,7 @@
 // COO-P04 — tests COMPLÉMENTAIRES des effets de la validation admin (effets-validation.int.test.ts n'est pas
-// dupliqué). Source de l'attendu (les règles, pas le code) : docs/COORDINATION_REGLES_METIER.md RG-COO-008,
+// dupliqué). Source de l'attendu (les règles, pas le code) : docs/specifications/COORDINATION_REGLES_METIER.md RG-COO-008,
 // 009, 014, 015, 017, 018, 021 à 032, 064, RG-X-050, 051, 052, 058, §2 (profils × actions) ;
-// docs/RECEPTION_REGLES_METIER.md RG-X-014, RG-X-015 ; décisions : Q-186 (hypothèses (1) à (9)), Q-201
+// docs/specifications/RECEPTION_REGLES_METIER.md RG-X-014, RG-X-015 ; décisions : Q-186 (hypothèses (1) à (9)), Q-201
 // (coord + admin valident, recep rattache sans valider, com lecture seule), Q-202 (effets de l'annulation).
 // Les écarts constatés (ANO-029 à 032, docs/RAPPORT_TESTS.md) étaient marqués `it.fails` : corrigés dans le code.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'

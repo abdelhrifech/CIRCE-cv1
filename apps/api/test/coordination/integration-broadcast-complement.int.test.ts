@@ -1,5 +1,5 @@
 // COO-P06 — tests COMPLÉMENTAIRES de l'intégration Broadcast (integration-broadcast.int.test.ts n'est pas
-// dupliqué). Source de l'attendu (les règles, pas le code) : docs/COORDINATION_REGLES_METIER.md RG-COO-080 à
+// dupliqué). Source de l'attendu (les règles, pas le code) : docs/specifications/COORDINATION_REGLES_METIER.md RG-COO-080 à
 // 083, 085, 087, 091 à 104, 115 à 134, §2 (profils × actions) ; hypothèses Q-188 (1) à (13), Q-187.
 // Les règles de vie des lignes (RG-COO-080 à 100) sont testées ici via le PASSAGE d'intégration réel
 // (route POST /api/coordination/integration/passages ou lancerPassage), jamais par appel direct.

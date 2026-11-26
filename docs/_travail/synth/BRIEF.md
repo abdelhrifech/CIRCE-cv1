@@ -27,7 +27,7 @@ Sources de synthèse : docs/_travail/*.md. Retour aux sources originales (circe-
 | ID | Module | Sujet | Source(s) en conflit / manquante | Options et conséquences | Bloquante ? | Statut | Décision (équipe) | Date |
 - Module ∈ REC, COO, TRA, DATA, INT, X. « Bloquante ? » = `OUI — <ce qui est bloqué>` ou `NON`. Statut = `OUVERTE` ou `HYPOTHÈSE PRISE` (alors décrire l'HYPOTHÈSE retenue dans « Options et conséquences »). Décision et Date vides. Pas de `|` dans une cellule (utiliser `/`). Une ligne = une seule ligne de texte.
 
-## Format d'une règle (respecter EXACTEMENT, c'est le modèle docs/RECEPTION_REGLES_METIER.md)
+## Format d'une règle (respecter EXACTEMENT, c'est le modèle docs/specifications/RECEPTION_REGLES_METIER.md)
 ### RG-REC-012 — <titre>
 - Origine : CONSERVÉE | MODIFIÉE | NOUVELLE | SUPPRIMÉE
 - Énoncé :

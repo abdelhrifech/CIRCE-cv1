@@ -1,5 +1,5 @@
 // ÉTAPE 7 — interactions RÉCEPTION → COORDINATION : chaque cellule R-nn de la matrice d'impact
-// (docs/ANALYSE_FONCTIONNELLE_COMPLETE.md §6.5) est un test d'intégration sur l'API réelle (test.db).
+// (docs/specifications/ANALYSE_FONCTIONNELLE_COMPLETE.md §6.5) est un test d'intégration sur l'API réelle (test.db).
 // Une action de Réception × l'état de la Coordination liée (dossier, ligne, validation admin, train) →
 // autorisé / bloqué (règle, code) / effet induit. Sources : RG-X-001 à 030, 053, 060 à 065, 075 à 088.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'

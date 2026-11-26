@@ -1,0 +1,151 @@
+# Généré depuis apps/api/src/core/permissions/catalogue.ts — ne pas modifier à la main.
+# Vérification côté API : check(utilisateur:<id>, <droit>, application:circe)
+#   puis, pour une ressource rattachée à un site, check(utilisateur:<id>, perimetre, plateforme:<id>).
+model
+  schema 1.1
+
+type utilisateur
+
+type role
+  relations
+    define membre: [utilisateur]
+
+type plateforme
+  relations
+    # Périmètre : lignes utilisateur_perimetre ; l’administrateur couvre toutes les plateformes (Q-421).
+    define perimetre: [utilisateur, role#membre]
+
+type application
+  relations
+    # Consulter les non-conformités
+    define nonconformite__consulter: [role#membre]
+    # Déclarer une non-conformité
+    define nonconformite__declarer: [role#membre]
+    # Décider du traitement des non-conformités
+    define nonconformite__decider: [role#membre]
+    # Confirmer le traitement par la plateforme
+    define nonconformite__traiter: [role#membre]
+    # Gérer le suivi J-3
+    define j3__gerer: [role#membre]
+    # Consulter la production Bus
+    define bus__consulter: [role#membre]
+    # Réceptionner les affiches Bus
+    define bus__recevoir: [role#membre]
+    # Ajuster les quantités Bus
+    define bus__ajuster: [role#membre]
+    # Consulter les réceptions attendues et le panier
+    define reception__attendues__consulter: [role#membre]
+    # Photographier le BL / une affiche, mettre au panier
+    define reception__saisir: [role#membre]
+    # Valider la réception
+    define reception__valider: [role#membre]
+    # Créer une réception inconnue
+    define reception__inconnue__creer: [role#membre]
+    # Consulter le sas (palettes à contrôler)
+    define reception__sas__consulter: [role#membre]
+    # Contrôler la palette et valider le contrôle
+    define reception__controler: [role#membre]
+    # Imprimer / réimprimer feuilles de stock et étiquettes rack
+    define reception__imprimer: [role#membre]
+    # Consulter la liste des affiches, la fiche affiche et la fiche réception
+    define affiche__consulter: [role#membre]
+    # Modifier la fiche affiche (annonceur, thème saisis, imprimeur, allée, rayon)
+    define affiche__modifier: [role#membre]
+    # Cocher « Affiche à conserver »
+    define affiche__conserver: [role#membre]
+    # Changer de thème, retirer un rattachement, rattacher à un autre dossier
+    define affiche__rattachement__modifier: [role#membre]
+    # Consulter les réceptions inconnues
+    define reception__inconnue__consulter: [role#membre]
+    # Identifier et rattacher une réception inconnue
+    define reception__inconnue__rattacher: [role#membre]
+    # Signaler « Dossier introuvable » à la Coordination
+    define reception__inconnue__signaler: [role#membre]
+    # Valider / annuler la validation admin d’une affiche
+    define validation_admin__valider: [role#membre]
+    # Consulter les vues Stocks et Mouvements
+    define stock__consulter: [role#membre]
+    # Mettre au rebut
+    define stock__rebut: [role#membre]
+    # Ajout / sortie manuels de stock
+    define stock__mouvement_manuel: [role#membre]
+    # Consulter Stocks › Fin de campagne
+    define stock__fin_campagne__consulter: [role#membre]
+    # Décider et exécuter la fin de campagne
+    define stock__fin_campagne__agir: [role#membre]
+    # Consulter Pilotage › Alertes
+    define alerte__consulter: [role#membre]
+    # Acquitter une alerte
+    define alerte__acquitter: [role#membre]
+    # Consulter l’historique d’une affiche et le journal
+    define historique__consulter: [role#membre]
+    # Exporter un tableau (xlsx)
+    define export__tableau: [role#membre]
+    # Paramétrer règles métier, alertes, listes de distribution, règles de déblocage
+    define parametrage__gerer: [role#membre]
+    # Gérer les référentiels (imprimeurs, livreurs, agents, plateformes, rouleurs)
+    define referentiel__gerer: [role#membre]
+    # Gérer les utilisateurs, leurs rôles et leur périmètre
+    define utilisateur__gerer: [role#membre]
+    # Consulter « Validation admin et Instruction OK »
+    define instruction__consulter: [role#membre]
+    # Passer l’Instruction OK (manuelle ou lancement du traitement)
+    define instruction__instruction_ok: [role#membre]
+    # Modifier l’entretien / la position d’une instruction
+    define instruction__modifier: [role#membre]
+    # Annuler une instruction
+    define instruction__annuler: [role#membre]
+    # Appliquer / reprendre la version Broadcast
+    define broadcast__version__appliquer: [role#membre]
+    # Demander une correction à Broadcast
+    define broadcast__correction__demander: [role#membre]
+    # Consulter Pré-production › Vérification des thèmes (thèmes, annonceurs, thèmes modifiés)
+    define verification_themes__consulter: [role#membre]
+    # Consulter l’état des réservations
+    define reservations__consulter: [role#membre]
+    # Consulter le suivi de production
+    define suivi_production__consulter: [role#membre]
+    # Rafraîchir un dossier ; consulter les chargements Broadcast
+    define alimentation__manuelle: [role#membre]
+    # Lancer un passage d’intégration Broadcast manuel
+    define integration__passage_manuel: [role#membre]
+    # Débloquer une préparation / rendre la main à la Pré-Prod
+    define deblocage__executer: [role#membre]
+    # Consulter les préparations débloquées
+    define deblocage__consulter: [role#membre]
+    # Consulter trains, suivi par thème, préparation, suivi 8 m², unitaire
+    define train__consulter: [role#membre]
+    # Exporter les trains (jeudi 14 h) et simuler
+    define train__exporter: [role#membre]
+    # Créer / supprimer un train
+    define train__creer_supprimer: [role#membre]
+    # Fractionner / raccrocher un visuel
+    define train__fractionner: [role#membre]
+    # Changer statut, annuler un thème, débloquer semaine (trains)
+    define train__changer_statut: [role#membre]
+    # Dupliquer un train
+    define train__dupliquer: [role#membre]
+    # Export préparation, au roulage, choisir le rouleur
+    define roulage__preparer: [role#membre]
+    # Pré-assemblage (marquer / désassembler)
+    define preassemblage__gerer: [role#membre]
+    # Saisie du suivi 8 m² ; afficher le n° de panneau Broadcast
+    define suivi_8m2__saisir: [role#membre]
+    # Libérer la semaine (fixe, pliage, bus)
+    define semaine__liberer: [role#membre]
+    # Rendre la main à la Pré-Prod (unitaire)
+    define preprod__rendre_main: [role#membre]
+    # Corriger l’intitulé (annonceur imprimé, thème)
+    define intitule__corriger: [role#membre]
+    # Créer UM, retirer, préparer ; comptage pliage ; quantités à encoller
+    define unite__gerer: [role#membre]
+    # Dispatch : proposer / affecter / désaffecter un rouleur, liste de picking
+    define dispatch__gerer: [role#membre]
+    # Imprimer / modifier les bagues
+    define bague__imprimer: [role#membre]
+    # Réimprimer une bague
+    define bague__reimprimer: [role#membre]
+    # Colis : rattacher UM / train, expédier, fin de journée
+    define colis__gerer: [role#membre]
+    # Déblocage de répartition (annulation répartitions / UM)
+    define repartition__debloquer: [role#membre]

@@ -1,0 +1,43 @@
+flowchart TB
+  subgraph SPA["Front — SPA React statique (build Vite servi par Caddy)"]
+    NAVC["Bandeau de navigation<br/>10 onglets · 70 entrées · affichage selon les droits"]
+    ECR["Écrans métier<br/>Réception · Coordination · Expédition · Pilotage ·<br/>Stocks · Bus · Non-conformités · Administration"]
+    CLI["Client API<br/>jeton d'accès en mémoire (GET /oauth2/auth)<br/>configuration /config.json"]
+    PDF["PDF générés dans le navigateur"]
+  end
+  subgraph API["API métier CIRCE — Fastify /v1 (architecture hexagonale)"]
+    subgraph ENTREE["Adaptateurs entrants"]
+      HTTP["Routes /v1 + schémas Zod<br/>contrat OpenAPI 3.x"]
+      JWT["Validation du jeton Bearer<br/>signature · émetteur · audience · expiration"]
+    end
+    subgraph DOMAINE["Domaine — sans dépendance technique"]
+      SRV["Services métier par module<br/>RG-REC · RG-COO · RG-X"]
+      SOC["Socle : machines d'états · verrou optimiste ·<br/>idempotence · erreurs {code, message, regle}"]
+    end
+    subgraph PORTS["Ports du domaine"]
+      PREPO["Dépôts de données"]
+      PAUTH["Décision d'autorisation<br/>(interface unique)"]
+      PFIC["Fichiers"]
+      PEXT["Mail · Broadcast · Machine · LLM"]
+    end
+    subgraph SORTANTS["Adaptateurs sortants"]
+      APG["Prisma → PostgreSQL"]
+      AFGA["Client OpenFGA"]
+      ABLOB["Client Blob Storage"]
+      ASMTP["Relais SMTP · interface Broadcast"]
+    end
+    OBS["Instrumentation OpenTelemetry<br/>traces · métriques · journaux JSON"]
+  end
+  SHARED["packages/shared — schémas Zod communs"]
+  NAVC --> ECR --> CLI
+  ECR --> PDF
+  CLI -- "HTTPS /v1 + Authorization: Bearer" --> HTTP
+  HTTP --> JWT --> SRV
+  SRV --> SOC
+  SRV --> PREPO & PAUTH & PFIC & PEXT
+  PREPO --> APG
+  PAUTH --> AFGA
+  PFIC --> ABLOB
+  PEXT --> ASMTP
+  SHARED -.- ECR
+  SHARED -.- HTTP

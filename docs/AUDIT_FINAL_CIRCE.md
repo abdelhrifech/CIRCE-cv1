@@ -1,6 +1,6 @@
 # Audit final CIRCE V2
 
-Étape 10, rédigé le 2026-11-06 après correction de la traçabilité et exécution de la chaîne complète. Les chiffres de statut viennent de la matrice `MATRICE_TRACABILITE_SPECIFICATIONS.md`, recomptée par le script `docs/_travail/controle-tracabilite.mjs` (0 anomalie). Les chiffres de tests viennent de l'exécution réelle (détail : `RAPPORT_TESTS.md`).
+Étape 10, rédigé le 2026-11-06 après correction de la traçabilité et exécution de la chaîne complète. Les chiffres de statut viennent de la matrice `MATRICE_TRACABILITE_SPECIFICATIONS.md`, recomptée par le script `ressources/travail/controle-tracabilite.mjs` (0 anomalie). Les chiffres de tests viennent de l'exécution réelle (détail : `RAPPORT_TESTS.md`).
 
 **Verdict en une phrase : CIRCE V2 n'est PAS prêt pour la production et ne peut pas être présenté comme terminé.** Une partie des règles est implémentée et prouvée par des tests (394 lignes de la matrice sur 858 sont FAIT), mais 343 sont PARTIEL, 32 BLOQUÉ, 66 À FAIRE et 23 NON REPRIS ; l'authentification est celle de développement, l'API refuse de démarrer en production, et les liaisons externes (Broadcast, imprimantes, mail, machines) sont simulées.
 
@@ -168,4 +168,4 @@ Classés par gravité (1 = bloquant sans traitement).
 
 ## Annexe : comment rejouer le contrôle
 
-`node docs/_travail/controle-tracabilite.mjs` (ou `--json`) relit la matrice et signale : EX FAIT dont une RG couverte ne l'est pas, mentions « reste » périmées, fichiers ou fonctions cités inexistants, FAIT / PARTIEL de RG sans test portant l'identifiant, tableau de synthèse inexact. Le code de sortie vaut 1 s'il reste une anomalie. Dernier résultat : 858 lignes, 0 anomalie.
+`node ressources/travail/controle-tracabilite.mjs` (ou `--json`) relit la matrice et signale : EX FAIT dont une RG couverte ne l'est pas, mentions « reste » périmées, fichiers ou fonctions cités inexistants, FAIT / PARTIEL de RG sans test portant l'identifiant, tableau de synthèse inexact. Le code de sortie vaut 1 s'il reste une anomalie. Dernier résultat : 858 lignes, 0 anomalie.

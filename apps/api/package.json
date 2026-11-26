@@ -26,7 +26,8 @@
     "export:circe": "tsx scripts/export-circe.ts",
     "import:circe": "tsx scripts/import-circe.ts",
     "openapi:generate": "tsx scripts/generate-openapi.ts",
-    "openapi:check": "tsx scripts/generate-openapi.ts --check"
+    "openapi:check": "tsx scripts/generate-openapi.ts --check",
+    "authz:generer": "tsx scripts/authz-generer.ts"
   },
   "dependencies": {
     "@circe/shared": "workspace:*",

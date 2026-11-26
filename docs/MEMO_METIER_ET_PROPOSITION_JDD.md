@@ -8,7 +8,7 @@ Ce document conserve une mémoire explicite et relisible pour les prochaines int
 
 Lecture ciblée des services de Réception et Coordination, des machines d'états, des JDD, des tests et de la documentation de suivi. Cette analyse n'est pas un nouvel audit exhaustif de tous les écrans, de toutes les spécifications ou de chaque branche du code. Le dossier historique `circe-develop/`, cité par la documentation, n'est pas présent à la racine de cette copie ; l'équivalence avec l'ancien système n'a donc pas été démontrée.
 
-L'[inventaire associé](INVENTAIRE_REGLES_METIER_2026-11-09.md) reprend toutes les règles RG-REC, RG-COO et RG-X de la matrice, avec leur statut déclaré et les occurrences retrouvées dans le code et les tests. Une occurrence d'identifiant, surtout dans un commentaire, n'est pas une preuve d'implémentation ni de couverture.
+L'[inventaire associé](specifications/INVENTAIRE_REGLES_METIER_2026-11-09.md) reprend toutes les règles RG-REC, RG-COO et RG-X de la matrice, avec leur statut déclaré et les occurrences retrouvées dans le code et les tests. Une occurrence d'identifiant, surtout dans un commentaire, n'est pas une preuve d'implémentation ni de couverture.
 
 Pour reprendre le travail : relire ce mémo, retrouver les RG concernées dans l'inventaire, vérifier le service et les tests correspondants, puis consulter les questions ouvertes avant toute modification. Ne pas convertir un comportement litigieux en règle nouvelle au moyen d'un JDD.
 
@@ -21,7 +21,7 @@ Pour reprendre le travail : relire ce mémo, retrouver les RG concernées dans l
 
 ## État des règles : recomptage actuel
 
-Commande exécutée en lecture seule : `node docs/_travail/controle-tracabilite.mjs`. Résultat : **858 lignes, 0 anomalie de traçabilité**. Ce contrôle vérifie des liens documentaires et des références, pas l'exactitude fonctionnelle.
+Commande exécutée en lecture seule : `node ressources/travail/controle-tracabilite.mjs`. Résultat : **858 lignes, 0 anomalie de traçabilité**. Ce contrôle vérifie des liens documentaires et des références, pas l'exactitude fonctionnelle.
 
 | Règles | Total | FAIT | PARTIEL | BLOQUÉ | À FAIRE | NON REPRIS |
 |---|---:|---:|---:|---:|---:|---:|

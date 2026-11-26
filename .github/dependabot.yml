@@ -1,0 +1,22 @@
+# MNT-022 : mises à jour des dépendances, un écosystème par gestionnaire présent dans le dépôt.
+# L'écosystème npm de Dependabot couvre les projets pnpm (pnpm-lock.yaml).
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: chore
+      include: scope
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: ci
+  - package-ecosystem: devcontainers
+    directory: /
+    schedule:
+      interval: monthly

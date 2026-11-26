@@ -1,0 +1,45 @@
+flowchart TB
+  USER["Navigateur<br/>collaborateur Cityz Media"]
+  APPS["Applications internes<br/>Cityz Media (consommateurs)"]
+  subgraph ENTREE["Chaînes d'entrée (Cityz Media)"]
+    AGW["Point d'entrée des fronts<br/>Azure Application Gateway · TLS"]
+    AFD["Point d'entrée des API<br/>Azure Front Door · TLS"]
+    APIM["API Gateway<br/>Azure API Management<br/>(auth, quotas, CORS)"]
+  end
+  subgraph AKS["Cluster Kubernetes (AKS) — tenant circe · Staging et Production"]
+    CGW["Cilium Gateway<br/>(HTTPRoute du tenant)"]
+    O2P["Middleware d'authentification<br/>oauth2-proxy + session Valkey"]
+    subgraph UIC["Composant front"]
+      SPA["SPA React statique<br/>Caddy · distroless static nonroot<br/>:8080 · /config.json · CSP<br/>:9180 /healthz, /metrics"]
+    end
+    subgraph APIC["Composant API métier CIRCE"]
+      API["API Fastify /v1<br/>Node.js LTS · distroless nonroot<br/>validation du jeton (audience)<br/>règles RG-REC / RG-COO<br/>:8080 service · :9180 healthz"]
+      MIG["Job de migrations Prisma<br/>(avant les réplicas)"]
+    end
+    ESO["External Secrets Operator<br/>→ Secret Kubernetes"]
+    OTC["OpenTelemetry Collector<br/>(namespace observability)"]
+  end
+  subgraph DONNEES["Services de données partagés (catalogue annexe C)"]
+    PG[("Azure Database for PostgreSQL<br/>base dédiée circe")]
+    BLOB[("Azure Blob Storage<br/>conteneur dédié : photos BL / affiches")]
+  end
+  subgraph PLATEFORME["Services de la plateforme (Cityz Media)"]
+    IDP["Fournisseur d'identité<br/>OpenID Connect (SSO)"]
+    FGA["Service d'autorisation OpenFGA<br/>store du tenant"]
+    KV["Azure Key Vault<br/>coffre du tenant"]
+    OBSV["Prometheus · Loki · Tempo · Grafana"]
+  end
+  USER --> AGW --> CGW
+  CGW -- "contrôle de session" --> O2P
+  O2P -. "OIDC" .-> IDP
+  CGW --> SPA
+  USER -- "GET /oauth2/auth → jeton d'accès" --> AGW
+  USER -- "appels /v1 + Bearer" --> AFD --> APIM --> CGW --> API
+  APPS -- "Bearer (même audience)" --> AFD
+  API --> PG
+  MIG --> PG
+  API --> BLOB
+  API -- "vérification des relations" --> FGA
+  KV --> ESO --> API
+  API -- "traces, métriques OTLP · logs JSON stdout" --> OTC --> OBSV
+  SPA -. "logs stdout, /metrics" .-> OTC

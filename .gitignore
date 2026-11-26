@@ -27,3 +27,11 @@ donnees-chiffrees/
 
 # npm install (postinstall -> pnpm) : seul pnpm-lock.yaml fait foi
 /package-lock.json
+
+# CIC-007 : les instructions des agents de code sont tenues dans le seul AGENTS.md versionné. CLAUDE.md (import local
+# de AGENTS.md) et .claude/ (agents, commandes, skills, hooks de l'outil) restent sur le poste, hors dépôt.
+/CLAUDE.md
+/.claude/
+
+# Fichiers de verrouillage Office (document ouvert dans Word)
+~$*

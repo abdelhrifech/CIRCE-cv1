@@ -1,0 +1,29 @@
+sequenceDiagram
+  autonumber
+  actor U as Collaborateur
+  participant AGW as Application Gateway + Cilium Gateway
+  participant O2P as oauth2-proxy (session)
+  participant IDP as Fournisseur d'identité (OIDC)
+  participant SPA as SPA CIRCE (Caddy)
+  participant APIM as Front Door + API Management
+  participant API as API métier CIRCE /v1
+  participant FGA as OpenFGA
+  participant PG as PostgreSQL
+  U->>AGW: Ouvre l'application CIRCE
+  AGW->>O2P: Contrôle de session
+  O2P-->>U: Redirection SSO si pas de session
+  U->>IDP: Authentification
+  IDP-->>O2P: Code puis jetons (OIDC)
+  O2P-->>AGW: Session valide
+  AGW->>SPA: index.html, scripts, /config.json
+  SPA->>AGW: GET /oauth2/auth
+  AGW->>O2P: Lecture de la session
+  O2P-->>SPA: X-Auth-Request-Access-Token (gardé en mémoire)
+  SPA->>APIM: GET /v1/reception/... (Authorization: Bearer)
+  APIM->>API: Requête (politiques, quotas, CORS)
+  API->>API: Valide signature, émetteur, audience, expiration
+  API->>FGA: Vérifie la relation utilisateur → droit → plateforme
+  FGA-->>API: Autorisé / refusé (refus journalisé)
+  API->>PG: Lecture / écriture (transaction, verrou optimiste)
+  API-->>SPA: 200 ou erreur {code, message, regle}
+  Note over SPA,API: Sur 401, la SPA renouvelle le jeton par GET /oauth2/auth

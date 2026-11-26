@@ -1,4 +1,4 @@
-// Audit REC-P04 à REC-P10 : tests MANQUANTS écrits depuis docs/RECEPTION_REGLES_METIER.md et les
+// Audit REC-P04 à REC-P10 : tests MANQUANTS écrits depuis docs/specifications/RECEPTION_REGLES_METIER.md et les
 // hypothèses Q-177 / Q-178 de docs/QUESTIONS_OUVERTES.md (le code est ce qui est testé, pas l'attendu).
 // Chaque règle a au moins un test nominal ET un test de rejet (ou de « non-effet » quand la règle décrit
 // une absence). Règles volontairement NON couvertes ici (code en cours de modification) : RG-REC-040,

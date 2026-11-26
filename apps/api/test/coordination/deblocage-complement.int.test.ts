@@ -1,6 +1,6 @@
 // COO-P08 — tests COMPLÉMENTAIRES du déblocage des préparations / « Rendre la main » (deblocage.int.test.ts n'est
 // pas dupliqué) et de la reprise groupée de la version Broadcast (POST /api/coordination/themes/broadcast/
-// reprendre-dossier). Source de l'attendu (les règles, pas le code) : docs/COORDINATION_REGLES_METIER.md
+// reprendre-dossier). Source de l'attendu (les règles, pas le code) : docs/specifications/COORDINATION_REGLES_METIER.md
 // RG-COO-068, 140 à 152, 277 à 279, RG-X-057, RG-X-059 ; hypothèses Q-191, Q-217, Q-218 ; CLAUDE.md §6 (400 / 409).
 // Les écarts constatés sont marqués `it.fails` avec leur n° ANO (non reportés dans RAPPORT_TESTS.md).
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'

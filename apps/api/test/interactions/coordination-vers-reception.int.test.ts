@@ -1,5 +1,5 @@
 // ÉTAPE 7 — interactions COORDINATION → RÉCEPTION : chaque cellule C-nn de la matrice d'impact
-// (docs/ANALYSE_FONCTIONNELLE_COMPLETE.md §6.5). Action de la Coordination × état de la Réception (palette,
+// (docs/specifications/ANALYSE_FONCTIONNELLE_COMPLETE.md §6.5). Action de la Coordination × état de la Réception (palette,
 // affiche, stock) → autorisé / bloqué (règle, code) / effet induit. Un test de REJET couvre le cas où la
 // réception n'est pas dans l'état requis. Sources : RG-X-022, 028, 050 à 059, 062 à 065, 081 à 084, 087.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'

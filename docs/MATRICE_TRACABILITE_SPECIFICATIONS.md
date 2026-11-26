@@ -868,7 +868,7 @@ Génération : script de consolidation de l'étape 1b (une ligne par EX, par RG 
 
 ## Synthèse
 
-Recomptée par script (`docs/_travail/controle-tracabilite.mjs`) le 2026-11-06 (étape 10) ; le tableau précédent affichait 858 « À FAIRE » (jamais régénéré). « NON REPRIS » = règle legacy non reprise, décision à valider.
+Recomptée par script (`ressources/travail/controle-tracabilite.mjs`) le 2026-11-06 (étape 10) ; le tableau précédent affichait 858 « À FAIRE » (jamais régénéré). « NON REPRIS » = règle legacy non reprise, décision à valider.
 
 | Module | Total | FAIT | PARTIEL | BLOQUÉ | À FAIRE | NON REPRIS |
 |---|---|---|---|---|---|---|
@@ -924,7 +924,7 @@ Ce complément trace les évolutions de la nouvelle maquette et de la note Bus. 
 | EX-NEW-COO-001 | instructions.js, unitaire.js, expedition.js | À traiter/Préparation/Colis par type, tous ateliers avec filtre | Réalisé, voir précisions |
 | EX-NEW-ADM-001 | parametrage.js, xlsxread.js | Déclarants, import et référentiel Bus | Réalisé, voir précisions |
 
-Règles effectivement implémentées : [mémoire fonctionnelle et technique](REGLES_METIER_NOUVELLES_SPECS_2026_11_12.md). Sources, décision utilisateur et vérifications : [registre des évolutions](EVOLUTIONS_NOUVELLES_SPECS_2026_11_12.md).
+Règles effectivement implémentées : [mémoire fonctionnelle et technique](specifications/REGLES_METIER_NOUVELLES_SPECS_2026_11_12.md). Sources, décision utilisateur et vérifications : [registre des évolutions](specifications/EVOLUTIONS_NOUVELLES_SPECS_2026_11_12.md).
 
 Preuves principales : `apps/api/test/bus/parcours.int.test.ts`, `apps/api/test/nonconformite/parcours.int.test.ts`, `apps/api/test/pilotage/nouveautes.int.test.ts`, tests de réception et de permissions, `e2e/admin-nouvelles-specs.spec.ts` et parcours de réception existants adaptés.
 

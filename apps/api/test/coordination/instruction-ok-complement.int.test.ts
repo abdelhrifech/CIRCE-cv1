@@ -1,5 +1,5 @@
 // COO-P02 — tests COMPLÉMENTAIRES de l'Instruction OK (instruction-ok.int.test.ts n'est pas dupliqué).
-// Source de l'attendu : docs/COORDINATION_REGLES_METIER.md §2 (bloc 1), §3.2.c, RG-COO-001, 042 à 060, 133, 204,
+// Source de l'attendu : docs/specifications/COORDINATION_REGLES_METIER.md §2 (bloc 1), §3.2.c, RG-COO-001, 042 à 060, 133, 204,
 // RG-X-064, RG-X-078 ; décisions et hypothèses : Q-204 (TRANCHÉE, option b), Q-183, Q-205, Q-206, Q-209,
 // Q-219, Q-224, Q-225, Q-257, Q-375.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
